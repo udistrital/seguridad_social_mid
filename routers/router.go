@@ -8,7 +8,7 @@
 package routers
 
 import (
-	"ss_api_mid/controllers"
+	"github.com/udistrital/ss_mid_api/controllers"
 
 	"github.com/astaxie/beego"
 )
