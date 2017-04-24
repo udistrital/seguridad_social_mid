@@ -3,9 +3,10 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
-	"ss_api_mid/models"
 	"strconv"
 	"strings"
+
+	"github.com/udistrital/ss_api_mid/models"
 
 	"github.com/astaxie/beego"
 )

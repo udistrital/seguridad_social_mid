@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"ss_api_mid/models"
 	"time"
+
+	"github.com/udistrital/ss_mid_api/models"
 
 	"github.com/astaxie/beego"
 )

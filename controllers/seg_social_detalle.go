@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"ss_api_mid/models"
 	"strconv"
 	"strings"
+
+	"github.com/udistrital/ss_mid_api/models"
 
 	"github.com/astaxie/beego"
 )

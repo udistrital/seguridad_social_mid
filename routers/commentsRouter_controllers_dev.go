@@ -6,28 +6,28 @@ import (
 
 func init() {
 
-	beego.GlobalControllerRouter["ss_api_mid/controllers:SegSocialController"] = append(beego.GlobalControllerRouter["ss_api_mid/controllers:SegSocialController"],
+	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:SegSocialController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:SegSocialController"],
 		beego.ControllerComments{
 			Method:           "CalcularSegSocial",
 			Router:           `CalcularSegSocial/:id`,
 			AllowHTTPMethods: []string{"get"},
 			Params:           nil})
 
-	beego.GlobalControllerRouter["ss_api_mid/controllers:SegSocialDetalleController"] = append(beego.GlobalControllerRouter["ss_api_mid/controllers:SegSocialDetalleController"],
+	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:SegSocialDetalleController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:SegSocialDetalleController"],
 		beego.ControllerComments{
 			Method:           "GetNovedadesPorPersona",
 			Router:           `GetNovedadesPorPersona/:persona`,
 			AllowHTTPMethods: []string{"get"},
 			Params:           nil})
 
-	beego.GlobalControllerRouter["ss_api_mid/controllers:FuncionarioProveedorController"] = append(beego.GlobalControllerRouter["github.com/miguelramirez93/titan_api_crud/controllers:FuncionarioProveedorController"],
+	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:FuncionarioProveedorController"] = append(beego.GlobalControllerRouter["github.com/miguelramirez93/titan_api_crud/controllers:FuncionarioProveedorController"],
 		beego.ControllerComments{
 			Method:           "ConsultarIDProveedor",
 			Router:           `/`,
 			AllowHTTPMethods: []string{"post"},
 			Params:           nil})
 
-	beego.GlobalControllerRouter["ss_api_mid/controllers:SegSocialController"] = append(beego.GlobalControllerRouter["ss_api_mid/controllers:SegSocialController"],
+	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:SegSocialController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:SegSocialController"],
 		beego.ControllerComments{
 			Method:           "GetConceptosIbc",
 			Router:           `ConceptosIbc`,
