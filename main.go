@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "ss_api_mid/routers"
+	_ "github.com/udistrital/ss_mid_api/routers"
 
 	"github.com/astaxie/beego"
 	//"github.com/astaxie/beego/orm"
