@@ -15,7 +15,7 @@ type DetallePreliquidacion struct {
 	Preliquidacion int       `orm:"column(preliquidacion)"`
 	Persona        int       `orm:"column(persona)"`
 	Concepto       *Concepto `orm:"column(concepto);rel(fk)"`
-	NumeroContrato *ContratoGeneral `orm:"column(numero_contrato);rel(fk)"`
+	NumeroContrato string    `orm:"column(numero_contrato)"`
 }
 
 func (t *DetallePreliquidacion) TableName() string {
@@ -25,6 +25,7 @@ func (t *DetallePreliquidacion) TableName() string {
 func init() {
 	orm.RegisterModel(new(DetallePreliquidacion))
 }
+
 // AddDetallePreliquidacion insert a new DetallePreliquidacion into database and returns
 // last inserted Id on success.
 func AddDetallePreliquidacion(m *DetallePreliquidacion) (id int64, err error) {
@@ -143,8 +144,8 @@ func DeleteDetallePreliquidacion(id int) (err error) {
 	o := orm.NewOrm()
 	res, err := o.Raw("DELETE FROM detalle_preliquidacion WHERE preliquidacion = ?", id).Exec()
 	if err == nil {
-    num, _ := res.RowsAffected()
-    fmt.Println("row affected nums: ", num)
+		num, _ := res.RowsAffected()
+		fmt.Println("row affected nums: ", num)
 	}
 	return
 }

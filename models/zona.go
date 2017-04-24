@@ -5,66 +5,54 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/astaxie/beego/orm"
 )
 
-type ConceptoPorPersona struct {
-	ValorNovedad  float64   `orm:"column(valor_novedad)"`
-	EstadoNovedad string    `orm:"column(estado_novedad)"`
-	FechaDesde    time.Time `orm:"column(fecha_desde);type(date)"`
-	FechaHasta    time.Time `orm:"column(fecha_hasta);type(date)"`
-	NumCuotas     int64     `orm:"column(num_cuotas)"`
-	Persona       int       `orm:"column(persona)"`
-	Concepto      *Concepto `orm:"column(concepto);rel(fk)"`
-	Nomina        *Nomina   `orm:"column(nomina);rel(fk)"`
-	Id            int       `orm:"auto;column(id);pk"`
-	Tipo          string    `orm:"column(tipo);null"`
+type Zona struct {
+	Id     int    `orm:"column(id_zona);pk"`
+	Nombre string `orm:"column(nombre)"`
+	Tipo   string `orm:"column(tipo)"`
 }
 
-func (t *ConceptoPorPersona) TableName() string {
-	return "concepto_por_persona"
+func (t *Zona) TableName() string {
+	return "zona"
 }
 
 func init() {
-	orm.RegisterModel(new(ConceptoPorPersona))
+	orm.RegisterModel(new(Zona))
 }
 
-// AddConceptoPorPersona insert a new ConceptoPorPersona into database and returns
+// AddZona insert a new Zona into database and returns
 // last inserted Id on success.
-func AddConceptoPorPersona(m *ConceptoPorPersona) (id int64, err error) {
+func AddZona(m *Zona) (id int64, err error) {
 	o := orm.NewOrm()
 	id, err = o.Insert(m)
 	return
 }
 
-// GetConceptoPorPersonaById retrieves ConceptoPorPersona by Id. Returns error if
+// GetZonaById retrieves Zona by Id. Returns error if
 // Id doesn't exist
-func GetConceptoPorPersonaById(id int) (v *ConceptoPorPersona, err error) {
+func GetZonaById(id int) (v *Zona, err error) {
 	o := orm.NewOrm()
-	v = &ConceptoPorPersona{Id: id}
+	v = &Zona{Id: id}
 	if err = o.Read(v); err == nil {
 		return v, nil
 	}
 	return nil, err
 }
 
-// GetAllConceptoPorPersona retrieves all ConceptoPorPersona matches certain condition. Returns empty list if
+// GetAllZona retrieves all Zona matches certain condition. Returns empty list if
 // no records exist
-func GetAllConceptoPorPersona(query map[string]string, fields []string, sortby []string, order []string,
+func GetAllZona(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(ConceptoPorPersona))
+	qs := o.QueryTable(new(Zona))
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
 		k = strings.Replace(k, ".", "__", -1)
-		if strings.Contains(k, "isnull") {
-			qs = qs.Filter(k, (v == "true" || v == "1"))
-		} else {
-			qs = qs.Filter(k, v)
-		}
+		qs = qs.Filter(k, v)
 	}
 	// order by:
 	var sortFields []string
@@ -105,8 +93,8 @@ func GetAllConceptoPorPersona(query map[string]string, fields []string, sortby [
 		}
 	}
 
-	var l []ConceptoPorPersona
-	qs = qs.OrderBy(sortFields...).RelatedSel(5)
+	var l []Zona
+	qs = qs.OrderBy(sortFields...)
 	if _, err = qs.Limit(limit, offset).All(&l, fields...); err == nil {
 		if len(fields) == 0 {
 			for _, v := range l {
@@ -128,11 +116,11 @@ func GetAllConceptoPorPersona(query map[string]string, fields []string, sortby [
 	return nil, err
 }
 
-// UpdateConceptoPorPersona updates ConceptoPorPersona by Id and returns error if
+// UpdateZona updates Zona by Id and returns error if
 // the record to be updated doesn't exist
-func UpdateConceptoPorPersonaById(m *ConceptoPorPersona) (err error) {
+func UpdateZonaById(m *Zona) (err error) {
 	o := orm.NewOrm()
-	v := ConceptoPorPersona{Id: m.Id}
+	v := Zona{Id: m.Id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
@@ -143,38 +131,17 @@ func UpdateConceptoPorPersonaById(m *ConceptoPorPersona) (err error) {
 	return
 }
 
-// DeleteConceptoPorPersona deletes ConceptoPorPersona by Id and returns error if
+// DeleteZona deletes Zona by Id and returns error if
 // the record to be deleted doesn't exist
-func DeleteConceptoPorPersona(id int) (err error) {
+func DeleteZona(id int) (err error) {
 	o := orm.NewOrm()
-	v := ConceptoPorPersona{Id: id}
+	v := Zona{Id: id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
-		if num, err = o.Delete(&ConceptoPorPersona{Id: id}); err == nil {
+		if num, err = o.Delete(&Zona{Id: id}); err == nil {
 			fmt.Println("Number of records deleted in database:", num)
 		}
 	}
-	return
-}
-
-func ConceptoPorPersonaActivo(id int, v *Preliquidacion) (datos []ConceptoPorPersona, err error) {
-	o := orm.NewOrm()
-	consulta := `select a.*
-								from titan.concepto_por_persona as a
-											where a.estado_novedad = 'Activo'
-											and a.persona = ?
-											and a.nomina = ?
-											`
-	_, err = o.Raw(consulta, id, v.Nomina.Id).QueryRows(&datos)
-	var concepto []Concepto
-	for i := 0; i < len(datos); i++ {
-		consulta := `select a.* from titan.concepto  as a
-									inner join titan.concepto_por_persona as b on a.id = b.concepto
-									where b.id = ?`
-		_, err = o.Raw(consulta, datos[i].Id).QueryRows(&concepto)
-		datos[i].Concepto = &concepto[0]
-	}
-
 	return
 }
