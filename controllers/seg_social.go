@@ -76,7 +76,7 @@ func (c *SegSocialController) GetConceptosIbc() {
 	var conceptos []models.Concepto
 	var conceptosIbc []models.ConceptosIbc
 	err := getJson("http://"+beego.AppConfig.String("rulerServicio")+
-		"/predicado?limit=-1&query=Nombre__startswith:conceptos_ibc,Dominio.Id:5", &predicados)
+		"/predicado?limit=-1&query=Nombre__startswith:conceptos_ibc,Dominio.Id:4", &predicados)
 	errConceptoTitan := getJson("http://"+beego.AppConfig.String("titanServicio")+
 		"/concepto?limit=-1", &conceptos)
 	if err != nil && errConceptoTitan != nil {
