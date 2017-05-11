@@ -9,56 +9,53 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
-type LugarEjecucion struct {
-	Id          int     `orm:"column(id);pk"`
-	Direccion   string  `orm:"column(direccion)"`
-	Sede        string  `orm:"column(sede);null"`
-	Dependencia string  `orm:"column(dependencia);null"`
-	Ciudad      float64 `orm:"column(ciudad)"`
+type DescSeguridadSocialDetalle struct {
+	Id                        int                      `orm:"column(id);pk"`
+	IdDetalleLiquidacion      int                      `orm:"column(id_detalle_liquidacion)"`
+	TipoPago                  string                   `orm:"column(tipo_pago)"`
+	Valor                     int64                    `orm:"column(valor)"`
+	IdDescSeguridadSocial     *DescSeguridadSocial     `orm:"column(id_desc_seguridad_social);rel(fk)"`
+	IdTipoPagoSeguridadSocial *TipoPagoSeguridadSocial `orm:"column(id_tipo_pago_seguridad_social);rel(fk)"`
 }
 
-func (t *LugarEjecucion) TableName() string {
-	return "lugar_ejecucion"
+func (t *DescSeguridadSocialDetalle) TableName() string {
+	return "desc_seguridad_social_detalle"
 }
 
 func init() {
-	orm.RegisterModel(new(LugarEjecucion))
+	orm.RegisterModel(new(DescSeguridadSocialDetalle))
 }
 
-// AddLugarEjecucion insert a new LugarEjecucion into database and returns
+// AddDescSeguridadSocialDetalle insert a new DescSeguridadSocialDetalle into database and returns
 // last inserted Id on success.
-func AddLugarEjecucion(m *LugarEjecucion) (id int64, err error) {
+func AddDescSeguridadSocialDetalle(m *DescSeguridadSocialDetalle) (id int64, err error) {
 	o := orm.NewOrm()
 	id, err = o.Insert(m)
 	return
 }
 
-// GetLugarEjecucionById retrieves LugarEjecucion by Id. Returns error if
+// GetDescSeguridadSocialDetalleById retrieves DescSeguridadSocialDetalle by Id. Returns error if
 // Id doesn't exist
-func GetLugarEjecucionById(id int) (v *LugarEjecucion, err error) {
+func GetDescSeguridadSocialDetalleById(id int) (v *DescSeguridadSocialDetalle, err error) {
 	o := orm.NewOrm()
-	v = &LugarEjecucion{Id: id}
+	v = &DescSeguridadSocialDetalle{Id: id}
 	if err = o.Read(v); err == nil {
 		return v, nil
 	}
 	return nil, err
 }
 
-// GetAllLugarEjecucion retrieves all LugarEjecucion matches certain condition. Returns empty list if
+// GetAllDescSeguridadSocialDetalle retrieves all DescSeguridadSocialDetalle matches certain condition. Returns empty list if
 // no records exist
-func GetAllLugarEjecucion(query map[string]string, fields []string, sortby []string, order []string,
+func GetAllDescSeguridadSocialDetalle(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(LugarEjecucion))
+	qs := o.QueryTable(new(DescSeguridadSocialDetalle))
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
 		k = strings.Replace(k, ".", "__", -1)
-		if strings.Contains(k, "isnull") {
-			qs = qs.Filter(k, (v == "true" || v == "1"))
-		} else {
-			qs = qs.Filter(k, v)
-		}
+		qs = qs.Filter(k, v)
 	}
 	// order by:
 	var sortFields []string
@@ -99,7 +96,7 @@ func GetAllLugarEjecucion(query map[string]string, fields []string, sortby []str
 		}
 	}
 
-	var l []LugarEjecucion
+	var l []DescSeguridadSocialDetalle
 	qs = qs.OrderBy(sortFields...)
 	if _, err = qs.Limit(limit, offset).All(&l, fields...); err == nil {
 		if len(fields) == 0 {
@@ -122,11 +119,11 @@ func GetAllLugarEjecucion(query map[string]string, fields []string, sortby []str
 	return nil, err
 }
 
-// UpdateLugarEjecucion updates LugarEjecucion by Id and returns error if
+// UpdateDescSeguridadSocialDetalle updates DescSeguridadSocialDetalle by Id and returns error if
 // the record to be updated doesn't exist
-func UpdateLugarEjecucionById(m *LugarEjecucion) (err error) {
+func UpdateDescSeguridadSocialDetalleById(m *DescSeguridadSocialDetalle) (err error) {
 	o := orm.NewOrm()
-	v := LugarEjecucion{Id: m.Id}
+	v := DescSeguridadSocialDetalle{Id: m.Id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
@@ -137,15 +134,15 @@ func UpdateLugarEjecucionById(m *LugarEjecucion) (err error) {
 	return
 }
 
-// DeleteLugarEjecucion deletes LugarEjecucion by Id and returns error if
+// DeleteDescSeguridadSocialDetalle deletes DescSeguridadSocialDetalle by Id and returns error if
 // the record to be deleted doesn't exist
-func DeleteLugarEjecucion(id int) (err error) {
+func DeleteDescSeguridadSocialDetalle(id int) (err error) {
 	o := orm.NewOrm()
-	v := LugarEjecucion{Id: id}
+	v := DescSeguridadSocialDetalle{Id: id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
-		if num, err = o.Delete(&LugarEjecucion{Id: id}); err == nil {
+		if num, err = o.Delete(&DescSeguridadSocialDetalle{Id: id}); err == nil {
 			fmt.Println("Number of records deleted in database:", num)
 		}
 	}

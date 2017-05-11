@@ -5,23 +5,20 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/astaxie/beego/orm"
 )
 
 type UpcAdicional struct {
-	Id               int       `orm:"column(id_upc);pk"`
-	PersonaAsociada  int       `orm:"column(persona_asociada)"`
-	Parentesco       string    `orm:"column(parentesco)"`
-	FechaNacimiento  time.Time `orm:"column(fecha_nacimiento);type(date)"`
-	TipoDocumento    string    `orm:"column(tipo_documento)"`
-	Documento        string    `orm:"column(documento)"`
-	PrimerNombre     string    `orm:"column(primer_nombre)"`
-	SegudoNombre     string    `orm:"column(segudo_nombre)"`
-	PrimerApellido   string    `orm:"column(primer_apellido)"`
-	SegudoApellido   string    `orm:"column(segudo_apellido)"`
-	UbicacionLaboral string    `orm:"column(ubicacion_laboral)"`
+	Id              int      `orm:"column(id);pk"`
+	PersonaAsociada int      `orm:"column(persona_asociada)"`
+	TipoDocumento   string   `orm:"column(tipo_documento)"`
+	Documento       string   `orm:"column(documento)"`
+	Nombre          string   `orm:"column(nombre)"`
+	Apellido        string   `orm:"column(apellido)"`
+	IdParentesco    int      `orm:"column(id_parentesco);null"`
+	IdTipoUpc       *TipoUpc `orm:"column(id_tipo_upc);rel(fk)"`
+	Estado          string   `orm:"column(estado);null"`
 }
 
 func (t *UpcAdicional) TableName() string {

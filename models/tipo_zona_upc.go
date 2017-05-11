@@ -9,49 +9,44 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
-type SegSocialDetalle struct {
-	Id             int        `orm:"column(id);pk"`
-	ValorDescuento int64      `orm:"column(valor_descuento)"`
-	Persona        int        `orm:"column(persona)"`
-	IdLiquidacion  int        `orm:"column(id_liquidacion)"`
-	Categoria      string     `orm:"column(categoria)"`
-	IdNovedad      int        `orm:"column(id_novedad);null"`
-	IdSegSocial    *SegSocial `orm:"column(id_seg_social);rel(fk)"`
+type TipoZonaUpc struct {
+	Id     int    `orm:"column(id);pk"`
+	Nombre string `orm:"column(nombre)"`
 }
 
-func (t *SegSocialDetalle) TableName() string {
-	return "seg_social_detalle"
+func (t *TipoZonaUpc) TableName() string {
+	return "tipo_zona_upc"
 }
 
 func init() {
-	orm.RegisterModel(new(SegSocialDetalle))
+	orm.RegisterModel(new(TipoZonaUpc))
 }
 
-// AddSegSocialDetalle insert a new SegSocialDetalle into database and returns
+// AddTipoZonaUpc insert a new TipoZonaUpc into database and returns
 // last inserted Id on success.
-func AddSegSocialDetalle(m *SegSocialDetalle) (id int64, err error) {
+func AddTipoZonaUpc(m *TipoZonaUpc) (id int64, err error) {
 	o := orm.NewOrm()
 	id, err = o.Insert(m)
 	return
 }
 
-// GetSegSocialDetalleById retrieves SegSocialDetalle by Id. Returns error if
+// GetTipoZonaUpcById retrieves TipoZonaUpc by Id. Returns error if
 // Id doesn't exist
-func GetSegSocialDetalleById(id int) (v *SegSocialDetalle, err error) {
+func GetTipoZonaUpcById(id int) (v *TipoZonaUpc, err error) {
 	o := orm.NewOrm()
-	v = &SegSocialDetalle{Id: id}
+	v = &TipoZonaUpc{Id: id}
 	if err = o.Read(v); err == nil {
 		return v, nil
 	}
 	return nil, err
 }
 
-// GetAllSegSocialDetalle retrieves all SegSocialDetalle matches certain condition. Returns empty list if
+// GetAllTipoZonaUpc retrieves all TipoZonaUpc matches certain condition. Returns empty list if
 // no records exist
-func GetAllSegSocialDetalle(query map[string]string, fields []string, sortby []string, order []string,
+func GetAllTipoZonaUpc(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(SegSocialDetalle))
+	qs := o.QueryTable(new(TipoZonaUpc))
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
@@ -97,7 +92,7 @@ func GetAllSegSocialDetalle(query map[string]string, fields []string, sortby []s
 		}
 	}
 
-	var l []SegSocialDetalle
+	var l []TipoZonaUpc
 	qs = qs.OrderBy(sortFields...)
 	if _, err = qs.Limit(limit, offset).All(&l, fields...); err == nil {
 		if len(fields) == 0 {
@@ -120,11 +115,11 @@ func GetAllSegSocialDetalle(query map[string]string, fields []string, sortby []s
 	return nil, err
 }
 
-// UpdateSegSocialDetalle updates SegSocialDetalle by Id and returns error if
+// UpdateTipoZonaUpc updates TipoZonaUpc by Id and returns error if
 // the record to be updated doesn't exist
-func UpdateSegSocialDetalleById(m *SegSocialDetalle) (err error) {
+func UpdateTipoZonaUpcById(m *TipoZonaUpc) (err error) {
 	o := orm.NewOrm()
-	v := SegSocialDetalle{Id: m.Id}
+	v := TipoZonaUpc{Id: m.Id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
@@ -135,15 +130,15 @@ func UpdateSegSocialDetalleById(m *SegSocialDetalle) (err error) {
 	return
 }
 
-// DeleteSegSocialDetalle deletes SegSocialDetalle by Id and returns error if
+// DeleteTipoZonaUpc deletes TipoZonaUpc by Id and returns error if
 // the record to be deleted doesn't exist
-func DeleteSegSocialDetalle(id int) (err error) {
+func DeleteTipoZonaUpc(id int) (err error) {
 	o := orm.NewOrm()
-	v := SegSocialDetalle{Id: id}
+	v := TipoZonaUpc{Id: id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
-		if num, err = o.Delete(&SegSocialDetalle{Id: id}); err == nil {
+		if num, err = o.Delete(&TipoZonaUpc{Id: id}); err == nil {
 			fmt.Println("Number of records deleted in database:", num)
 		}
 	}

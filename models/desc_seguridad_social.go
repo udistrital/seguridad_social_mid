@@ -9,45 +9,46 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
-type Zona struct {
-	Id     int    `orm:"column(id_zona);pk"`
-	Nombre string `orm:"column(nombre)"`
-	Tipo   string `orm:"column(tipo)"`
+type DescSeguridadSocial struct {
+	Id         int    `orm:"column(id);pk"`
+	Mes        int16  `orm:"column(mes)"`
+	Anio       int    `orm:"column(anio)"`
+	TipoNomina string `orm:"column(tipo_nomina)"`
 }
 
-func (t *Zona) TableName() string {
-	return "zona"
+func (t *DescSeguridadSocial) TableName() string {
+	return "desc_seguridad_social"
 }
 
 func init() {
-	orm.RegisterModel(new(Zona))
+	orm.RegisterModel(new(DescSeguridadSocial))
 }
 
-// AddZona insert a new Zona into database and returns
+// AddDescSeguridadSocial insert a new DescSeguridadSocial into database and returns
 // last inserted Id on success.
-func AddZona(m *Zona) (id int64, err error) {
+func AddDescSeguridadSocial(m *DescSeguridadSocial) (id int64, err error) {
 	o := orm.NewOrm()
 	id, err = o.Insert(m)
 	return
 }
 
-// GetZonaById retrieves Zona by Id. Returns error if
+// GetDescSeguridadSocialById retrieves DescSeguridadSocial by Id. Returns error if
 // Id doesn't exist
-func GetZonaById(id int) (v *Zona, err error) {
+func GetDescSeguridadSocialById(id int) (v *DescSeguridadSocial, err error) {
 	o := orm.NewOrm()
-	v = &Zona{Id: id}
+	v = &DescSeguridadSocial{Id: id}
 	if err = o.Read(v); err == nil {
 		return v, nil
 	}
 	return nil, err
 }
 
-// GetAllZona retrieves all Zona matches certain condition. Returns empty list if
+// GetAllDescSeguridadSocial retrieves all DescSeguridadSocial matches certain condition. Returns empty list if
 // no records exist
-func GetAllZona(query map[string]string, fields []string, sortby []string, order []string,
+func GetAllDescSeguridadSocial(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(Zona))
+	qs := o.QueryTable(new(DescSeguridadSocial))
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
@@ -93,7 +94,7 @@ func GetAllZona(query map[string]string, fields []string, sortby []string, order
 		}
 	}
 
-	var l []Zona
+	var l []DescSeguridadSocial
 	qs = qs.OrderBy(sortFields...)
 	if _, err = qs.Limit(limit, offset).All(&l, fields...); err == nil {
 		if len(fields) == 0 {
@@ -116,11 +117,11 @@ func GetAllZona(query map[string]string, fields []string, sortby []string, order
 	return nil, err
 }
 
-// UpdateZona updates Zona by Id and returns error if
+// UpdateDescSeguridadSocial updates DescSeguridadSocial by Id and returns error if
 // the record to be updated doesn't exist
-func UpdateZonaById(m *Zona) (err error) {
+func UpdateDescSeguridadSocialById(m *DescSeguridadSocial) (err error) {
 	o := orm.NewOrm()
-	v := Zona{Id: m.Id}
+	v := DescSeguridadSocial{Id: m.Id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
@@ -131,15 +132,15 @@ func UpdateZonaById(m *Zona) (err error) {
 	return
 }
 
-// DeleteZona deletes Zona by Id and returns error if
+// DeleteDescSeguridadSocial deletes DescSeguridadSocial by Id and returns error if
 // the record to be deleted doesn't exist
-func DeleteZona(id int) (err error) {
+func DeleteDescSeguridadSocial(id int) (err error) {
 	o := orm.NewOrm()
-	v := Zona{Id: id}
+	v := DescSeguridadSocial{Id: id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
-		if num, err = o.Delete(&Zona{Id: id}); err == nil {
+		if num, err = o.Delete(&DescSeguridadSocial{Id: id}); err == nil {
 			fmt.Println("Number of records deleted in database:", num)
 		}
 	}

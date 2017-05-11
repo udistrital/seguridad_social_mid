@@ -7,18 +7,18 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/udistrital/ss_mid_api/models"
+	"github.com/udistrital/b/ss_mid_api/models"
 
 	"github.com/astaxie/beego"
 )
 
-// SegSocialDetalleController oprations for SegSocialDetalle
-type SegSocialDetalleController struct {
+// DescSeguridadSocialDetalleController oprations for DescSeguridadSocialDetalle
+type DescSeguridadSocialDetalleController struct {
 	beego.Controller
 }
 
 // URLMapping ...
-func (c *SegSocialDetalleController) URLMapping() {
+func (c *DescSeguridadSocialDetalleController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("GetOne", c.GetOne)
 	c.Mapping("GetAll", c.GetAll)
@@ -27,7 +27,29 @@ func (c *SegSocialDetalleController) URLMapping() {
 	c.Mapping("GetNovedadesPorPersona", c.GetNovedadesPorPersona)
 }
 
-func (c *SegSocialDetalleController) GetNovedadesPorPersona() {
+// Post ...
+// @Title Post
+// @Description create DescSeguridadSocialDetalle
+// @Param	body		body 	models.DescSeguridadSocialDetalle	true		"body for DescSeguridadSocialDetalle content"
+// @Success 201 {int} models.DescSeguridadSocialDetalle
+// @Failure 403 body is empty
+// @router / [post]
+func (c *DescSeguridadSocialDetalleController) Post() {
+	var v models.DescSeguridadSocialDetalle
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+		if _, err := models.AddDescSeguridadSocialDetalle(&v); err == nil {
+			c.Ctx.Output.SetStatus(201)
+			c.Data["json"] = v
+		} else {
+			c.Data["json"] = err.Error()
+		}
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}
+
+func (c *DescSeguridadSocialDetalleController) GetNovedadesPorPersona() {
 	personaStr := c.Ctx.Input.Param(":persona")
 	_, err := strconv.Atoi(personaStr)
 	var alertas []string
@@ -77,39 +99,17 @@ func (c *SegSocialDetalleController) GetNovedadesPorPersona() {
 	}
 }
 
-// Post ...
-// @Title Post
-// @Description create SegSocialDetalle
-// @Param	body		body 	models.SegSocialDetalle	true		"body for SegSocialDetalle content"
-// @Success 201 {int} models.SegSocialDetalle
-// @Failure 403 body is empty
-// @router / [post]
-func (c *SegSocialDetalleController) Post() {
-	var v models.SegSocialDetalle
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		if _, err := models.AddSegSocialDetalle(&v); err == nil {
-			c.Ctx.Output.SetStatus(201)
-			c.Data["json"] = v
-		} else {
-			c.Data["json"] = err.Error()
-		}
-	} else {
-		c.Data["json"] = err.Error()
-	}
-	c.ServeJSON()
-}
-
 // GetOne ...
 // @Title Get One
-// @Description get SegSocialDetalle by id
+// @Description get DescSeguridadSocialDetalle by id
 // @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} models.SegSocialDetalle
+// @Success 200 {object} models.DescSeguridadSocialDetalle
 // @Failure 403 :id is empty
 // @router /:id [get]
-func (c *SegSocialDetalleController) GetOne() {
+func (c *DescSeguridadSocialDetalleController) GetOne() {
 	idStr := c.Ctx.Input.Param(":id")
 	id, _ := strconv.Atoi(idStr)
-	v, err := models.GetSegSocialDetalleById(id)
+	v, err := models.GetDescSeguridadSocialDetalleById(id)
 	if err != nil {
 		c.Data["json"] = err.Error()
 	} else {
@@ -120,17 +120,17 @@ func (c *SegSocialDetalleController) GetOne() {
 
 // GetAll ...
 // @Title Get All
-// @Description get SegSocialDetalle
+// @Description get DescSeguridadSocialDetalle
 // @Param	query	query	string	false	"Filter. e.g. col1:v1,col2:v2 ..."
 // @Param	fields	query	string	false	"Fields returned. e.g. col1,col2 ..."
 // @Param	sortby	query	string	false	"Sorted-by fields. e.g. col1,col2 ..."
 // @Param	order	query	string	false	"Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ..."
 // @Param	limit	query	string	false	"Limit the size of result set. Must be an integer"
 // @Param	offset	query	string	false	"Start position of result set. Must be an integer"
-// @Success 200 {object} models.SegSocialDetalle
+// @Success 200 {object} models.DescSeguridadSocialDetalle
 // @Failure 403
 // @router / [get]
-func (c *SegSocialDetalleController) GetAll() {
+func (c *DescSeguridadSocialDetalleController) GetAll() {
 	var fields []string
 	var sortby []string
 	var order []string
@@ -172,7 +172,7 @@ func (c *SegSocialDetalleController) GetAll() {
 		}
 	}
 
-	l, err := models.GetAllSegSocialDetalle(query, fields, sortby, order, offset, limit)
+	l, err := models.GetAllDescSeguridadSocialDetalle(query, fields, sortby, order, offset, limit)
 	if err != nil {
 		c.Data["json"] = err.Error()
 	} else {
@@ -183,18 +183,18 @@ func (c *SegSocialDetalleController) GetAll() {
 
 // Put ...
 // @Title Put
-// @Description update the SegSocialDetalle
+// @Description update the DescSeguridadSocialDetalle
 // @Param	id		path 	string	true		"The id you want to update"
-// @Param	body		body 	models.SegSocialDetalle	true		"body for SegSocialDetalle content"
-// @Success 200 {object} models.SegSocialDetalle
+// @Param	body		body 	models.DescSeguridadSocialDetalle	true		"body for DescSeguridadSocialDetalle content"
+// @Success 200 {object} models.DescSeguridadSocialDetalle
 // @Failure 403 :id is not int
 // @router /:id [put]
-func (c *SegSocialDetalleController) Put() {
+func (c *DescSeguridadSocialDetalleController) Put() {
 	idStr := c.Ctx.Input.Param(":id")
 	id, _ := strconv.Atoi(idStr)
-	v := models.SegSocialDetalle{Id: id}
+	v := models.DescSeguridadSocialDetalle{Id: id}
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		if err := models.UpdateSegSocialDetalleById(&v); err == nil {
+		if err := models.UpdateDescSeguridadSocialDetalleById(&v); err == nil {
 			c.Data["json"] = "OK"
 		} else {
 			c.Data["json"] = err.Error()
@@ -207,15 +207,15 @@ func (c *SegSocialDetalleController) Put() {
 
 // Delete ...
 // @Title Delete
-// @Description delete the SegSocialDetalle
+// @Description delete the DescSeguridadSocialDetalle
 // @Param	id		path 	string	true		"The id you want to delete"
 // @Success 200 {string} delete success!
 // @Failure 403 id is empty
 // @router /:id [delete]
-func (c *SegSocialDetalleController) Delete() {
+func (c *DescSeguridadSocialDetalleController) Delete() {
 	idStr := c.Ctx.Input.Param(":id")
 	id, _ := strconv.Atoi(idStr)
-	if err := models.DeleteSegSocialDetalle(id); err == nil {
+	if err := models.DeleteDescSeguridadSocialDetalle(id); err == nil {
 		c.Data["json"] = "OK"
 	} else {
 		c.Data["json"] = err.Error()

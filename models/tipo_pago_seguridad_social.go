@@ -9,46 +9,44 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
-type SegSocial struct {
-	Id        int    `orm:"column(id);pk"`
-	Mes       int16  `orm:"column(mes)"`
-	Anio      int    `orm:"column(anio)"`
-	Categoria string `orm:"column(categoria)"`
+type TipoPagoSeguridadSocial struct {
+	Id     int    `orm:"column(id);pk"`
+	Nombre string `orm:"column(nombre)"`
 }
 
-func (t *SegSocial) TableName() string {
-	return "seg_social"
+func (t *TipoPagoSeguridadSocial) TableName() string {
+	return "tipo_pago_seguridad_social"
 }
 
 func init() {
-	orm.RegisterModel(new(SegSocial))
+	orm.RegisterModel(new(TipoPagoSeguridadSocial))
 }
 
-// AddSegSocial insert a new SegSocial into database and returns
+// AddTipoPagoSeguridadSocial insert a new TipoPagoSeguridadSocial into database and returns
 // last inserted Id on success.
-func AddSegSocial(m *SegSocial) (id int64, err error) {
+func AddTipoPagoSeguridadSocial(m *TipoPagoSeguridadSocial) (id int64, err error) {
 	o := orm.NewOrm()
 	id, err = o.Insert(m)
 	return
 }
 
-// GetSegSocialById retrieves SegSocial by Id. Returns error if
+// GetTipoPagoSeguridadSocialById retrieves TipoPagoSeguridadSocial by Id. Returns error if
 // Id doesn't exist
-func GetSegSocialById(id int) (v *SegSocial, err error) {
+func GetTipoPagoSeguridadSocialById(id int) (v *TipoPagoSeguridadSocial, err error) {
 	o := orm.NewOrm()
-	v = &SegSocial{Id: id}
+	v = &TipoPagoSeguridadSocial{Id: id}
 	if err = o.Read(v); err == nil {
 		return v, nil
 	}
 	return nil, err
 }
 
-// GetAllSegSocial retrieves all SegSocial matches certain condition. Returns empty list if
+// GetAllTipoPagoSeguridadSocial retrieves all TipoPagoSeguridadSocial matches certain condition. Returns empty list if
 // no records exist
-func GetAllSegSocial(query map[string]string, fields []string, sortby []string, order []string,
+func GetAllTipoPagoSeguridadSocial(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(SegSocial))
+	qs := o.QueryTable(new(TipoPagoSeguridadSocial))
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
@@ -94,7 +92,7 @@ func GetAllSegSocial(query map[string]string, fields []string, sortby []string, 
 		}
 	}
 
-	var l []SegSocial
+	var l []TipoPagoSeguridadSocial
 	qs = qs.OrderBy(sortFields...)
 	if _, err = qs.Limit(limit, offset).All(&l, fields...); err == nil {
 		if len(fields) == 0 {
@@ -117,11 +115,11 @@ func GetAllSegSocial(query map[string]string, fields []string, sortby []string, 
 	return nil, err
 }
 
-// UpdateSegSocial updates SegSocial by Id and returns error if
+// UpdateTipoPagoSeguridadSocial updates TipoPagoSeguridadSocial by Id and returns error if
 // the record to be updated doesn't exist
-func UpdateSegSocialById(m *SegSocial) (err error) {
+func UpdateTipoPagoSeguridadSocialById(m *TipoPagoSeguridadSocial) (err error) {
 	o := orm.NewOrm()
-	v := SegSocial{Id: m.Id}
+	v := TipoPagoSeguridadSocial{Id: m.Id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
@@ -132,15 +130,15 @@ func UpdateSegSocialById(m *SegSocial) (err error) {
 	return
 }
 
-// DeleteSegSocial deletes SegSocial by Id and returns error if
+// DeleteTipoPagoSeguridadSocial deletes TipoPagoSeguridadSocial by Id and returns error if
 // the record to be deleted doesn't exist
-func DeleteSegSocial(id int) (err error) {
+func DeleteTipoPagoSeguridadSocial(id int) (err error) {
 	o := orm.NewOrm()
-	v := SegSocial{Id: id}
+	v := TipoPagoSeguridadSocial{Id: id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
-		if num, err = o.Delete(&SegSocial{Id: id}); err == nil {
+		if num, err = o.Delete(&TipoPagoSeguridadSocial{Id: id}); err == nil {
 			fmt.Println("Number of records deleted in database:", num)
 		}
 	}

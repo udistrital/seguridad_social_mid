@@ -10,13 +10,11 @@ import (
 )
 
 type TipoUpc struct {
-	Id         int    `orm:"column(id_tipo);pk"`
-	Valor      int64  `orm:"column(valor)"`
-	Acuerdo    string `orm:"column(acuerdo)"`
-	EdadMinima int16  `orm:"column(edad_minima)"`
-	EdadMax    int16  `orm:"column(edad_max)"`
-	IdZonaZona *Zona  `orm:"column(id_zona_zona);rel(fk)"`
-	Vigencia   int    `orm:"column(vigencia)"`
+	Id            int          `orm:"column(id);pk"`
+	Valor         int64        `orm:"column(valor)"`
+	Acuerdo       string       `orm:"column(acuerdo)"`
+	IdEdadUpc     *EdadUpc     `orm:"column(id_edad_upc);rel(fk)"`
+	IdTipoZonaUpc *TipoZonaUpc `orm:"column(id_tipo_zona_upc);rel(fk)"`
 }
 
 func (t *TipoUpc) TableName() string {

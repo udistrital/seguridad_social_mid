@@ -9,57 +9,52 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
-type DetallePreliquidacion struct {
-	Id             int       `orm:"column(id);pk;auto"`
-	ValorCalculado int64     `orm:"column(valor_calculado)"`
-	Preliquidacion int       `orm:"column(preliquidacion)"`
-	Persona        int       `orm:"column(persona)"`
-	Concepto       *Concepto `orm:"column(concepto);rel(fk)"`
-	NumeroContrato string    `orm:"column(numero_contrato)"`
+type EdadUpc struct {
+	Id           int    `orm:"column(id);pk"`
+	EdadMin      int    `orm:"column(edad_min)"`
+	EdadMax      int    `orm:"column(edad_max)"`
+	Vigencia     int    `orm:"column(vigencia)"`
+	AplicaGenero string `orm:"column(aplica_genero);null"`
 }
 
-func (t *DetallePreliquidacion) TableName() string {
-	return "detalle_preliquidacion"
+func (t *EdadUpc) TableName() string {
+	return "edad_upc"
 }
 
 func init() {
-	orm.RegisterModel(new(DetallePreliquidacion))
+	orm.RegisterModel(new(EdadUpc))
 }
 
-// AddDetallePreliquidacion insert a new DetallePreliquidacion into database and returns
+// AddEdadUpc insert a new EdadUpc into database and returns
 // last inserted Id on success.
-func AddDetallePreliquidacion(m *DetallePreliquidacion) (id int64, err error) {
+func AddEdadUpc(m *EdadUpc) (id int64, err error) {
 	o := orm.NewOrm()
 	id, err = o.Insert(m)
 	return
 }
 
-// GetDetallePreliquidacionById retrieves DetallePreliquidacion by Id. Returns error if
+// GetEdadUpcById retrieves EdadUpc by Id. Returns error if
 // Id doesn't exist
-func GetDetallePreliquidacionById(id int) (v *DetallePreliquidacion, err error) {
+func GetEdadUpcById(id int) (v *EdadUpc, err error) {
 	o := orm.NewOrm()
-	v = &DetallePreliquidacion{Id: id}
+	v = &EdadUpc{Id: id}
 	if err = o.Read(v); err == nil {
 		return v, nil
 	}
 	return nil, err
 }
 
-// GetAllDetallePreliquidacion retrieves all DetallePreliquidacion matches certain condition. Returns empty list if
+// GetAllEdadUpc retrieves all EdadUpc matches certain condition. Returns empty list if
 // no records exist
-func GetAllDetallePreliquidacion(query map[string]string, fields []string, sortby []string, order []string,
+func GetAllEdadUpc(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(DetallePreliquidacion))
+	qs := o.QueryTable(new(EdadUpc))
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
 		k = strings.Replace(k, ".", "__", -1)
-		if strings.Contains(k, "isnull") {
-			qs = qs.Filter(k, (v == "true" || v == "1"))
-		} else {
-			qs = qs.Filter(k, v)
-		}
+		qs = qs.Filter(k, v)
 	}
 	// order by:
 	var sortFields []string
@@ -100,7 +95,7 @@ func GetAllDetallePreliquidacion(query map[string]string, fields []string, sortb
 		}
 	}
 
-	var l []DetallePreliquidacion
+	var l []EdadUpc
 	qs = qs.OrderBy(sortFields...)
 	if _, err = qs.Limit(limit, offset).All(&l, fields...); err == nil {
 		if len(fields) == 0 {
@@ -123,11 +118,11 @@ func GetAllDetallePreliquidacion(query map[string]string, fields []string, sortb
 	return nil, err
 }
 
-// UpdateDetallePreliquidacion updates DetallePreliquidacion by Id and returns error if
+// UpdateEdadUpc updates EdadUpc by Id and returns error if
 // the record to be updated doesn't exist
-func UpdateDetallePreliquidacionById(m *DetallePreliquidacion) (err error) {
+func UpdateEdadUpcById(m *EdadUpc) (err error) {
 	o := orm.NewOrm()
-	v := DetallePreliquidacion{Id: m.Id}
+	v := EdadUpc{Id: m.Id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
@@ -138,14 +133,17 @@ func UpdateDetallePreliquidacionById(m *DetallePreliquidacion) (err error) {
 	return
 }
 
-// DeleteDetallePreliquidacion deletes DetallePreliquidacion by Id and returns error if
+// DeleteEdadUpc deletes EdadUpc by Id and returns error if
 // the record to be deleted doesn't exist
-func DeleteDetallePreliquidacion(id int) (err error) {
+func DeleteEdadUpc(id int) (err error) {
 	o := orm.NewOrm()
-	res, err := o.Raw("DELETE FROM detalle_preliquidacion WHERE preliquidacion = ?", id).Exec()
-	if err == nil {
-		num, _ := res.RowsAffected()
-		fmt.Println("row affected nums: ", num)
+	v := EdadUpc{Id: id}
+	// ascertain id exists in the database
+	if err = o.Read(&v); err == nil {
+		var num int64
+		if num, err = o.Delete(&EdadUpc{Id: id}); err == nil {
+			fmt.Println("Number of records deleted in database:", num)
+		}
 	}
 	return
 }

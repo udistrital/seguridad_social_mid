@@ -8,7 +8,7 @@
 package routers
 
 import (
-	"github.com/udistrital/ss_mid_api/controllers"
+	"github.com/udistrital/b/ss_mid_api/controllers"
 
 	"github.com/astaxie/beego"
 )
@@ -22,27 +22,39 @@ func init() {
 			),
 		),
 
-		beego.NSNamespace("/seg_social",
+		beego.NSNamespace("/desc_seguridad_social",
 			beego.NSInclude(
-				&controllers.SegSocialController{},
+				&controllers.DescSeguridadSocialController{},
 			),
 		),
 
-		beego.NSNamespace("/seg_social_detalle",
+		beego.NSNamespace("/edad_upc",
 			beego.NSInclude(
-				&controllers.SegSocialDetalleController{},
+				&controllers.EdadUpcController{},
 			),
 		),
 
-		beego.NSNamespace("/zona",
+		beego.NSNamespace("/tipo_zona_upc",
 			beego.NSInclude(
-				&controllers.ZonaController{},
+				&controllers.TipoZonaUpcController{},
+			),
+		),
+
+		beego.NSNamespace("/tipo_pago_seguridad_social",
+			beego.NSInclude(
+				&controllers.TipoPagoSeguridadSocialController{},
 			),
 		),
 
 		beego.NSNamespace("/tipo_upc",
 			beego.NSInclude(
 				&controllers.TipoUpcController{},
+			),
+		),
+
+		beego.NSNamespace("/desc_seguridad_social_detalle",
+			beego.NSInclude(
+				&controllers.DescSeguridadSocialDetalleController{},
 			),
 		),
 	)

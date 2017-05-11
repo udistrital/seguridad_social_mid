@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/udistrital/ss_mid_api/models"
+	"github.com/udistrital/b/ss_mid_api/models"
 
 	"github.com/astaxie/beego"
 )

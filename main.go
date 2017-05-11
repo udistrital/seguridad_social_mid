@@ -1,20 +1,16 @@
 package main
 
 import (
-	_ "github.com/udistrital/ss_mid_api/routers"
+	_ "github.com/udistrital/b/ss_mid_api/routers"
 
 	"github.com/astaxie/beego"
-	//"github.com/astaxie/beego/orm"
+	"github.com/astaxie/beego/orm"
 	"github.com/astaxie/beego/plugins/cors"
-	// _ "github.com/lib/pq"
+	_ "github.com/lib/pq"
 )
 
 func init() {
-	/*orm.RegisterDataBase("default", "postgres", "postgres://"+beego.AppConfig.String("PGuser")+":"+
-	beego.AppConfig.String("PGpass")+"@"+
-	beego.AppConfig.String("PGurls")+"/"+
-	beego.AppConfig.String("PGdb")+"?sslmode=disable&search_path="+
-	beego.AppConfig.String("PGschemas")+"")*/
+	orm.RegisterDataBase("default", "postgres", "postgres://postgres:postgres2016@127.0.0.1:5432/udistrital?sslmode=disable&search_path=seguridad_social")
 }
 
 func main() {
