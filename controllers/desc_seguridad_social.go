@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -129,12 +130,13 @@ func (c *DescSeguridadSocialController) CalcularSegSocial() {
 
 			for index := 0; index < len(ids); index++ {
 				aux := models.PagosSeguridadSocial{
-					Persona:      ids[index],
-					SaludUd:      saludUd[index],
-					SaludTotal:   saludTotal[index],
-					PensionUd:    pensionUd[index],
-					PensionTotal: pensionTotal[index],
-					Arl:          arl[index]}
+					Persona:              ids[index],
+					SaludUd:              saludUd[index],
+					SaludTotal:           AproximarValor(int64(saludTotal[index]), 100),
+					PensionUd:            pensionUd[index],
+					PensionTotal:         AproximarValor(int64(pensionTotal[index]), 100),
+					IdDetalleLiquidacion: detalleLiquidacion[index].Id,
+					Arl:                  AproximarValor(int64(arl[index]), 100)}
 
 				pagosSeguridadSocial = append(pagosSeguridadSocial, aux)
 			}
@@ -144,6 +146,23 @@ func (c *DescSeguridadSocialController) CalcularSegSocial() {
 		c.ServeJSON()
 
 	}
+}
+
+// AproximarValor ...
+// @Title Aproximar Valor
+// @Description Aproxima un valor al número de aproximacion más cercano
+// @Param valorInicial valor a cual quiere aproximar
+// @Param	aproximacion	multiplo sobre al cual debe aproximarse el valor inicial
+// @return valorAproximado el valor aproximado de acuerdo a la aproximacion
+func AproximarValor(valorInicial int64, aproximacion int64) (valorAproximado int64) {
+	x := float64(valorInicial) / float64(aproximacion)
+	y := math.Trunc(float64(valorInicial / aproximacion))
+	if (x - y) > 0 {
+		valorAproximado = AproximarValor(valorInicial+1, aproximacion)
+	} else {
+		valorAproximado = valorInicial
+	}
+	return
 }
 
 func ValorSaludEmpleado(idLiquidacion string) (valorSaludEmpleado string) {
@@ -164,6 +183,13 @@ func ValorSaludEmpleado(idLiquidacion string) (valorSaludEmpleado string) {
 	return
 }
 
+// GetOne ...
+// @Title Get One
+// @Description get DescSeguridadSocial by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.DescSeguridadSocial
+// @Failure 403 :id is empty
+// @router /:id [get]
 func ValorPensionEmpleado(idLiquidacion string) (valorPensionEmpleado string) {
 	var detalleLiquPension []models.DetalleLiquidacion
 	var predicado []models.Predicado
@@ -181,27 +207,6 @@ func ValorPensionEmpleado(idLiquidacion string) (valorPensionEmpleado string) {
 	}
 	return
 }
-
-/*
-func CargarUpcAdicionales() string {
-	var upcAdicionales []models.UpcAdicional
-	var predicado []models.Predicado
-	var upcAdicional string
-
-	errUpc := getJson("http://"+beego.AppConfig.String("seguridadSocialCrud")+"/upc_adicional"+
-		"?limit=-1&query=Estado:Activo", &upcAdicionales)
-
-	if errUpc != nil {
-		fmt.Println("Error en CargarUpcAdicional:\n", errUpc)
-	} else {
-		for index := 0; index < len(upcAdicional); index++ {
-			predicado = append(predicado, models.Predicado{Nombre: ""})
-			upcAdicional += predicado[index].Nombre + "\n"
-		}
-	}
-	return upcAdicional
-}
-*/
 
 // CargarNovedades ...
 // @Title CargarNovedades
@@ -223,6 +228,13 @@ func CargarNovedades(id string) (novedades string) {
 	}
 	return
 }
+
+/*func (c *DescSeguridadSocialController) GenerarArchivoPlano() {
+	idStr := c.Ctx.Input.Param(":id")
+	id, _ := strconv.Atoi(idStr)
+	GetA
+
+}*/
 
 // GetOne ...
 // @Title Get One
