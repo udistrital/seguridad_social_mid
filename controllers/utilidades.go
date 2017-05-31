@@ -92,6 +92,7 @@ func diff(a, b time.Time) (year, month, day int) {
 
 func CargarReglasBase() (reglas string) {
 	reglas = `
+	novedad(-1,undefined).
 	concepto(ud, descuento, porcentaje, salud, 5, 0.085,	2017). 	%%descuento salud ud
 	concepto(ud, descuento, porcentaje, pension, 5, 0.12, 2017).	%%descuento pension ud
 	concepto(ud, descuento, porcentaje, arl, 5, 0.00522, 2017). %%descuento de ARL
@@ -118,15 +119,15 @@ func CargarReglasBase() (reglas string) {
 	smlmv(737717, 2017).
 
 	%%		SALUD
-	v_salud_ud(I,Y) :- concepto(ud,Z,T,salud,5,V,2017), ibc(I,W,salud), Y is V * W.
+	v_salud_ud(I,Y) :- concepto(ud,Z,T,salud,5,V,2017), ibc(I,W,salud), Y is (V * W approach 100).
 	v_total_salud(X,T) :- v_salud_func(X,Y), v_salud_ud(X,U), T is (Y + U).
 
 	%%		PENSION
-	v_pen_ud(I,Y) :- concepto(ud,Z,T,pension,5,V,2017), ibc(I,W,salud), Y is V * W.
+	v_pen_ud(I,Y) :- concepto(ud,Z,T,pension,5,V,2017), ibc(I,W,salud), Y is (V * W approach 100).
 	v_total_pen(X,T) :- v_pen_func(X,Y), v_pen_ud(X,U), T is Y + U.
 
 	%%		ARL
-	v_arl(I,Y) :- concepto(ud,Z,T,arl,5,V,2017), ibc(I,W,riesgos), (novedad(I,2324) -> Y is 0 * W; novedad(I,2326) -> Y is 0 * W;Y is V * W).
+	v_arl(I,Y) :- concepto(ud,Z,T,arl,5,V,2017), ibc(I,W,riesgos), Y is (V * W approach 100).
 
 	%%		FONDO DE SOLIDARIDAD
 	v_fondo1(X,S,D,Y) :- ibc(X,W,apf), smlmv(M,2017),
@@ -141,10 +142,10 @@ func CargarReglasBase() (reglas string) {
 	v_upc(I,Y,Z) :- ibc(I,W,salud), upc(Z,V,I), Y is W - V.
 
 	%%		CAJA DE COMPENSACION FAMILIAR
-	v_caja(I,Y) :- concepto(ud,Z,T,caja,5,V,2017), ibc(I,W,apf), Y is V * W.
+	v_caja(I,Y) :- concepto(ud,Z,T,caja,5,V,2017), ibc(I,W,apf), Y is (V * W approach 100).
 
 	%%		ICBF
-	v_icbf(I,Y) :- concepto(ud,Z,T,icbf,5,V,2017), ibc(I,W,apf), Y is V * W.
+	v_icbf(I,Y) :- concepto(ud,Z,T,icbf,5,V,2017), ibc(I,W,apf), Y is (V * W approach 100).
 	`
 	//fmt.Println(reglas)
 	return
