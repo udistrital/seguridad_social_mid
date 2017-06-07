@@ -10,10 +10,10 @@ import (
 )
 
 type DescSeguridadSocial struct {
-	Id         int    `orm:"column(id);pk"`
-	Mes        int16  `orm:"column(mes)"`
-	Anio       int    `orm:"column(anio)"`
-	TipoNomina string `orm:"column(tipo_nomina)"`
+	Id       int `orm:"column(id);pk;auto"`
+	Mes      int `orm:"column(mes)"`
+	Anio     int `orm:"column(anio)"`
+	IdNomina int `orm:"column(id_nomina)"`
 }
 
 func (t *DescSeguridadSocial) TableName() string {

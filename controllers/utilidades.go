@@ -92,60 +92,55 @@ func diff(a, b time.Time) (year, month, day int) {
 
 func CargarReglasBase() (reglas string) {
 	reglas = `
-	novedad(-1,undefined).
-	concepto(ud, descuento, porcentaje, salud, 5, 0.085,	2017). 	%%descuento salud ud
-	concepto(ud, descuento, porcentaje, pension, 5, 0.12, 2017).	%%descuento pension ud
-	concepto(ud, descuento, porcentaje, arl, 5, 0.00522, 2017). %%descuento de ARL
+			%% 		HECHOS PARA ACTIVOS
+			%%(ud, conceptoDeDescuento, porcentaje, concepto, nominaCorrespondiente, valorPorcentaje, vigencia).
+			concepto(descuento, porcentaje, salud, X, 0.085,	2017). 	%%descuento salud ud
+			concepto(descuento, porcentaje, pension, X, 0.12, 2017).	%%descuento pension ud
+			concepto(descuento, porcentaje, arl, X, 0.00522, 2017). %%descuento de ARL
 
-	%%	Hechos para pensionados
-	concepto(X, devengo, porcentaje, salud, pensionado, 0.12, 2017).	%%descuento de salud pensionado
+			%%		HECHOS PARA PENSIONADOS
+			concepto(X, devengo, porcentaje, salud, pensionado, 0.12, 2017).	%%descuento de salud pensionado
 
-	%% Hechos para aportes parafiscales
-	concepto(ud, descuento, porcentaje, caja,	5, 0.04, 2017).	%%caja de compensa familiar
-	concepto(ud, descuento, porcentaje,	icbf, 5, 0.03, 2017).	%%ICBF
+			%% Hechos para aportes parafiscales
+			concepto(descuento, porcentaje, caja,	5, 0.04, 2017).	%%caja de compensa familiar
+			concepto(descuento, porcentaje,	icbf, 5, 0.03, 2017).	%%ICBF
+
+			%%		NOVEDADES
+			%%(descripcion, valor, persona)
+			novedad(exterior_familia, 0).
+
+			%%salario minimo legal mensual vigente
+			smlmv(737717, 2017).
+
+			%%		SALUD
+			v_salud_ud(I,Y) :- concepto(Z,T,salud,X,V,2017), ibc(I,W,salud), (novedad_persona(N,I), novedad(N,U) -> Y is ((V * W) * U approach 100); Y is (V * W approach 100)).
+			v_total_salud(X,T) :- v_salud_func(X,Y), v_salud_ud(X,U), T is (Y + U approach 100).
 
 
-	%% Pagos de salud funcionario
-	v_salud_func(1, 105080).
-	v_salud_func(2, 145200).
-	v_salud_func(3, 90240).
+			%%		PENSION
+			v_pen_ud(I,Y) :- concepto(Z,T,pension,X,V,2017), ibc(I,W,salud), Y is (V * W approach 100).
+			v_total_pen(X,T) :- v_pen_func(X,Y), v_pen_ud(X,U), T is (Y + U approach 100).
 
-	%% Pagos de pension funcionario
-	v_pen_func(1, 105080).
-	v_pen_func(2, 145200).
-	v_pen_func(3, 90240).
+			%%		ARL
+			v_arl(I,Y) :- concepto(Z,T,arl,X,V,2017), ibc(I,W,riesgos), Y is (V * W approach 100).
 
-	%%salario minimo legal mensual vigente
-	smlmv(737717, 2017).
+			%%		FONDO DE SOLIDARIDAD
+			v_fondo1(X,S,D,Y) :- ibc(X,W,apf,H), smlmv(M,2017),
+			(S is 4*M, W@>= S, D is 16*M, W@< D -> Y is W * 0.01;
+				S is 16*M, W@>= S, D is 17*M, W@< D -> Y is W * 0.012;
+				S is 17*M, W@>= S, D is 18*M, W@< D -> Y is W * 0.014;
+				S is 18*M, W@>= S, D is 19*M, W@< D -> Y is W * 0.016;
+				S is 19*M, W@>= S, D is 20*M, W@=< D -> Y is W * 0.018;
+				S is 20*M, W@> S -> Y is W * 0.02), Y is (Y approach 100).	%calculo de fondo de solidaridad 1
 
-	%%		SALUD
-	v_salud_ud(I,Y) :- concepto(ud,Z,T,salud,5,V,2017), ibc(I,W,salud), Y is (V * W approach 100).
-	v_total_salud(X,T) :- v_salud_func(X,Y), v_salud_ud(X,U), T is (Y + U).
+				%% 		PAGO UPC
+				v_upc(I,Y,Z) :- ibc(I,W,salud,D), upc(Z,V,I), Y is W - V.
 
-	%%		PENSION
-	v_pen_ud(I,Y) :- concepto(ud,Z,T,pension,5,V,2017), ibc(I,W,salud), Y is (V * W approach 100).
-	v_total_pen(X,T) :- v_pen_func(X,Y), v_pen_ud(X,U), T is Y + U.
+				%%		CAJA DE COMPENSACION FAMILIAR
+				v_caja(I,Y,D) :- concepto(Z,T,caja,5,V,2017), ibc(I,W,apf,D), Y is (V * W approach 100).
 
-	%%		ARL
-	v_arl(I,Y) :- concepto(ud,Z,T,arl,5,V,2017), ibc(I,W,riesgos), Y is (V * W approach 100).
-
-	%%		FONDO DE SOLIDARIDAD
-	v_fondo1(X,S,D,Y) :- ibc(X,W,apf), smlmv(M,2017),
-	(S is 4*M, W@>= S, D is 16*M, W@< D -> Y is W * 0.01;
-	S is 16*M, W@>= S, D is 17*M, W@< D -> Y is W * 0.012;
-	S is 17*M, W@>= S, D is 18*M, W@< D -> Y is W * 0.014;
-	S is 18*M, W@>= S, D is 19*M, W@< D -> Y is W * 0.016;
-	S is 19*M, W@>= S, D is 20*M, W@=< D -> Y is W * 0.018;
-	S is 20*M, W@> S -> Y is W * 0.02).	%calculo de fondo de solidaridad 1
-
-	%% PAGO UPC
-	v_upc(I,Y,Z) :- ibc(I,W,salud), upc(Z,V,I), Y is W - V.
-
-	%%		CAJA DE COMPENSACION FAMILIAR
-	v_caja(I,Y) :- concepto(ud,Z,T,caja,5,V,2017), ibc(I,W,apf), Y is (V * W approach 100).
-
-	%%		ICBF
-	v_icbf(I,Y) :- concepto(ud,Z,T,icbf,5,V,2017), ibc(I,W,apf), Y is (V * W approach 100).
+				%%		ICBF
+				v_icbf(I,Y,D) :- concepto(Z,T,icbf,X,V,2017), ibc(I,W,apf,D), Y is (V * W approach 100).
 	`
 	//fmt.Println(reglas)
 	return

@@ -117,24 +117,33 @@ func (c *DescSeguridadSocialController) CalcularSegSocial() {
 				predicado = append(predicado, models.Predicado{Nombre: "ibc(" + strconv.Itoa(detalleLiquidacion[index].Persona) + "," + strconv.Itoa(int(detalleLiquidacion[index].ValorCalculado)) + ", apf)."})
 			}
 
-			reglas := CargarReglasBase() + FormatoReglas(predicado) + ValorSaludEmpleado(idStr) + ValorPensionEmpleado(idStr)
+			reglas := CargarReglasBase() + FormatoReglas(predicado) + CargarNovedades(idStr) +
+				ValorSaludEmpleado(idStr) + ValorPensionEmpleado(idStr)
 
 			ids := golog.GetInt64(reglas, "v_salud_ud(I,Y).", "I")
 			saludUd := golog.GetFloat(reglas, "v_salud_ud(I,Y).", "Y")
-			saludTotal := golog.GetFloat(reglas, "v_total_salud(X,T).", "T")
+			saludTotal := golog.GetInt64(reglas, "v_total_salud(X,T).", "T")
 			pensionUd := golog.GetFloat(reglas, "v_pen_ud(I,Y).", "Y")
-			pensionTotal := golog.GetFloat(reglas, "v_total_pen(X,T).", "T")
-			arl := golog.GetFloat(reglas, "v_arl(I,Y).", "Y")
+			pensionTotal := golog.GetInt64(reglas, "v_total_pen(X,T).", "T")
+			arl := golog.GetInt64(reglas, "v_arl(I,Y).", "Y")
+
+			//fmt.Println(reglas)
+			fmt.Printf("Tamaño de ids: %d \n", len(ids))
+			fmt.Printf("Tamaño de saludUd: %d \n", len(saludUd))
+			fmt.Printf("Tamaño de saludTotal: %d \n", len(saludTotal))
+			fmt.Printf("Tamaño de pensionUd: %d \n", len(pensionUd))
+			fmt.Printf("Tamaño de pensionTotal: %d \n", len(pensionTotal))
+			fmt.Printf("Tamaño de arl: %d \n", len(arl))
 
 			for index := 0; index < len(ids); index++ {
 				aux := models.PagosSeguridadSocial{
 					Persona:              ids[index],
 					SaludUd:              saludUd[index],
-					SaludTotal:           AproximarValor(int64(saludTotal[index]), 100),
+					SaludTotal:           saludTotal[index],
 					PensionUd:            pensionUd[index],
-					PensionTotal:         AproximarValor(int64(pensionTotal[index]), 100),
+					PensionTotal:         pensionTotal[index],
 					IdDetalleLiquidacion: detalleLiquidacion[index].Id,
-					Arl:                  AproximarValor(int64(arl[index]), 100)}
+					Arl:                  arl[index]}
 
 				pagosSeguridadSocial = append(pagosSeguridadSocial, aux)
 			}
@@ -142,66 +151,6 @@ func (c *DescSeguridadSocialController) CalcularSegSocial() {
 			c.Data["json"] = pagosSeguridadSocial
 		}
 		c.ServeJSON()
-	}
-}
-
-//Funcion para calcular pagos de seguridad social con las novedades
-func CalcularSeguridadSocialNovedades(idLiqudacion string) {
-	var predicado []models.Predicado
-	var buffer bytes.Buffer //objeto para concatenar strings a la variable errores
-
-	var detalleLiquidacion []models.DetalleLiquidacion
-	var pagosSeguridadSocial []models.PagosSeguridadSocial
-
-	err := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_liquidacion"+
-		"?limit=0&query=Liquidacion.Id:"+idLiqudacion+",Concepto.NombreConcepto:ibc_novedad", &detalleLiquidacion)
-
-	fmt.Println(buffer.String())
-
-	if err != nil {
-		fmt.Println("ERROR EN LA PETICION:\n", buffer.String())
-	} else {
-
-		for index := 0; index < len(detalleLiquidacion); index++ {
-			predicado = append(predicado, models.Predicado{Nombre: "ibc(" + strconv.Itoa(detalleLiquidacion[index].Persona) + "," + strconv.Itoa(int(detalleLiquidacion[index].ValorCalculado)) + ", salud)."})
-			predicado = append(predicado, models.Predicado{Nombre: "ibc(" + strconv.Itoa(detalleLiquidacion[index].Persona) + "," + strconv.Itoa(int(detalleLiquidacion[index].ValorCalculado)) + ", riesgos)."})
-			predicado = append(predicado, models.Predicado{Nombre: "ibc(" + strconv.Itoa(detalleLiquidacion[index].Persona) + "," + strconv.Itoa(int(detalleLiquidacion[index].ValorCalculado)) + ", apf)."})
-		}
-
-		reglas := CargarReglasBase() + FormatoReglas(predicado) + CargarNovedades(idLiqudacion) +
-			ValorSaludEmpleado(idLiqudacion) + ValorPensionEmpleado(idLiqudacion)
-
-		ids := golog.GetInt64(reglas, "v_salud_ud(I,Y).", "I")
-		saludUd := golog.GetFloat(reglas, "v_salud_ud(I,Y).", "Y")
-		saludTotal := golog.GetFloat(reglas, "v_total_salud(X,T).", "T")
-		pensionUd := golog.GetFloat(reglas, "v_pen_ud(I,Y).", "Y")
-		pensionTotal := golog.GetFloat(reglas, "v_total_pen(X,T).", "T")
-		arl := golog.GetFloat(reglas, "v_arl(I,Y).", "Y")
-
-		for index := 0; index < len(ids); index++ {
-			aux := models.PagosSeguridadSocial{
-				Persona:              ids[index],
-				SaludUd:              saludUd[index],
-				SaludTotal:           AproximarValor(int64(saludTotal[index]), 100),
-				PensionUd:            pensionUd[index],
-				PensionTotal:         AproximarValor(int64(pensionTotal[index]), 100),
-				IdDetalleLiquidacion: detalleLiquidacion[index].Id,
-				Arl:                  AproximarValor(int64(arl[index]), 100)}
-
-			pagosSeguridadSocial = append(pagosSeguridadSocial, aux)
-		}
-
-		fmt.Println("Pagos seguridad Social")
-		for i := 0; i < len(pagosSeguridadSocial); i++ {
-			fmt.Println("Persona: ", pagosSeguridadSocial[i].Persona)
-			fmt.Println("Salud Ud:", pagosSeguridadSocial[i].SaludUd)
-			fmt.Println("Salud Total:", pagosSeguridadSocial[i].SaludTotal)
-			fmt.Println("Pensión Ud:", pagosSeguridadSocial[i].PensionUd)
-			fmt.Println("Pensión Total:", pagosSeguridadSocial[i].PensionTotal)
-			fmt.Println("Salud Ud:", pagosSeguridadSocial[i].IdDetalleLiquidacion)
-			fmt.Println("ARL:", pagosSeguridadSocial[i].Arl)
-		}
-
 	}
 }
 
@@ -222,6 +171,10 @@ func AproximarValor(valorInicial int64, aproximacion int64) (valorAproximado int
 	return
 }
 
+// ValorSaludEmpleado ...
+// @Title Valor Salud Empleado
+// @Description Crea todos los hechos con la información del valor de salud
+// @Param	idLiquidacion		id de la liquidacion correspondiente
 func ValorSaludEmpleado(idLiquidacion string) (valorSaludEmpleado string) {
 	var detalleLiquSalud []models.DetalleLiquidacion
 	var predicado []models.Predicado
@@ -240,13 +193,10 @@ func ValorSaludEmpleado(idLiquidacion string) (valorSaludEmpleado string) {
 	return
 }
 
-// GetOne ...
-// @Title Get One
-// @Description get DescSeguridadSocial by id
-// @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} models.DescSeguridadSocial
-// @Failure 403 :id is empty
-// @router /:id [get]
+// ValorPensionEmpleado ...
+// @Title Valor Pensión Empleado
+// @Description Crea todos los hechos con la información del valor de la pensión
+// @Param	idLiquidacion		id de la liquidacion correspondiente
 func ValorPensionEmpleado(idLiquidacion string) (valorPensionEmpleado string) {
 	var detalleLiquPension []models.DetalleLiquidacion
 	var predicado []models.Predicado
@@ -279,7 +229,7 @@ func CargarNovedades(id string) (novedades string) {
 		fmt.Println("error en CargarNovedades()", errLincNo)
 	} else {
 		for index := 0; index < len(conceptos); index++ {
-			predicado = append(predicado, models.Predicado{Nombre: "novedad(" + strconv.Itoa(int(conceptos[index].Persona)) + ", " + conceptos[index].Concepto.NombreConcepto + ")."})
+			predicado = append(predicado, models.Predicado{Nombre: "novedad_persona(" + conceptos[index].Concepto.NombreConcepto + ", " + strconv.Itoa(int(conceptos[index].Persona)) + ")."})
 			novedades += predicado[index].Nombre + "\n"
 		}
 	}
