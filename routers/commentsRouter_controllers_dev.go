@@ -33,4 +33,18 @@ func init() {
 			Router:           `ConceptosIbc`,
 			AllowHTTPMethods: []string{"get"},
 			Params:           nil})
+
+	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:DescSeguridadSocialController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:DescSeguridadSocialController"],
+		beego.ControllerComments{
+			Method:           "GenerarPlanillaActivos",
+			Router:           `GenerarPlanillaActivos`,
+			AllowHTTPMethods: []string{"get"},
+			Params:           nil})
+
+	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:DescSeguridadSocialController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:DescSeguridadSocialController"],
+		beego.ControllerComments{
+			Method:           "GenerarPlanillaPensionados",
+			Router:           `GenerarPlanillaPensionados`,
+			AllowHTTPMethods: []string{"get"},
+			Params:           nil})
 }

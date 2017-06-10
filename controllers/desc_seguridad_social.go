@@ -29,6 +29,8 @@ func (c *DescSeguridadSocialController) URLMapping() {
 	c.Mapping("Delete", c.Delete)
 	c.Mapping("CalcularSegSocial", c.CalcularSegSocial)
 	c.Mapping("GetConceptosIbc", c.GetConceptosIbc)
+	c.Mapping("GenerarPlanillaActivos", c.GenerarPlanillaActivos)
+	c.Mapping("GenerarPlanillaPensionados", c.GenerarPlanillaPensionados)
 }
 
 // Post ...
@@ -75,7 +77,6 @@ func (c *DescSeguridadSocialController) GetConceptosIbc() {
 						Descripcion: conceptos[j].AliasConcepto}
 					conceptosIbc = append(conceptosIbc, aux)
 					break
-				} else {
 				}
 			}
 
@@ -126,14 +127,6 @@ func (c *DescSeguridadSocialController) CalcularSegSocial() {
 			pensionUd := golog.GetFloat(reglas, "v_pen_ud(I,Y).", "Y")
 			pensionTotal := golog.GetInt64(reglas, "v_total_pen(X,T).", "T")
 			arl := golog.GetInt64(reglas, "v_arl(I,Y).", "Y")
-
-			//fmt.Println(reglas)
-			fmt.Printf("Tamaño de ids: %d \n", len(ids))
-			fmt.Printf("Tamaño de saludUd: %d \n", len(saludUd))
-			fmt.Printf("Tamaño de saludTotal: %d \n", len(saludTotal))
-			fmt.Printf("Tamaño de pensionUd: %d \n", len(pensionUd))
-			fmt.Printf("Tamaño de pensionTotal: %d \n", len(pensionTotal))
-			fmt.Printf("Tamaño de arl: %d \n", len(arl))
 
 			for index := 0; index < len(ids); index++ {
 				aux := models.PagosSeguridadSocial{
@@ -365,4 +358,133 @@ func (c *DescSeguridadSocialController) Delete() {
 		c.Data["json"] = err.Error()
 	}
 	c.ServeJSON()
+}
+
+func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
+	var proveedores []models.InformacionProveedor
+	//var pagosSalud []models.DescSeguridadSocialDetalle
+	//var pagoSalud []models.DescSeguridadSocial
+	var detalleLiquidacion []models.DetalleLiquidacion
+	var errStrings []string
+	tipoRegistro := "02"
+	fila := ""
+
+	errLiquidacion := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_liquidacion"+
+		"?limit=-1", &detalleLiquidacion)
+	if errLiquidacion != nil {
+		errStrings = append(errStrings, errLiquidacion.Error())
+	}
+
+	errProveedores := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_proveedor"+
+		"?limit=0", &proveedores)
+	if errProveedores != nil {
+		errStrings = append(errStrings, errProveedores.Error())
+	}
+
+	fmt.Println("errStrings: ", errStrings)
+	if errStrings == nil {
+		secuencia := 1
+		x := 1
+		for i := 0; i < len(proveedores); i++ {
+			for j := 0; j < len(detalleLiquidacion); j++ {
+				if proveedores[i].Id == detalleLiquidacion[j].Persona {
+					fila += formatoDato(tipoRegistro, 2)
+					fila += formatoDato(completarSecuencia(secuencia), 5)
+					fila += formatoDato("CC", 2)
+					fila += formatoDato(strconv.Itoa(int(proveedores[j].NumDocumento)), 16)
+					fila += formatoDato("1", 2)
+					fila += formatoDato("1", 2)
+					fila += formatoDato(" ", 1)
+					fila += formatoDato(detalleLiquidacion[j].Concepto, 1)
+					if x == 1 {
+						fmt.Printf("Tamaño fila : %d\n", len(fila))
+						x = 2
+					}
+
+					fila += "\n"
+					secuencia++
+				}
+			}
+		}
+		fmt.Println("Filas:\n", fila)
+	}
+}
+
+func (c *DescSeguridadSocialController) GenerarPlanillaPensionados() {
+	var proveedores []models.InformacionProveedor
+	var personasNatural []models.InformacionPersonaNatural
+	//var pagosSalud []models.DescSeguridadSocialDetalle
+	//var pagoSalud []models.DescSeguridadSocial
+	var detalleLiquidacion []models.DetalleLiquidacion
+	var errStrings []string
+	tipoRegistro := "02"
+	fila := ""
+
+	errLiquidacion := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_liquidacion"+
+		"?limit=-1", &detalleLiquidacion)
+	if errLiquidacion != nil {
+		errStrings = append(errStrings, errLiquidacion.Error())
+	}
+
+	errProveedores := getJson("http://"+beego.AppConfig.String("titanServicio")+"/informacion_proveedor"+
+		"?limit=-1", &proveedores)
+	if errProveedores != nil {
+		errStrings = append(errStrings, errProveedores.Error())
+	}
+
+	errPersonaNatural := getJson("http://"+beego.AppConfig.String("titanServicio")+"/informacion_persona_natural"+
+		"?limit=0", &personasNatural)
+	if errPersonaNatural != nil {
+		errStrings = append(errStrings, errPersonaNatural.Error())
+	}
+
+	fmt.Println("**errStrings: ", errStrings)
+	if errStrings == nil {
+		secuencia := 1
+		x := 1
+		for i := 0; i < len(proveedores); i++ {
+			for j := 0; j < len(detalleLiquidacion); j++ {
+				for k := 0; k < len(personasNatural); k++ {
+					if proveedores[i].Id == detalleLiquidacion[j].Persona {
+						if int(proveedores[i].NumDocumento) == personasNatural[k].Id {
+							fila += formatoDato(tipoRegistro, 2)
+							fila += formatoDato(completarSecuencia(secuencia), 5)
+							fila += formatoDato(personasNatural[k].PrimerApellido, 20)
+							fila += formatoDato(personasNatural[k].SegundoApellido, 30)
+							fila += formatoDato(personasNatural[k].PrimerNombre, 20)
+							fila += formatoDato(personasNatural[k].SegundoApellido, 30)
+							fila += formatoDato("CC", 2)
+							fila += formatoDato(strconv.Itoa(int(personasNatural[k].Id)), 16)
+							if x == 1 {
+								fmt.Printf("Tamaño fila : %d\n", len(fila))
+								x = 2
+							}
+							fila += "\n"
+							secuencia++
+						}
+					}
+				}
+			}
+		}
+		fmt.Println("Filas:\n", fila)
+	}
+}
+
+func completarSecuencia(num int) (secuencia string) {
+	tamanioNum := len(strconv.Itoa(num))
+	for i := 0; i < 5-tamanioNum; i++ {
+		secuencia += "0"
+	}
+	secuencia += strconv.Itoa(num)
+	return
+}
+
+func formatoDato(texto string, longitud int) (textoEscribir string) {
+	for _, r := range texto {
+		textoEscribir += string(r)
+	}
+	for i := 0; i < longitud-len(texto); i++ {
+		textoEscribir += " "
+	}
+	return
 }
