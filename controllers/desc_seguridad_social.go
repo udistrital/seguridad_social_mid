@@ -395,7 +395,7 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 					fila += formatoDato("1", 2)
 					fila += formatoDato("1", 2)
 					fila += formatoDato(" ", 1)
-					fila += formatoDato(detalleLiquidacion[j].Concepto, 1)
+					fila += formatoDato(detalleLiquidacion[j].Concepto.AliasConcepto, 1)
 					if x == 1 {
 						fmt.Printf("Tamaño fila : %d\n", len(fila))
 						x = 2
