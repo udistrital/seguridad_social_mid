@@ -365,44 +365,267 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 	//var pagosSalud []models.DescSeguridadSocialDetalle
 	//var pagoSalud []models.DescSeguridadSocial
 	var detalleLiquidacion []models.DetalleLiquidacion
+	var detalleIncapcidadLaboral []models.DetalleLiquidacion
+	var diasLiquidados []models.DetalleLiquidacion
+	var conceptoPersona []models.ConceptoPorPersona
+	var conceptos []models.Concepto
+	var personaNatural []models.InformacionPersonaNatural
 	var errStrings []string
-	tipoRegistro := "02"
-	fila := ""
 
-	errLiquidacion := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_liquidacion"+
-		"?limit=-1", &detalleLiquidacion)
+	tipoRegistro := "02"
+	fila := "\n"
+
+	errLiquidacion := getJson("http://"+beego.AppConfig.String("titanServicio")+
+		"/detalle_liquidacion?limit=-1", &detalleLiquidacion)
 	if errLiquidacion != nil {
 		errStrings = append(errStrings, errLiquidacion.Error())
 	}
 
-	errProveedores := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_proveedor"+
-		"?limit=0", &proveedores)
+	errProveedores := getJson("http://"+beego.AppConfig.String("agoraServicio")+
+		"/informacion_proveedor?limit=0", &proveedores)
 	if errProveedores != nil {
 		errStrings = append(errStrings, errProveedores.Error())
+	}
+
+	errConceptos := getJson("http://"+beego.AppConfig.String("titanServicio")+
+		"/concepto?limit=0", &conceptos)
+	if errConceptos != nil {
+		errStrings = append(errStrings, errConceptos.Error())
 	}
 
 	fmt.Println("errStrings: ", errStrings)
 	if errStrings == nil {
 		secuencia := 1
 		x := 1
-		for i := 0; i < len(proveedores); i++ {
-			for j := 0; j < len(detalleLiquidacion); j++ {
-				if proveedores[i].Id == detalleLiquidacion[j].Persona {
-					fila += formatoDato(tipoRegistro, 2)
-					fila += formatoDato(completarSecuencia(secuencia), 5)
-					fila += formatoDato("CC", 2)
-					fila += formatoDato(strconv.Itoa(int(proveedores[j].NumDocumento)), 16)
-					fila += formatoDato("1", 2)
-					fila += formatoDato("1", 2)
-					fila += formatoDato(" ", 1)
-					fila += formatoDato(detalleLiquidacion[j].Concepto.AliasConcepto, 1)
-					if x == 1 {
-						fmt.Printf("Tamaño fila : %d\n", len(fila))
-						x = 2
-					}
+		for i := 0; i < len(detalleLiquidacion); i++ {
+			for j := 0; j < len(proveedores); j++ {
+				if detalleLiquidacion[i].Persona == proveedores[j].Id {
+					if strings.Contains(fila, strconv.Itoa(int(proveedores[j].NumDocumento))) {
+						break
+					} else {
+						//Novedades
+						var trasladoPensiones = false
+						var trasladoEps = false
+						var exterior = false
+						var suspencionContrato = false
+						var licenciaNoRem = false
+						var comisionServicios = false
+						var incapacidadGeneral = false
+						var licenciaMaternidad = false
+						var vacaciones = false
+						var licenciaRem = false
+						var aporteVoluntario = false
+						var variacionCentroTrabajo = false
+						var diasIncapcidadLaboral = 0
+						var novedad = false
 
-					fila += "\n"
-					secuencia++
+						fila += formatoDato(tipoRegistro, 2)                                    //Tipo Registro
+						fila += formatoDato(completarSecuencia(secuencia, 5), 5)                //Secuencia
+						fila += formatoDato("CC", 2)                                            //Tip de documento del cotizante
+						fila += formatoDato(strconv.Itoa(int(proveedores[j].NumDocumento)), 16) //Número de identificación del cotizante
+						fila += formatoDato("1", 2)                                             //Tipo Cotizante
+						fila += formatoDato("1", 2)                                             //Subtipo de Cotizante
+						fila += formatoDato(" ", 1)                                             //Extranjero no obligado a cotizar pensión
+
+						errConceptoPersona := getJson("http://"+beego.AppConfig.String("titanServicio")+
+							"/concepto_por_persona"+
+							"?limit=0"+
+							"&query=EstadoNovedad:Activo,Persona.Id:"+strconv.Itoa(detalleLiquidacion[i].Persona)+
+							",Concepto.Naturaleza:seguridad_social", &conceptoPersona)
+
+						if errConceptoPersona != nil {
+							fmt.Println("errConceptoPersona: ", errConceptoPersona)
+							fila += formatoDato(" ", 1) //Colombiano en el exterior
+						}
+
+						fmt.Println("Conceptos para el id: ", detalleLiquidacion[i].Persona)
+						fmt.Println(conceptoPersona[0].Concepto.NombreConcepto)
+						for h := 0; h < len(conceptoPersona); h++ {
+							switch conceptoPersona[h].Concepto.NombreConcepto {
+							case "exterior_familia":
+								exterior = true
+								novedad = true
+							case "suspencionContrato":
+								suspencionContrato = true
+								novedad = true
+							case "licenciaNoRem":
+								licenciaNoRem = true
+								novedad = true
+							case "comision_norem":
+								comisionServicios = true
+								novedad = true
+							case "incapacidad_general":
+								incapacidadGeneral = true
+								novedad = true
+							case "licenciaMaternidad":
+								licenciaMaternidad = true
+								novedad = true
+							case "vacaciones":
+								vacaciones = true
+								novedad = true
+							case "licencia_rem":
+								licenciaRem = true
+								novedad = true
+							case "aporteVoluntario":
+								aporteVoluntario = true
+								novedad = true
+							case "variacionCentroTrabajo":
+								variacionCentroTrabajo = true
+								novedad = true
+							case "incapacidad_laboral":
+								errEnfermedadLaboral := getJson("http://"+beego.AppConfig.String("titanServicio")+
+									"/detalle_liquidacion?limit=-1", &detalleIncapcidadLaboral)
+								if errEnfermedadLaboral != nil {
+									fmt.Println("errEnfermedadLaboral: ", errEnfermedadLaboral)
+								}
+								diasIncapcidadLaboral, _ = strconv.Atoi(detalleIncapcidadLaboral[0].DiasLiquidados)
+								novedad = true
+							}
+						}
+
+						if exterior {
+							fila += formatoDato("X", 1) //Colombiano en el exterior
+							fila += formatoDato(" ", 2) //Código del departamento de la ubicación laboral
+							fila += formatoDato(" ", 3) //Código del municipio de ubicación laboral
+						} else {
+							fila += formatoDato(" ", 1)   //Colombiano en el exterior
+							fila += formatoDato("11", 2)  //Código del departamento de la ubicación laboral
+							fila += formatoDato("001", 3) //Código del municipio de ubicación laboral
+						}
+
+						errPersonaNatural := getJson("http://"+beego.AppConfig.String("agoraServicio")+
+							"/informacion_persona_natural"+
+							"?limit=1"+
+							"&query=Id:"+strconv.FormatFloat(proveedores[j].NumDocumento, 'E', -1, 64), &personaNatural)
+
+						if errPersonaNatural != nil {
+							fmt.Println("errPersonaNatural: ", errPersonaNatural)
+						}
+
+						fila += formatoDato(personaNatural[0].PrimerApellido, 20)  //Primer apellido
+						fila += formatoDato(personaNatural[0].SegundoApellido, 30) //Segundo apellido
+						fila += formatoDato(personaNatural[0].PrimerNombre, 20)    //Primer nombre
+						fila += formatoDato(personaNatural[0].SegundoNombre, 30)   //Segundo nombre
+
+						fila += formatoDato(" ", 1) //ING:Ingreso
+						fila += formatoDato(" ", 1) //RET: retiro
+						fila += formatoDato(" ", 1) //TDE: Traslado desde otra EPS o EOC
+						fila += formatoDato(" ", 1) //TAE: Traslado a otra EPS o EOC
+						//TDP: Traslado desde otra administradora de pensiones
+						if trasladoPensiones {
+							fila += formatoDato("X", 1)
+						} else {
+							fila += formatoDato(" ", 1)
+						}
+
+						fila += formatoDato(" ", 1) //TAP: Traslado a otra administradora de pensiones
+						fila += formatoDato(" ", 1) //Variación permanente de salario
+						fila += formatoDato(" ", 1) //Correcciones
+						fila += formatoDato(" ", 1) //VST: Variación transitoria de salario
+
+						//SLN: Suspención temporal del contrato de tabajo o licencia no remunerada o comisión de servicios
+						if suspencionContrato {
+							fila += formatoDato("X", 1)
+						} else if licenciaNoRem {
+							fila += formatoDato("X", 1)
+						} else if comisionServicios {
+							fila += formatoDato("C", 1)
+						} else {
+							fila += formatoDato(" ", 1)
+						}
+
+						//IGE: Incapacidad temporal por enfermedad general
+						if incapacidadGeneral {
+							fila += formatoDato("X", 1)
+						} else {
+							fila += formatoDato(" ", 1)
+						}
+
+						//LMA: Licencia de Maternidad o paternidad
+						if licenciaMaternidad { //
+							fila += formatoDato("X", 1)
+						} else {
+							fila += formatoDato(" ", 1)
+						}
+
+						//VAC: Vacaciones
+						if vacaciones {
+							fila += formatoDato("X", 1)
+						} else if licenciaRem {
+							fila += formatoDato("L", 1)
+						} else {
+							fila += formatoDato(" ", 1)
+						}
+
+						//AVP: Aporte voluntario
+						if aporteVoluntario {
+							fila += formatoDato("X", 1)
+						} else {
+							fila += formatoDato(" ", 1)
+						}
+
+						//VCT: Variación centros de trabajo
+						if variacionCentroTrabajo {
+							fila += formatoDato("X", 1)
+						} else {
+							fila += formatoDato(" ", 1)
+						}
+
+						//IRL: Días de incapacidad por accidente de trabajo o enfermedad laboral
+						fila += formatoDato(completarSecuencia(diasIncapcidadLaboral, 2), 2)
+
+						//Código de la administradora de fondo de pensiones a la cual pertenece el afiliado
+						fila += formatoDato("231001", 6)
+
+						//Código de la admnistradora de pensiones a la cual se traslada el afiliado
+						if trasladoPensiones {
+							fila += formatoDato("230301", 6)
+						} else {
+							fila += formatoDato(" ", 6)
+						}
+
+						//Código EPS o EOC a la cual pertenece el afiliado
+						fila += formatoDato("EPS010", 6)
+
+						//Código EPS o EOC a la cual se traslada el afiliado
+						if trasladoEps {
+							fila += formatoDato("EPS012", 6)
+						} else {
+							fila += formatoDato(" ", 6)
+						}
+
+						//Código CCF a la cual pertenece el afiliado
+						fila += formatoDato("CCF04", 6)
+
+						errDiasLiquidados := getJson("http://"+beego.AppConfig.String("titanServicio")+
+							"/detalle_liquidacion?limit=0"+
+							"&query=Concepto.NombreConcepto:ibc_novedad,Persona:"+
+							strconv.Itoa(detalleLiquidacion[i].Persona), &diasLiquidados)
+						if errDiasLiquidados != nil {
+							fmt.Println("errDiasLiquidados: ", errDiasLiquidados)
+						}
+						diasCotizados, _ := strconv.Atoi(diasLiquidados[0].DiasLiquidados)
+
+						if novedad {
+							fila += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a pensión
+							fila += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a salud
+							fila += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a ARL
+							fila += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a CCF
+						} else {
+							fila += formatoDato("30", 2) //Número de días cotizados a pensión
+							fila += formatoDato("30", 2) //Número de días cotizados a salud
+							fila += formatoDato("30", 2) //Número de días cotizados a ARL
+							fila += formatoDato("30", 2) //Número de días cotizados a CCF
+						}
+
+						if x == 1 {
+							fmt.Printf("Tamaño fila : %d\n", len(fila))
+							x = 2
+						}
+
+						fila += "\n"
+						secuencia++
+					}
 				}
 			}
 		}
@@ -448,7 +671,7 @@ func (c *DescSeguridadSocialController) GenerarPlanillaPensionados() {
 					if proveedores[i].Id == detalleLiquidacion[j].Persona {
 						if int(proveedores[i].NumDocumento) == personasNatural[k].Id {
 							fila += formatoDato(tipoRegistro, 2)
-							fila += formatoDato(completarSecuencia(secuencia), 5)
+							fila += formatoDato(completarSecuencia(secuencia, 5), 5)
 							fila += formatoDato(personasNatural[k].PrimerApellido, 20)
 							fila += formatoDato(personasNatural[k].SegundoApellido, 30)
 							fila += formatoDato(personasNatural[k].PrimerNombre, 20)
@@ -470,9 +693,9 @@ func (c *DescSeguridadSocialController) GenerarPlanillaPensionados() {
 	}
 }
 
-func completarSecuencia(num int) (secuencia string) {
+func completarSecuencia(num, cantSecuencia int) (secuencia string) {
 	tamanioNum := len(strconv.Itoa(num))
-	for i := 0; i < 5-tamanioNum; i++ {
+	for i := 0; i < cantSecuencia-tamanioNum; i++ {
 		secuencia += "0"
 	}
 	secuencia += strconv.Itoa(num)
