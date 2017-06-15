@@ -361,19 +361,22 @@ func (c *DescSeguridadSocialController) Delete() {
 }
 
 func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
+	idStr := c.Ctx.Input.Param(":id")
+	idDescSegSocial, _ := strconv.Atoi(idStr)
 	var proveedores []models.InformacionProveedor
-	//var pagosSalud []models.DescSeguridadSocialDetalle
+	var pagosSalud []models.DescSeguridadSocialDetalle
 	//var pagoSalud []models.DescSeguridadSocial
 	var detalleLiquidacion []models.DetalleLiquidacion
 	var detalleIncapcidadLaboral []models.DetalleLiquidacion
 	var diasLiquidados []models.DetalleLiquidacion
+	var soloLiquidadoDetalle []models.DetalleLiquidacion
 	var conceptoPersona []models.ConceptoPorPersona
 	var conceptos []models.Concepto
 	var personaNatural []models.InformacionPersonaNatural
 	var errStrings []string
 
 	tipoRegistro := "02"
-	fila := "\n"
+	fila := ""
 
 	errLiquidacion := getJson("http://"+beego.AppConfig.String("titanServicio")+
 		"/detalle_liquidacion?limit=-1", &detalleLiquidacion)
@@ -404,6 +407,8 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 						break
 					} else {
 						//Novedades
+						var ingreso = false
+						var retiro = false
 						var trasladoPensiones = false
 						var trasladoEps = false
 						var exterior = false
@@ -417,7 +422,8 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 						var aporteVoluntario = false
 						var variacionCentroTrabajo = false
 						var diasIncapcidadLaboral = 0
-						var novedad = false
+						//var valorIncapacidadLaboral int
+						//var novedad = false
 
 						fila += formatoDato(tipoRegistro, 2)                                    //Tipo Registro
 						fila += formatoDato(completarSecuencia(secuencia, 5), 5)                //Secuencia
@@ -444,34 +450,34 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 							switch conceptoPersona[h].Concepto.NombreConcepto {
 							case "exterior_familia":
 								exterior = true
-								novedad = true
+								//novedad = true
 							case "suspencionContrato":
 								suspencionContrato = true
-								novedad = true
+								//novedad = true
 							case "licenciaNoRem":
 								licenciaNoRem = true
-								novedad = true
+								//novedad = true
 							case "comision_norem":
 								comisionServicios = true
-								novedad = true
+								//novedad = true
 							case "incapacidad_general":
 								incapacidadGeneral = true
-								novedad = true
+								//novedad = true
 							case "licenciaMaternidad":
 								licenciaMaternidad = true
-								novedad = true
+								//novedad = true
 							case "vacaciones":
 								vacaciones = true
-								novedad = true
+								//novedad = true
 							case "licencia_rem":
 								licenciaRem = true
-								novedad = true
+								//novedad = true
 							case "aporteVoluntario":
 								aporteVoluntario = true
-								novedad = true
+								//novedad = true
 							case "variacionCentroTrabajo":
 								variacionCentroTrabajo = true
-								novedad = true
+								//novedad = true
 							case "incapacidad_laboral":
 								errEnfermedadLaboral := getJson("http://"+beego.AppConfig.String("titanServicio")+
 									"/detalle_liquidacion?limit=-1", &detalleIncapcidadLaboral)
@@ -479,7 +485,8 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 									fmt.Println("errEnfermedadLaboral: ", errEnfermedadLaboral)
 								}
 								diasIncapcidadLaboral, _ = strconv.Atoi(detalleIncapcidadLaboral[0].DiasLiquidados)
-								novedad = true
+								//valorIncapacidadLaboral = int(detalleIncapcidadLaboral[0].ValorCalculado)
+								//novedad = true
 							}
 						}
 
@@ -606,17 +613,115 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 						}
 						diasCotizados, _ := strconv.Atoi(diasLiquidados[0].DiasLiquidados)
 
-						if novedad {
+						if ingreso || retiro {
 							fila += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a pensión
 							fila += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a salud
-							fila += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a ARL
-							fila += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a CCF
 						} else {
 							fila += formatoDato("30", 2) //Número de días cotizados a pensión
 							fila += formatoDato("30", 2) //Número de días cotizados a salud
+						}
+
+						if incapacidadGeneral || licenciaMaternidad || vacaciones || diasIncapcidadLaboral > 0 {
+							fila += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a ARL
+							fila += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a CCF
+						} else {
 							fila += formatoDato("30", 2) //Número de días cotizados a ARL
 							fila += formatoDato("30", 2) //Número de días cotizados a CCF
 						}
+
+						errSalarioBasico := getJson("http://"+beego.AppConfig.String("titanServicio")+
+							"/detalle_liquidacion?limit=0"+
+							"&query=Concepto.NombreConcepto:salarioBase,Persona:"+
+							strconv.Itoa(detalleLiquidacion[i].Persona), &soloLiquidadoDetalle)
+						if errSalarioBasico != nil {
+							fmt.Println("errSalarioBasico: ", errSalarioBasico)
+						} else {
+							salarioBase := strconv.FormatInt(soloLiquidadoDetalle[0].ValorCalculado, 10)
+							fila += formatoDato(salarioBase, 9) //Salario básico
+						}
+
+						fila += formatoDato(" ", 1) //Salario integral
+
+						errSoloLiquidado := getJson("http://"+beego.AppConfig.String("titanServicio")+
+							"/detalle_liquidacion?limit=0"+
+							"&query=Concepto.NombreConcepto:ibc_liquidado,Persona:"+
+							strconv.Itoa(detalleLiquidacion[i].Persona), &soloLiquidadoDetalle)
+						if errSoloLiquidado != nil {
+							fmt.Println("errSoloLiquidado: ", errSoloLiquidado)
+						} else {
+							ibcLiquidado := int(soloLiquidadoDetalle[0].ValorCalculado)
+							fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC pensión
+							fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC salud
+							fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC ARL
+							fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC CCF
+						}
+
+						fila += formatoDato(completarSecuencia(16, 7), 7) //Tarifa de aportes pensiones
+
+						errPagosSalud := getJson("http://"+beego.AppConfig.String("seguridadSocialService")+
+							"/desc_seguridad_social_detalle"+
+							"?query=IdDescSeguridadSocial:"+strconv.Itoa(idDescSegSocial)+
+							",IdDetalleLiquidacion:"+strconv.Itoa(soloLiquidadoDetalle[0].Id), &pagosSalud)
+						if errPagosSalud != nil {
+							fmt.Println("errPagosSalud: ", errPagosSalud)
+						}
+
+						fmt.Println("http://" + beego.AppConfig.String("seguridadSocialService") +
+							"/desc_seguridad_social_detalle" +
+							"?query=IdDescSeguridadSocial:" + strconv.Itoa(idDescSegSocial) +
+							",IdDetalleLiquidacion:" + strconv.Itoa(detalleLiquidacion[i].Id))
+
+						//Cotización obligatoria a pensiones
+						for _, pagoPension := range pagosSalud {
+							if pagoPension.IdTipoPagoSeguridadSocial.Nombre == "Pension" {
+								fila += formatoDato(completarSecuencia(int(pagoPension.Valor), 9), 9)
+								break
+							}
+						}
+
+						fila += formatoDato(completarSecuencia(0, 9), 9) //Aporte voluntario del afiliado al fondo de pensiones obligatorias
+
+						//Aporte voluntario del aportante al fondo de pensiones obligatoria
+						errAporteVoluntario := getJson("http://"+beego.AppConfig.String("titanServicio")+
+							"/detalle_liquidacion"+
+							",Persona:"+strconv.Itoa(detalleLiquidacion[i].Persona), &soloLiquidadoDetalle)
+
+						if errAporteVoluntario != nil {
+							fmt.Println("errAporteVoluntario", errAporteVoluntario)
+							fila += formatoDato(completarSecuencia(0, 9), 9)
+						} else {
+							for _, liquidado := range soloLiquidadoDetalle {
+								if liquidado.Concepto.NombreConcepto == "nombreRegla2176" {
+									fila += formatoDato(strconv.FormatInt(liquidado.ValorCalculado, 10), 9)
+								} else if liquidado.Concepto.NombreConcepto == "nombreRegla2178" {
+									fila += formatoDato(strconv.FormatInt(liquidado.ValorCalculado, 10), 9)
+								} else if liquidado.Concepto.NombreConcepto == "nombreRegla2173" {
+									fila += formatoDato(strconv.FormatInt(liquidado.ValorCalculado, 10), 9)
+								} else {
+									break
+								}
+							}
+						}
+
+						fila += formatoDato(completarSecuencia(0, 9), 9) //Aportes a fondo de solidaridad pensional subcuenta de solidaridad
+						fila += formatoDato(completarSecuencia(0, 9), 9) //Aportes a fondo de solidaridad pensional subcuenta de subsistencia
+						fila += formatoDato(completarSecuencia(0, 9), 9) //Valor no retenido por aportes voluntarios
+						fila += formatoDato("12.5", 7)                   //Tarifa de aportes salud
+
+						//Cotización obligatoria a salud
+						for _, pagoSalud := range pagosSalud {
+							if pagoSalud.IdTipoPagoSeguridadSocial.Nombre == "Salud" {
+								fila += formatoDato(strconv.FormatInt(pagoSalud.Valor, 10), 9)
+								break
+							}
+						}
+
+						fila += formatoDato(completarSecuencia(0, 9), 9) //Valor UPC Adicional
+						fila += formatoDato(" ", 15)                     //Nº de autorización de la incapacidad por enfermedad general
+						fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de la incapacidad por enfermedad general
+						fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de la licencia de maternidad
+
+						fila += formatoDato(completarSecuencia(000522, cantSecuencia), longitud)
 
 						if x == 1 {
 							fmt.Printf("Tamaño fila : %d\n", len(fila))
@@ -630,7 +735,9 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 			}
 		}
 		fmt.Println("Filas:\n", fila)
+		c.Data["json"] = fila
 	}
+	c.ServeJSON()
 }
 
 func (c *DescSeguridadSocialController) GenerarPlanillaPensionados() {
@@ -690,7 +797,9 @@ func (c *DescSeguridadSocialController) GenerarPlanillaPensionados() {
 			}
 		}
 		fmt.Println("Filas:\n", fila)
+		c.Data["json"] = fila
 	}
+	c.ServeJSON()
 }
 
 func completarSecuencia(num, cantSecuencia int) (secuencia string) {
@@ -699,6 +808,15 @@ func completarSecuencia(num, cantSecuencia int) (secuencia string) {
 		secuencia += "0"
 	}
 	secuencia += strconv.Itoa(num)
+	return
+}
+
+func completarSecuenciaString(num string, cantSecuencia int) (secuencia string) {
+	tamanioNum := len(num)
+	for i := 0; i < cantSecuencia-tamanioNum; i++ {
+		secuencia += 0
+	}
+	secuencia += num
 	return
 }
 

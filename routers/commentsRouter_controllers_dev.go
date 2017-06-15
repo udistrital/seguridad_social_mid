@@ -37,7 +37,7 @@ func init() {
 	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:DescSeguridadSocialController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:DescSeguridadSocialController"],
 		beego.ControllerComments{
 			Method:           "GenerarPlanillaActivos",
-			Router:           `GenerarPlanillaActivos`,
+			Router:           `GenerarPlanillaActivos/:id`,
 			AllowHTTPMethods: []string{"get"},
 			Params:           nil})
 
