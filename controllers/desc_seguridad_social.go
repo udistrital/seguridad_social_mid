@@ -127,6 +127,8 @@ func (c *DescSeguridadSocialController) CalcularSegSocial() {
 			pensionUd := golog.GetFloat(reglas, "v_pen_ud(I,Y).", "Y")
 			pensionTotal := golog.GetInt64(reglas, "v_total_pen(X,T).", "T")
 			arl := golog.GetInt64(reglas, "v_arl(I,Y).", "Y")
+			caja := golog.GetInt64(reglas, "v_caja(I,Y).", "Y")
+			icbf := golog.GetInt64(reglas, "v_icbf(I,Y).", "Y")
 
 			for index := 0; index < len(ids); index++ {
 				aux := models.PagosSeguridadSocial{
@@ -135,6 +137,8 @@ func (c *DescSeguridadSocialController) CalcularSegSocial() {
 					SaludTotal:           saludTotal[index],
 					PensionUd:            pensionUd[index],
 					PensionTotal:         pensionTotal[index],
+					Caja:                 caja[index],
+					Icbf:                 icbf[index],
 					IdDetalleLiquidacion: detalleLiquidacion[index].Id,
 					Arl:                  arl[index]}
 
@@ -429,9 +433,9 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 						fila += formatoDato(completarSecuencia(secuencia, 5), 5)                //Secuencia
 						fila += formatoDato("CC", 2)                                            //Tip de documento del cotizante
 						fila += formatoDato(strconv.Itoa(int(proveedores[j].NumDocumento)), 16) //Número de identificación del cotizante
-						fila += formatoDato("1", 2)                                             //Tipo Cotizante
-						fila += formatoDato("1", 2)                                             //Subtipo de Cotizante
-						fila += formatoDato(" ", 1)                                             //Extranjero no obligado a cotizar pensión
+						fila += formatoDato(completarSecuencia(1, 2), 2)                        //Tipo Cotizante
+						fila += formatoDato(completarSecuencia(1, 2), 2)                        //Subtipo de Cotizante
+						fila += formatoDato("", 1)                                              //Extranjero no obligado a cotizar pensión
 
 						errConceptoPersona := getJson("http://"+beego.AppConfig.String("titanServicio")+
 							"/concepto_por_persona"+
@@ -441,7 +445,6 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 
 						if errConceptoPersona != nil {
 							fmt.Println("errConceptoPersona: ", errConceptoPersona)
-							fila += formatoDato(" ", 1) //Colombiano en el exterior
 						}
 
 						fmt.Println("Conceptos para el id: ", detalleLiquidacion[i].Persona)
@@ -495,7 +498,7 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 							fila += formatoDato(" ", 2) //Código del departamento de la ubicación laboral
 							fila += formatoDato(" ", 3) //Código del municipio de ubicación laboral
 						} else {
-							fila += formatoDato(" ", 1)   //Colombiano en el exterior
+							fila += formatoDato("", 1)    //Colombiano en el exterior
 							fila += formatoDato("11", 2)  //Código del departamento de la ubicación laboral
 							fila += formatoDato("001", 3) //Código del municipio de ubicación laboral
 						}
@@ -514,21 +517,21 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 						fila += formatoDato(personaNatural[0].PrimerNombre, 20)    //Primer nombre
 						fila += formatoDato(personaNatural[0].SegundoNombre, 30)   //Segundo nombre
 
-						fila += formatoDato(" ", 1) //ING:Ingreso
-						fila += formatoDato(" ", 1) //RET: retiro
-						fila += formatoDato(" ", 1) //TDE: Traslado desde otra EPS o EOC
-						fila += formatoDato(" ", 1) //TAE: Traslado a otra EPS o EOC
+						fila += formatoDato("", 1) //ING:Ingreso
+						fila += formatoDato("", 1) //RET: retiro
+						fila += formatoDato("", 1) //TDE: Traslado desde otra EPS o EOC
+						fila += formatoDato("", 1) //TAE: Traslado a otra EPS o EOC
 						//TDP: Traslado desde otra administradora de pensiones
 						if trasladoPensiones {
 							fila += formatoDato("X", 1)
 						} else {
-							fila += formatoDato(" ", 1)
+							fila += formatoDato("", 1)
 						}
 
-						fila += formatoDato(" ", 1) //TAP: Traslado a otra administradora de pensiones
-						fila += formatoDato(" ", 1) //Variación permanente de salario
-						fila += formatoDato(" ", 1) //Correcciones
-						fila += formatoDato(" ", 1) //VST: Variación transitoria de salario
+						fila += formatoDato("", 1) //TAP: Traslado a otra administradora de pensiones
+						fila += formatoDato("", 1) //Variación permanente de salario
+						fila += formatoDato("", 1) //Correcciones
+						fila += formatoDato("", 1) //VST: Variación transitoria de salario
 
 						//SLN: Suspención temporal del contrato de tabajo o licencia no remunerada o comisión de servicios
 						if suspencionContrato {
@@ -538,21 +541,21 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 						} else if comisionServicios {
 							fila += formatoDato("C", 1)
 						} else {
-							fila += formatoDato(" ", 1)
+							fila += formatoDato("", 1)
 						}
 
 						//IGE: Incapacidad temporal por enfermedad general
 						if incapacidadGeneral {
 							fila += formatoDato("X", 1)
 						} else {
-							fila += formatoDato(" ", 1)
+							fila += formatoDato("", 1)
 						}
 
 						//LMA: Licencia de Maternidad o paternidad
 						if licenciaMaternidad { //
 							fila += formatoDato("X", 1)
 						} else {
-							fila += formatoDato(" ", 1)
+							fila += formatoDato("", 1)
 						}
 
 						//VAC: Vacaciones
@@ -561,21 +564,21 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 						} else if licenciaRem {
 							fila += formatoDato("L", 1)
 						} else {
-							fila += formatoDato(" ", 1)
+							fila += formatoDato("", 1)
 						}
 
 						//AVP: Aporte voluntario
 						if aporteVoluntario {
 							fila += formatoDato("X", 1)
 						} else {
-							fila += formatoDato(" ", 1)
+							fila += formatoDato("", 1)
 						}
 
 						//VCT: Variación centros de trabajo
 						if variacionCentroTrabajo {
 							fila += formatoDato("X", 1)
 						} else {
-							fila += formatoDato(" ", 1)
+							fila += formatoDato("", 1)
 						}
 
 						//IRL: Días de incapacidad por accidente de trabajo o enfermedad laboral
@@ -640,7 +643,7 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 							fila += formatoDato(salarioBase, 9) //Salario básico
 						}
 
-						fila += formatoDato(" ", 1) //Salario integral
+						fila += formatoDato("", 1) //Salario integral
 
 						errSoloLiquidado := getJson("http://"+beego.AppConfig.String("titanServicio")+
 							"/detalle_liquidacion?limit=0"+
@@ -703,6 +706,7 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 							}
 						}
 
+						fila += formatoDato(completarSecuencia(0, 9), 9) //Total cotización Sistema General de Pensiones
 						fila += formatoDato(completarSecuencia(0, 9), 9) //Aportes a fondo de solidaridad pensional subcuenta de solidaridad
 						fila += formatoDato(completarSecuencia(0, 9), 9) //Aportes a fondo de solidaridad pensional subcuenta de subsistencia
 						fila += formatoDato(completarSecuencia(0, 9), 9) //Valor no retenido por aportes voluntarios
@@ -717,11 +721,24 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 						}
 
 						fila += formatoDato(completarSecuencia(0, 9), 9) //Valor UPC Adicional
-						fila += formatoDato(" ", 15)                     //Nº de autorización de la incapacidad por enfermedad general
+						fila += formatoDato("", 15)                      //Nº de autorización de la incapacidad por enfermedad general
 						fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de la incapacidad por enfermedad general
+						fila += formatoDato("", 15)                      //Nº de autorización de la licencia de maternidad o paternidad
 						fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de la licencia de maternidad
 
-						fila += formatoDato(completarSecuencia(000522, cantSecuencia), longitud)
+						fila += formatoDato(completarSecuenciaString("0.000522", 9), 9) //Tarifa de aportes a Riegos Laborales
+
+						fila += formatoDato(completarSecuenciaString("0", 9), 9) //Centro de trabajo CT
+
+						//Cotización obligatoria a Sistema General de Riesgos Laborales
+						for _, pagoSalud := range pagosSalud {
+							if pagoSalud.IdTipoPagoSeguridadSocial.Nombre == "ARL" {
+								fila += formatoDato(strconv.FormatInt(pagoSalud.Valor, 9), 9)
+								break
+							}
+						}
+
+						fila += formatoDato(completarSecuenciaString("4", 7), 7)
 
 						if x == 1 {
 							fmt.Printf("Tamaño fila : %d\n", len(fila))
@@ -814,7 +831,7 @@ func completarSecuencia(num, cantSecuencia int) (secuencia string) {
 func completarSecuenciaString(num string, cantSecuencia int) (secuencia string) {
 	tamanioNum := len(num)
 	for i := 0; i < cantSecuencia-tamanioNum; i++ {
-		secuencia += 0
+		secuencia += "0"
 	}
 	secuencia += num
 	return

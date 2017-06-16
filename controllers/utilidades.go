@@ -137,10 +137,10 @@ func CargarReglasBase() (reglas string) {
 				v_upc(I,Y,Z) :- ibc(I,W,salud,D), upc(Z,V,I), Y is W - V.
 
 				%%		CAJA DE COMPENSACION FAMILIAR
-				v_caja(I,Y,D) :- concepto(Z,T,caja,5,V,2017), ibc(I,W,apf,D), Y is (V * W approach 100).
+				v_caja(I,Y) :- concepto(Z,T,caja,5,V,2017), ibc(I,W,apf), Y is (V * W approach 100).
 
 				%%		ICBF
-				v_icbf(I,Y,D) :- concepto(Z,T,icbf,X,V,2017), ibc(I,W,apf,D), Y is (V * W approach 100).
+				v_icbf(I,Y) :- concepto(Z,T,icbf,X,V,2017), ibc(I,W,apf), Y is (V * W approach 100).
 	`
 	//fmt.Println(reglas)
 	return
