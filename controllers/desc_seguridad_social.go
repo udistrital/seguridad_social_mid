@@ -403,7 +403,6 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 	fmt.Println("errStrings: ", errStrings)
 	if errStrings == nil {
 		secuencia := 1
-		x := 1
 		for i := 0; i < len(detalleLiquidacion); i++ {
 			for j := 0; j < len(proveedores); j++ {
 				if detalleLiquidacion[i].Persona == proveedores[j].Id {
@@ -715,7 +714,7 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 						//Cotización obligatoria a salud
 						for _, pagoSalud := range pagosSalud {
 							if pagoSalud.IdTipoPagoSeguridadSocial.Nombre == "Salud" {
-								fila += formatoDato(strconv.FormatInt(pagoSalud.Valor, 10), 9)
+								fila += formatoDato(completarSecuencia(int(pagoSalud.Valor), 9), 9)
 								break
 							}
 						}
@@ -731,20 +730,41 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 						fila += formatoDato(completarSecuenciaString("0", 9), 9) //Centro de trabajo CT
 
 						//Cotización obligatoria a Sistema General de Riesgos Laborales
-						for _, pagoSalud := range pagosSalud {
-							if pagoSalud.IdTipoPagoSeguridadSocial.Nombre == "ARL" {
-								fila += formatoDato(strconv.FormatInt(pagoSalud.Valor, 9), 9)
+						for _, pagoArl := range pagosSalud {
+							if pagoArl.IdTipoPagoSeguridadSocial.Nombre == "ARL" {
+								fila += formatoDato(completarSecuencia(int(pagoArl.Valor), 9), 9)
 								break
 							}
 						}
 
-						fila += formatoDato(completarSecuenciaString("4", 7), 7)
+						fila += formatoDato(completarSecuenciaString("4", 7), 7) //Tarifa de aportes CCF
 
-						if x == 1 {
-							fmt.Printf("Tamaño fila : %d\n", len(fila))
-							x = 2
+						//Valor aporte CCF
+						for _, pagoCaja := range pagosSalud {
+							if pagoCaja.IdTipoPagoSeguridadSocial.Nombre == "Caja" {
+								fila += formatoDato(completarSecuencia(int(pagoCaja.Valor), 9), 9)
+								break
+							}
 						}
 
+						fila += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes SENA
+						fila += formatoDato(completarSecuencia(0, 9), 9) //Valor Aportes SENA
+
+						fila += formatoDato(completarSecuencia(3, 7), 7) //Tarifa de aportes ICBF
+
+						//Valor aporte ICBF
+						for _, pagoIcbf := range pagosSalud {
+							if pagoIcbf.IdTipoPagoSeguridadSocial.Nombre == "ICBF" {
+								fila += formatoDato(completarSecuencia(int(pagoIcbf.Valor), 9), 9)
+							}
+						}
+
+						fila += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes ESAP
+						fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de aporte ESAP
+						fila += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes MEN
+						fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de aporte MEN
+
+						//fila += formatoDato(, longitud)
 						fila += "\n"
 						secuencia++
 					}
@@ -788,7 +808,6 @@ func (c *DescSeguridadSocialController) GenerarPlanillaPensionados() {
 	fmt.Println("**errStrings: ", errStrings)
 	if errStrings == nil {
 		secuencia := 1
-		x := 1
 		for i := 0; i < len(proveedores); i++ {
 			for j := 0; j < len(detalleLiquidacion); j++ {
 				for k := 0; k < len(personasNatural); k++ {
@@ -802,10 +821,6 @@ func (c *DescSeguridadSocialController) GenerarPlanillaPensionados() {
 							fila += formatoDato(personasNatural[k].SegundoApellido, 30)
 							fila += formatoDato("CC", 2)
 							fila += formatoDato(strconv.Itoa(int(personasNatural[k].Id)), 16)
-							if x == 1 {
-								fmt.Printf("Tamaño fila : %d\n", len(fila))
-								x = 2
-							}
 							fila += "\n"
 							secuencia++
 						}
