@@ -369,6 +369,7 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 	idDescSegSocial, _ := strconv.Atoi(idStr)
 	var proveedores []models.InformacionProveedor
 	var pagosSalud []models.DescSeguridadSocialDetalle
+	var upc []models.UpcAdicional
 	//var pagoSalud []models.DescSeguridadSocial
 	var detalleLiquidacion []models.DetalleLiquidacion
 	var detalleIncapcidadLaboral []models.DetalleLiquidacion
@@ -378,7 +379,7 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 	var conceptos []models.Concepto
 	var personaNatural []models.InformacionPersonaNatural
 	var errStrings []string
-
+	//formatoFecha := "2006-01-02"
 	tipoRegistro := "02"
 	fila := ""
 
@@ -400,6 +401,12 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 		errStrings = append(errStrings, errConceptos.Error())
 	}
 
+	errUpc := getJson("http://"+beego.AppConfig.String("SEGURIDAD_SOCIAL_SERVICE")+
+		"/upc_adicional?limit=0", &upc)
+	if errUpc != nil {
+		errStrings = append(errStrings, errUpc.Error())
+	}
+
 	fmt.Println("errStrings: ", errStrings)
 	if errStrings == nil {
 		secuencia := 1
@@ -409,22 +416,46 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 					if strings.Contains(fila, strconv.Itoa(int(proveedores[j].NumDocumento))) {
 						break
 					} else {
+						var ibcLiquidado int = 0
 						//Novedades
 						var ingreso = false
+						fechaIngreso := ""
+
 						var retiro = false
+						fechaRetiro := ""
+
 						var trasladoPensiones = false
 						var trasladoEps = false
 						var exterior = false
 						var suspencionContrato = false
+						fechaInicioSuspencion := ""
+						fechaFinSuspencion := ""
+
 						var licenciaNoRem = false
 						var comisionServicios = false
 						var incapacidadGeneral = false
+						fechaInicioIge := ""
+						fechaFinIge := ""
+
 						var licenciaMaternidad = false
+						fechaInicioLma := ""
+						fechaFinLma := ""
+
 						var vacaciones = false
 						var licenciaRem = false
+						fechaInicioVac := ""
+						fechaFinVac := ""
+
 						var aporteVoluntario = false
 						var variacionCentroTrabajo = false
+						fechaInicioVct := ""
+						fechaFinVct := ""
+
 						var diasIncapcidadLaboral = 0
+						fechaInicioIrl := ""
+						fechaFinIrl := ""
+
+						fechaInicioVsp := ""
 						//var valorIncapacidadLaboral int
 						//var novedad = false
 
@@ -450,6 +481,8 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 						fmt.Println(conceptoPersona[0].Concepto.NombreConcepto)
 						for h := 0; h < len(conceptoPersona); h++ {
 							switch conceptoPersona[h].Concepto.NombreConcepto {
+							case "retiro":
+							case "ingreso":
 							case "exterior_familia":
 								exterior = true
 								//novedad = true
@@ -528,7 +561,7 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 						}
 
 						fila += formatoDato("", 1) //TAP: Traslado a otra administradora de pensiones
-						fila += formatoDato("", 1) //Variación permanente de salario
+						fila += formatoDato("", 1) //VSP: Variación permanente de salario
 						fila += formatoDato("", 1) //Correcciones
 						fila += formatoDato("", 1) //VST: Variación transitoria de salario
 
@@ -651,7 +684,7 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 						if errSoloLiquidado != nil {
 							fmt.Println("errSoloLiquidado: ", errSoloLiquidado)
 						} else {
-							ibcLiquidado := int(soloLiquidadoDetalle[0].ValorCalculado)
+							ibcLiquidado = int(soloLiquidadoDetalle[0].ValorCalculado)
 							fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC pensión
 							fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC salud
 							fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC ARL
@@ -764,7 +797,41 @@ func (c *DescSeguridadSocialController) GenerarPlanillaActivos() {
 						fila += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes MEN
 						fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de aporte MEN
 
-						//fila += formatoDato(, longitud)
+						//Para los registros de las UPC
+						/*for _, upcAdicional := range upc {
+							if upcAdicional.PersonaAsociada == detalleLiquidacion[i].Persona {
+								fila += formatoDato(texto, longitud)
+							}
+						}*/
+
+						// Estos campos están vacios porque solo aplican a los registros que osn upc
+						fila += formatoDato(" ", 2)  //Tipo de documento del cotizante principal
+						fila += formatoDato(" ", 16) //Número de identificación del cotizante principal
+
+						fila += formatoDato("N", 1)     //Cotizante exonerado de pago de aporte salud, SENA e ICBF - Ley 1607 de 2012
+						fila += formatoDato("14-23", 6) //Código de la administradora de Riesgos Laborales a la cual pertenece el afiliado
+						fila += formatoDato("1", 1)     //Clase de Riesgo en la que se encuentra el afiliado
+						fila += formatoDato("", 1)      //Indicador tarifa especial pensiones (Actividades de alto riesgo, Senadores, CTI y Aviadores aplican)
+
+						//Fechas de novedades (AAAA-MM-DD)
+						fila += formatoDato(fechaIngreso, 10)          //Fecha ingreso
+						fila += formatoDato(fechaRetiro, 10)           //Fecha retiro
+						fila += formatoDato(fechaInicioVsp, 10)        //Fecha inicio VSP
+						fila += formatoDato(fechaInicioSuspencion, 10) //Fecha inicio SLN
+						fila += formatoDato(fechaFinSuspencion, 10)    //Fecha fin SLN
+						fila += formatoDato(fechaInicioIge, 10)        //Fecha inicio IGE
+						fila += formatoDato(fechaFinIge, 10)           //Fecha fin IGE
+						fila += formatoDato(fechaInicioLma, 10)        //Fecha inicio LMA
+						fila += formatoDato(fechaFinLma, 10)           //Fecha fin LMA
+						fila += formatoDato(fechaInicioVac, 10)        //Fecha inicio VAC-LR
+						fila += formatoDato(fechaFinVac, 10)           //Fecha fin VAC-LR
+						fila += formatoDato(fechaInicioVct, 10)        //Fecha inicio VCT
+						fila += formatoDato(fechaFinVct, 10)           //Fecha fin VCT
+						fila += formatoDato(fechaInicioIrl, 10)        //Fecha inicio IRL
+						fila += formatoDato(fechaFinIrl, 10)           //Fecha fin IRL
+
+						fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC otros parafiscales difenrentes a CCF
+						fila += formatoDato("240", 3)
 						fila += "\n"
 						secuencia++
 					}
