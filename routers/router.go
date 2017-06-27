@@ -57,6 +57,12 @@ func init() {
 				&controllers.DescSeguridadSocialDetalleController{},
 			),
 		),
+
+		beego.NSNamespace("/planillas",
+			beego.NSInclude(
+				&controllers.PlanillasController{},
+			),
+		),
 	)
 	beego.AddNamespace(ns)
 }

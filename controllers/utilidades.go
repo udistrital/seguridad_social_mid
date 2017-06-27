@@ -113,16 +113,16 @@ func CargarReglasBase() (reglas string) {
 			smlmv(737717, 2017).
 
 			%%		SALUD
-			v_salud_ud(I,Y) :- concepto(Z,T,salud,X,V,2017), ibc(I,W,salud), (novedad_persona(N,I), novedad(N,U) -> Y is ((V * W) * U approach 100); Y is (V * W approach 100)).
-			v_total_salud(X,T) :- v_salud_func(X,Y), v_salud_ud(X,U), T is (Y + U approach 100).
+			v_salud_ud(I,Y) :- concepto(Z,T,salud,X,V,2017), ibc(I,W,salud), (novedad_persona(N,I), novedad(N,U) -> Y is ((V * W) * U) approach 100; Y is (V * W) approach 100).
+			v_total_salud(X,T) :- v_salud_func(X,Y), v_salud_ud(X,U), T is (Y + U) approach 100.
 
 
 			%%		PENSION
-			v_pen_ud(I,Y) :- concepto(Z,T,pension,X,V,2017), ibc(I,W,salud), Y is (V * W approach 100).
-			v_total_pen(X,T) :- v_pen_func(X,Y), v_pen_ud(X,U), T is (Y + U approach 100).
+			v_pen_ud(I,Y) :- concepto(Z,T,pension,X,V,2017), ibc(I,W,salud), Y is (V * W) approach 100.
+			v_total_pen(X,T) :- v_pen_func(X,Y), v_pen_ud(X,U), T is (Y + U) approach 100.
 
 			%%		ARL
-			v_arl(I,Y) :- concepto(Z,T,arl,X,V,2017), ibc(I,W,riesgos), Y is (V * W approach 100).
+			v_arl(I,Y) :- concepto(Z,T,arl,X,V,2017), ibc(I,W,riesgos), Y is (V * W) approach 100.
 
 			%%		FONDO DE SOLIDARIDAD
 			v_fondo1(X,S,D,Y) :- ibc(X,W,apf,H), smlmv(M,2017),
@@ -131,16 +131,16 @@ func CargarReglasBase() (reglas string) {
 				S is 17*M, W@>= S, D is 18*M, W@< D -> Y is W * 0.014;
 				S is 18*M, W@>= S, D is 19*M, W@< D -> Y is W * 0.016;
 				S is 19*M, W@>= S, D is 20*M, W@=< D -> Y is W * 0.018;
-				S is 20*M, W@> S -> Y is W * 0.02), Y is (Y approach 100).	%calculo de fondo de solidaridad 1
+				S is 20*M, W@> S -> Y is W * 0.02), Y approach 100.	%calculo de fondo de solidaridad 1
 
 				%% 		PAGO UPC
 				v_upc(I,Y,Z) :- ibc(I,W,salud,D), upc(Z,V,I), Y is W - V.
 
 				%%		CAJA DE COMPENSACION FAMILIAR
-				v_caja(I,Y) :- concepto(Z,T,caja,5,V,2017), ibc(I,W,apf), Y is (V * W approach 100).
+				v_caja(I,Y) :- concepto(Z,T,caja,5,V,2017), ibc(I,W,apf), Y is (V * W) approach 100.
 
 				%%		ICBF
-				v_icbf(I,Y) :- concepto(Z,T,icbf,X,V,2017), ibc(I,W,apf), Y is (V * W approach 100).
+				v_icbf(I,Y) :- concepto(Z,T,icbf,X,V,2017), ibc(I,W,apf), Y is (V * W) approach 100.
 	`
 	//fmt.Println(reglas)
 	return

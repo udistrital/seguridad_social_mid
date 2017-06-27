@@ -10,7 +10,7 @@ import (
 )
 
 type UpcAdicional struct {
-	Id              int      `orm:"column(id);pk"`
+	Id              int      `orm:"column(id);pk;auto"`
 	PersonaAsociada int      `orm:"column(persona_asociada)"`
 	TipoDocumento   string   `orm:"column(tipo_documento)"`
 	Documento       string   `orm:"column(documento)"`
@@ -18,7 +18,7 @@ type UpcAdicional struct {
 	Apellido        string   `orm:"column(apellido)"`
 	IdParentesco    int      `orm:"column(id_parentesco);null"`
 	IdTipoUpc       *TipoUpc `orm:"column(id_tipo_upc);rel(fk)"`
-	Estado          string   `orm:"column(estado);null"`
+	Estado          string   `orm:"column(estado)"`
 }
 
 func (t *UpcAdicional) TableName() string {
