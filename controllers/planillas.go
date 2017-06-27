@@ -510,6 +510,91 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 	c.ServeJSON()
 }
 
+func (c *DescSeguridadSocialController) GenerarPlanillaPensionados() {
+	var proveedores []models.InformacionProveedor
+	var personasNatural []models.InformacionPersonaNatural
+	//var pagosSalud []models.DescSeguridadSocialDetalle
+	//var pagoSalud []models.DescSeguridadSocial
+	var detalleLiquidacion []models.DetalleLiquidacion
+	var errStrings []string
+	tipoRegistro := "02"
+	fila := ""
+
+	errLiquidacion := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_liquidacion"+
+		"?limit=-1", &detalleLiquidacion)
+	if errLiquidacion != nil {
+		errStrings = append(errStrings, errLiquidacion.Error())
+	}
+
+	errProveedores := getJson("http://"+beego.AppConfig.String("titanServicio")+"/informacion_proveedor"+
+		"?limit=-1", &proveedores)
+	if errProveedores != nil {
+		errStrings = append(errStrings, errProveedores.Error())
+	}
+
+	errPersonaNatural := getJson("http://"+beego.AppConfig.String("titanServicio")+"/informacion_persona_natural"+
+		"?limit=0", &personasNatural)
+	if errPersonaNatural != nil {
+		errStrings = append(errStrings, errPersonaNatural.Error())
+	}
+
+	fmt.Println("**errStrings: ", errStrings)
+	if errStrings == nil {
+		secuencia := 1
+		for i := 0; i < len(proveedores); i++ {
+			for j := 0; j < len(detalleLiquidacion); j++ {
+				for k := 0; k < len(personasNatural); k++ {
+					if proveedores[i].Id == detalleLiquidacion[j].Persona {
+						if int(proveedores[i].NumDocumento) == personasNatural[k].Id {
+							fila += formatoDato(tipoRegistro, 2)
+							fila += formatoDato(completarSecuencia(secuencia, 5), 5)
+							fila += formatoDato(personasNatural[k].PrimerApellido, 20)
+							fila += formatoDato(personasNatural[k].SegundoApellido, 30)
+							fila += formatoDato(personasNatural[k].PrimerNombre, 20)
+							fila += formatoDato(personasNatural[k].SegundoApellido, 30)
+							fila += formatoDato("CC", 2)
+							fila += formatoDato(strconv.Itoa(int(personasNatural[k].Id)), 16)
+							fila += "\n"
+							secuencia++
+						}
+					}
+				}
+			}
+		}
+		fmt.Println("Filas:\n", fila)
+		c.Data["json"] = fila
+	}
+	c.ServeJSON()
+}
+
+func completarSecuencia(num, cantSecuencia int) (secuencia string) {
+	tamanioNum := len(strconv.Itoa(num))
+	for i := 0; i < cantSecuencia-tamanioNum; i++ {
+		secuencia += "0"
+	}
+	secuencia += strconv.Itoa(num)
+	return
+}
+
+func completarSecuenciaString(num string, cantSecuencia int) (secuencia string) {
+	tamanioNum := len(num)
+	for i := 0; i < cantSecuencia-tamanioNum; i++ {
+		secuencia += "0"
+	}
+	secuencia += num
+	return
+}
+
+func formatoDato(texto string, longitud int) (textoEscribir string) {
+	for _, r := range texto {
+		textoEscribir += string(r)
+	}
+	for i := 0; i < longitud-len(texto); i++ {
+		textoEscribir += " "
+	}
+	return
+}
+
 // Post ...
 // @Title Create
 // @Description create Planillas
