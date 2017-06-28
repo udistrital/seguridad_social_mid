@@ -9,49 +9,55 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
-type TipoZonaUpc struct {
-	Id     int    `orm:"column(id);pk"`
-	Nombre string `orm:"column(nombre)"`
+type RangoEdadUpc struct {
+	Id           int     `orm:"column(id);pk"`
+	EdadMax      float64 `orm:"column(edad_max)"`
+	EdadMin      float64 `orm:"column(edad_min)"`
+	AplicaGenero string  `orm:"column(aplica_genero);null"`
 }
 
-func (t *TipoZonaUpc) TableName() string {
-	return "tipo_zona_upc"
+func (t *RangoEdadUpc) TableName() string {
+	return "rango_edad_upc"
 }
 
 func init() {
-	orm.RegisterModel(new(TipoZonaUpc))
+	orm.RegisterModel(new(RangoEdadUpc))
 }
 
-// AddTipoZonaUpc insert a new TipoZonaUpc into database and returns
+// AddRangoEdadUpc insert a new RangoEdadUpc into database and returns
 // last inserted Id on success.
-func AddTipoZonaUpc(m *TipoZonaUpc) (id int64, err error) {
+func AddRangoEdadUpc(m *RangoEdadUpc) (id int64, err error) {
 	o := orm.NewOrm()
 	id, err = o.Insert(m)
 	return
 }
 
-// GetTipoZonaUpcById retrieves TipoZonaUpc by Id. Returns error if
+// GetRangoEdadUpcById retrieves RangoEdadUpc by Id. Returns error if
 // Id doesn't exist
-func GetTipoZonaUpcById(id int) (v *TipoZonaUpc, err error) {
+func GetRangoEdadUpcById(id int) (v *RangoEdadUpc, err error) {
 	o := orm.NewOrm()
-	v = &TipoZonaUpc{Id: id}
+	v = &RangoEdadUpc{Id: id}
 	if err = o.Read(v); err == nil {
 		return v, nil
 	}
 	return nil, err
 }
 
-// GetAllTipoZonaUpc retrieves all TipoZonaUpc matches certain condition. Returns empty list if
+// GetAllRangoEdadUpc retrieves all RangoEdadUpc matches certain condition. Returns empty list if
 // no records exist
-func GetAllTipoZonaUpc(query map[string]string, fields []string, sortby []string, order []string,
+func GetAllRangoEdadUpc(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(TipoZonaUpc))
+	qs := o.QueryTable(new(RangoEdadUpc))
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
 		k = strings.Replace(k, ".", "__", -1)
-		qs = qs.Filter(k, v)
+		if strings.Contains(k, "isnull") {
+			qs = qs.Filter(k, (v == "true" || v == "1"))
+		} else {
+			qs = qs.Filter(k, v)
+		}
 	}
 	// order by:
 	var sortFields []string
@@ -92,7 +98,7 @@ func GetAllTipoZonaUpc(query map[string]string, fields []string, sortby []string
 		}
 	}
 
-	var l []TipoZonaUpc
+	var l []RangoEdadUpc
 	qs = qs.OrderBy(sortFields...)
 	if _, err = qs.Limit(limit, offset).All(&l, fields...); err == nil {
 		if len(fields) == 0 {
@@ -115,11 +121,11 @@ func GetAllTipoZonaUpc(query map[string]string, fields []string, sortby []string
 	return nil, err
 }
 
-// UpdateTipoZonaUpc updates TipoZonaUpc by Id and returns error if
+// UpdateRangoEdadUpc updates RangoEdadUpc by Id and returns error if
 // the record to be updated doesn't exist
-func UpdateTipoZonaUpcById(m *TipoZonaUpc) (err error) {
+func UpdateRangoEdadUpcById(m *RangoEdadUpc) (err error) {
 	o := orm.NewOrm()
-	v := TipoZonaUpc{Id: m.Id}
+	v := RangoEdadUpc{Id: m.Id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
@@ -130,15 +136,15 @@ func UpdateTipoZonaUpcById(m *TipoZonaUpc) (err error) {
 	return
 }
 
-// DeleteTipoZonaUpc deletes TipoZonaUpc by Id and returns error if
+// DeleteRangoEdadUpc deletes RangoEdadUpc by Id and returns error if
 // the record to be deleted doesn't exist
-func DeleteTipoZonaUpc(id int) (err error) {
+func DeleteRangoEdadUpc(id int) (err error) {
 	o := orm.NewOrm()
-	v := TipoZonaUpc{Id: id}
+	v := RangoEdadUpc{Id: id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
-		if num, err = o.Delete(&TipoZonaUpc{Id: id}); err == nil {
+		if num, err = o.Delete(&RangoEdadUpc{Id: id}); err == nil {
 			fmt.Println("Number of records deleted in database:", num)
 		}
 	}

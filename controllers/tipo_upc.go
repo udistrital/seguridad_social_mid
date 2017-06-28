@@ -11,7 +11,7 @@ import (
 	"github.com/astaxie/beego"
 )
 
-// TipoUpcController oprations for TipoUpc
+// TipoUpcController operations for TipoUpc
 type TipoUpcController struct {
 	beego.Controller
 }

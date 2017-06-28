@@ -9,49 +9,57 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
-type TipoPagoSeguridadSocial struct {
-	Id     int    `orm:"column(id);pk"`
-	Nombre string `orm:"column(nombre)"`
+type ZonaUpc struct {
+	Id                int     `orm:"column(id);pk"`
+	Nombre            string  `orm:"column(nombre)"`
+	Descripcion       string  `orm:"column(descripcion)"`
+	CodigoAbreviacion string  `orm:"column(codigo_abreviacion);null"`
+	Activo            bool    `orm:"column(activo)"`
+	NumeroOrden       float64 `orm:"column(numero_orden);null"`
 }
 
-func (t *TipoPagoSeguridadSocial) TableName() string {
-	return "tipo_pago_seguridad_social"
+func (t *ZonaUpc) TableName() string {
+	return "zona_upc"
 }
 
 func init() {
-	orm.RegisterModel(new(TipoPagoSeguridadSocial))
+	orm.RegisterModel(new(ZonaUpc))
 }
 
-// AddTipoPagoSeguridadSocial insert a new TipoPagoSeguridadSocial into database and returns
+// AddZonaUpc insert a new ZonaUpc into database and returns
 // last inserted Id on success.
-func AddTipoPagoSeguridadSocial(m *TipoPagoSeguridadSocial) (id int64, err error) {
+func AddZonaUpc(m *ZonaUpc) (id int64, err error) {
 	o := orm.NewOrm()
 	id, err = o.Insert(m)
 	return
 }
 
-// GetTipoPagoSeguridadSocialById retrieves TipoPagoSeguridadSocial by Id. Returns error if
+// GetZonaUpcById retrieves ZonaUpc by Id. Returns error if
 // Id doesn't exist
-func GetTipoPagoSeguridadSocialById(id int) (v *TipoPagoSeguridadSocial, err error) {
+func GetZonaUpcById(id int) (v *ZonaUpc, err error) {
 	o := orm.NewOrm()
-	v = &TipoPagoSeguridadSocial{Id: id}
+	v = &ZonaUpc{Id: id}
 	if err = o.Read(v); err == nil {
 		return v, nil
 	}
 	return nil, err
 }
 
-// GetAllTipoPagoSeguridadSocial retrieves all TipoPagoSeguridadSocial matches certain condition. Returns empty list if
+// GetAllZonaUpc retrieves all ZonaUpc matches certain condition. Returns empty list if
 // no records exist
-func GetAllTipoPagoSeguridadSocial(query map[string]string, fields []string, sortby []string, order []string,
+func GetAllZonaUpc(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(TipoPagoSeguridadSocial))
+	qs := o.QueryTable(new(ZonaUpc))
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
 		k = strings.Replace(k, ".", "__", -1)
-		qs = qs.Filter(k, v)
+		if strings.Contains(k, "isnull") {
+			qs = qs.Filter(k, (v == "true" || v == "1"))
+		} else {
+			qs = qs.Filter(k, v)
+		}
 	}
 	// order by:
 	var sortFields []string
@@ -92,7 +100,7 @@ func GetAllTipoPagoSeguridadSocial(query map[string]string, fields []string, sor
 		}
 	}
 
-	var l []TipoPagoSeguridadSocial
+	var l []ZonaUpc
 	qs = qs.OrderBy(sortFields...)
 	if _, err = qs.Limit(limit, offset).All(&l, fields...); err == nil {
 		if len(fields) == 0 {
@@ -115,11 +123,11 @@ func GetAllTipoPagoSeguridadSocial(query map[string]string, fields []string, sor
 	return nil, err
 }
 
-// UpdateTipoPagoSeguridadSocial updates TipoPagoSeguridadSocial by Id and returns error if
+// UpdateZonaUpc updates ZonaUpc by Id and returns error if
 // the record to be updated doesn't exist
-func UpdateTipoPagoSeguridadSocialById(m *TipoPagoSeguridadSocial) (err error) {
+func UpdateZonaUpcById(m *ZonaUpc) (err error) {
 	o := orm.NewOrm()
-	v := TipoPagoSeguridadSocial{Id: m.Id}
+	v := ZonaUpc{Id: m.Id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
@@ -130,15 +138,15 @@ func UpdateTipoPagoSeguridadSocialById(m *TipoPagoSeguridadSocial) (err error) {
 	return
 }
 
-// DeleteTipoPagoSeguridadSocial deletes TipoPagoSeguridadSocial by Id and returns error if
+// DeleteZonaUpc deletes ZonaUpc by Id and returns error if
 // the record to be deleted doesn't exist
-func DeleteTipoPagoSeguridadSocial(id int) (err error) {
+func DeleteZonaUpc(id int) (err error) {
 	o := orm.NewOrm()
-	v := TipoPagoSeguridadSocial{Id: id}
+	v := ZonaUpc{Id: id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
-		if num, err = o.Delete(&TipoPagoSeguridadSocial{Id: id}); err == nil {
+		if num, err = o.Delete(&ZonaUpc{Id: id}); err == nil {
 			fmt.Println("Number of records deleted in database:", num)
 		}
 	}

@@ -9,52 +9,57 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
-type EdadUpc struct {
-	Id           int    `orm:"column(id);pk"`
-	EdadMin      int    `orm:"column(edad_min)"`
-	EdadMax      int    `orm:"column(edad_max)"`
-	Vigencia     int    `orm:"column(vigencia)"`
-	AplicaGenero string `orm:"column(aplica_genero);null"`
+type Pago struct {
+	Id                 int          `orm:"column(id);pk"`
+	DetalleLiquidacion int          `orm:"column(detalle_liquidacion)"`
+	Valor              float64      `orm:"column(valor)"`
+	TipoPago           *TipoPago    `orm:"column(tipo_pago);rel(fk)"`
+	EntidadPago        int          `orm:"column(entidad_pago)"`
+	PeriodoPago        *PeriodoPago `orm:"column(periodo_pago);rel(fk)"`
 }
 
-func (t *EdadUpc) TableName() string {
-	return "edad_upc"
+func (t *Pago) TableName() string {
+	return "pago"
 }
 
 func init() {
-	orm.RegisterModel(new(EdadUpc))
+	orm.RegisterModel(new(Pago))
 }
 
-// AddEdadUpc insert a new EdadUpc into database and returns
+// AddPago insert a new Pago into database and returns
 // last inserted Id on success.
-func AddEdadUpc(m *EdadUpc) (id int64, err error) {
+func AddPago(m *Pago) (id int64, err error) {
 	o := orm.NewOrm()
 	id, err = o.Insert(m)
 	return
 }
 
-// GetEdadUpcById retrieves EdadUpc by Id. Returns error if
+// GetPagoById retrieves Pago by Id. Returns error if
 // Id doesn't exist
-func GetEdadUpcById(id int) (v *EdadUpc, err error) {
+func GetPagoById(id int) (v *Pago, err error) {
 	o := orm.NewOrm()
-	v = &EdadUpc{Id: id}
+	v = &Pago{Id: id}
 	if err = o.Read(v); err == nil {
 		return v, nil
 	}
 	return nil, err
 }
 
-// GetAllEdadUpc retrieves all EdadUpc matches certain condition. Returns empty list if
+// GetAllPago retrieves all Pago matches certain condition. Returns empty list if
 // no records exist
-func GetAllEdadUpc(query map[string]string, fields []string, sortby []string, order []string,
+func GetAllPago(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(EdadUpc))
+	qs := o.QueryTable(new(Pago))
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
 		k = strings.Replace(k, ".", "__", -1)
-		qs = qs.Filter(k, v)
+		if strings.Contains(k, "isnull") {
+			qs = qs.Filter(k, (v == "true" || v == "1"))
+		} else {
+			qs = qs.Filter(k, v)
+		}
 	}
 	// order by:
 	var sortFields []string
@@ -95,7 +100,7 @@ func GetAllEdadUpc(query map[string]string, fields []string, sortby []string, or
 		}
 	}
 
-	var l []EdadUpc
+	var l []Pago
 	qs = qs.OrderBy(sortFields...)
 	if _, err = qs.Limit(limit, offset).All(&l, fields...); err == nil {
 		if len(fields) == 0 {
@@ -118,11 +123,11 @@ func GetAllEdadUpc(query map[string]string, fields []string, sortby []string, or
 	return nil, err
 }
 
-// UpdateEdadUpc updates EdadUpc by Id and returns error if
+// UpdatePago updates Pago by Id and returns error if
 // the record to be updated doesn't exist
-func UpdateEdadUpcById(m *EdadUpc) (err error) {
+func UpdatePagoById(m *Pago) (err error) {
 	o := orm.NewOrm()
-	v := EdadUpc{Id: m.Id}
+	v := Pago{Id: m.Id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
@@ -133,15 +138,15 @@ func UpdateEdadUpcById(m *EdadUpc) (err error) {
 	return
 }
 
-// DeleteEdadUpc deletes EdadUpc by Id and returns error if
+// DeletePago deletes Pago by Id and returns error if
 // the record to be deleted doesn't exist
-func DeleteEdadUpc(id int) (err error) {
+func DeletePago(id int) (err error) {
 	o := orm.NewOrm()
-	v := EdadUpc{Id: id}
+	v := Pago{Id: id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
-		if num, err = o.Delete(&EdadUpc{Id: id}); err == nil {
+		if num, err = o.Delete(&Pago{Id: id}); err == nil {
 			fmt.Println("Number of records deleted in database:", num)
 		}
 	}

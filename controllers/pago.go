@@ -5,55 +5,32 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 
+	"github.com/astaxie/beego"
 	"github.com/udistrital/ss_mid_api/golog"
 	"github.com/udistrital/ss_mid_api/models"
-
-	"github.com/astaxie/beego"
 )
 
-// DescSeguridadSocialController oprations for DescSeguridadSocial
-type DescSeguridadSocialController struct {
+// PagoController operations for Pago
+type PagoController struct {
 	beego.Controller
 }
 
 // URLMapping ...
-func (c *DescSeguridadSocialController) URLMapping() {
+func (c *PagoController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("GetOne", c.GetOne)
 	c.Mapping("GetAll", c.GetAll)
 	c.Mapping("Put", c.Put)
 	c.Mapping("Delete", c.Delete)
 	c.Mapping("CalcularSegSocial", c.CalcularSegSocial)
-	c.Mapping("GetConceptosIbc", c.GetConceptosIbc)
+	c.Mapping("ConceptosIbc", c.ConceptosIbc)
+	c.Mapping("GetNovedadesPorPersona", c.NovedadesPorPersona)
 }
 
-// Post ...
-// @Title Post
-// @Description create DescSeguridadSocial
-// @Param	body		body 	models.DescSeguridadSocial	true		"body for DescSeguridadSocial content"
-// @Success 201 {int} models.DescSeguridadSocial
-// @Failure 403 body is empty
-// @router / [post]
-func (c *DescSeguridadSocialController) Post() {
-	var v models.DescSeguridadSocial
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		if _, err := models.AddDescSeguridadSocial(&v); err == nil {
-			c.Ctx.Output.SetStatus(201)
-			c.Data["json"] = v
-		} else {
-			c.Data["json"] = err.Error()
-		}
-	} else {
-		c.Data["json"] = err.Error()
-	}
-	c.ServeJSON()
-}
-
-func (c *DescSeguridadSocialController) GetConceptosIbc() {
+func (c *PagoController) ConceptosIbc() {
 	fmt.Println("GetConceptosIbc")
 	var predicados []models.Predicado
 	var conceptos []models.Concepto
@@ -84,7 +61,57 @@ func (c *DescSeguridadSocialController) GetConceptosIbc() {
 	c.ServeJSON()
 }
 
-func (c *DescSeguridadSocialController) CalcularSegSocial() {
+func (c *PagoController) NovedadesPorPersona() {
+	personaStr := c.Ctx.Input.Param(":persona")
+	_, err := strconv.Atoi(personaStr)
+	var alertas []string
+	var errores string
+	var concepto models.ConceptoPorPersona
+	var detalleLiquidacion []models.DetalleLiquidacion
+	var conceptoPorPersona []models.ConceptoPorPersona
+	var novedadesPersonaSs []models.NovedadesPersonaSS
+
+	if err != nil {
+		c.Data["json"] = err.Error()
+	} else {
+		err := getJson("http://"+beego.AppConfig.String("titanServicio")+
+			"/detalle_liquidacion"+
+			"?limit=0"+
+			"&query=Persona:"+personaStr+",Concepto.Naturaleza:seguridad_social"+
+			"&fields=Concepto,ValorCalculado", &detalleLiquidacion)
+		errConcepto := getJson("http://"+beego.AppConfig.String("titanServicio")+
+			"concepto_por_persona"+
+			"?limit=0"+
+			"&query=Persona:"+personaStr+",Concepto.Naturaleza:seguridad_social,EstadoNovedad:Activo"+
+			"&fields=Concepto,Persona,FechaDesde,FechaHasta", &conceptoPorPersona)
+		errores = ""
+		fmt.Println(err, errConcepto)
+
+		if errores != "" {
+			fmt.Println("err en la peticion", errores)
+			alertas = append(alertas, "error al traer detalle liquidacion")
+			fmt.Println(alertas)
+			c.Data["json"] = alertas
+		} else {
+			persona, _ := strconv.ParseInt(personaStr, 10, 64)
+			for index := 0; index < len(detalleLiquidacion); index++ {
+				if detalleLiquidacion[index].Concepto == conceptoPorPersona[index].Concepto {
+					concepto = conceptoPorPersona[index]
+					fmt.Println(concepto)
+				}
+				novedadesPersonaSs = append(novedadesPersonaSs, models.NovedadesPersonaSS{
+					Persona:         persona,
+					Liquidacion:     detalleLiquidacion[index],
+					ConceptoPersona: concepto})
+			}
+
+			c.Data["json"] = novedadesPersonaSs
+		}
+		c.ServeJSON()
+	}
+}
+
+func (c *PagoController) CalcularSegSocial() {
 	idStr := c.Ctx.Input.Param(":id")
 	_, err := strconv.Atoi(idStr)
 	var alertas []string
@@ -147,23 +174,6 @@ func (c *DescSeguridadSocialController) CalcularSegSocial() {
 		}
 		c.ServeJSON()
 	}
-}
-
-// AproximarValor ...
-// @Title Aproximar Valor
-// @Description Aproxima un valor al número de aproximacion más cercano
-// @Param valorInicial valor a cual quiere aproximar
-// @Param	aproximacion	multiplo sobre al cual debe aproximarse el valor inicial
-// @return valorAproximado el valor aproximado de acuerdo a la aproximacion
-func AproximarValor(valorInicial int64, aproximacion int64) (valorAproximado int64) {
-	x := float64(valorInicial) / float64(aproximacion)
-	y := math.Trunc(float64(valorInicial / aproximacion))
-	if (x - y) > 0 {
-		valorAproximado = AproximarValor(valorInicial+1, aproximacion)
-	} else {
-		valorAproximado = valorInicial
-	}
-	return
 }
 
 // ValorSaludEmpleado ...
@@ -231,24 +241,39 @@ func CargarNovedades(id string) (novedades string) {
 	return
 }
 
-/*func (c *DescSeguridadSocialController) GenerarArchivoPlano() {
-	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	GetA
-
-}*/
+// Post ...
+// @Title Post
+// @Description create Pago
+// @Param	body		body 	models.Pago	true		"body for Pago content"
+// @Success 201 {int} models.Pago
+// @Failure 403 body is empty
+// @router / [post]
+func (c *PagoController) Post() {
+	var v models.Pago
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+		if _, err := models.AddPago(&v); err == nil {
+			c.Ctx.Output.SetStatus(201)
+			c.Data["json"] = v
+		} else {
+			c.Data["json"] = err.Error()
+		}
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}
 
 // GetOne ...
 // @Title Get One
-// @Description get DescSeguridadSocial by id
+// @Description get Pago by id
 // @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} models.DescSeguridadSocial
+// @Success 200 {object} models.Pago
 // @Failure 403 :id is empty
 // @router /:id [get]
-func (c *DescSeguridadSocialController) GetOne() {
+func (c *PagoController) GetOne() {
 	idStr := c.Ctx.Input.Param(":id")
 	id, _ := strconv.Atoi(idStr)
-	v, err := models.GetDescSeguridadSocialById(id)
+	v, err := models.GetPagoById(id)
 	if err != nil {
 		c.Data["json"] = err.Error()
 	} else {
@@ -259,17 +284,17 @@ func (c *DescSeguridadSocialController) GetOne() {
 
 // GetAll ...
 // @Title Get All
-// @Description get DescSeguridadSocial
+// @Description get Pago
 // @Param	query	query	string	false	"Filter. e.g. col1:v1,col2:v2 ..."
 // @Param	fields	query	string	false	"Fields returned. e.g. col1,col2 ..."
 // @Param	sortby	query	string	false	"Sorted-by fields. e.g. col1,col2 ..."
 // @Param	order	query	string	false	"Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ..."
 // @Param	limit	query	string	false	"Limit the size of result set. Must be an integer"
 // @Param	offset	query	string	false	"Start position of result set. Must be an integer"
-// @Success 200 {object} models.DescSeguridadSocial
+// @Success 200 {object} models.Pago
 // @Failure 403
 // @router / [get]
-func (c *DescSeguridadSocialController) GetAll() {
+func (c *PagoController) GetAll() {
 	var fields []string
 	var sortby []string
 	var order []string
@@ -311,7 +336,7 @@ func (c *DescSeguridadSocialController) GetAll() {
 		}
 	}
 
-	l, err := models.GetAllDescSeguridadSocial(query, fields, sortby, order, offset, limit)
+	l, err := models.GetAllPago(query, fields, sortby, order, offset, limit)
 	if err != nil {
 		c.Data["json"] = err.Error()
 	} else {
@@ -322,18 +347,18 @@ func (c *DescSeguridadSocialController) GetAll() {
 
 // Put ...
 // @Title Put
-// @Description update the DescSeguridadSocial
+// @Description update the Pago
 // @Param	id		path 	string	true		"The id you want to update"
-// @Param	body		body 	models.DescSeguridadSocial	true		"body for DescSeguridadSocial content"
-// @Success 200 {object} models.DescSeguridadSocial
+// @Param	body		body 	models.Pago	true		"body for Pago content"
+// @Success 200 {object} models.Pago
 // @Failure 403 :id is not int
 // @router /:id [put]
-func (c *DescSeguridadSocialController) Put() {
+func (c *PagoController) Put() {
 	idStr := c.Ctx.Input.Param(":id")
 	id, _ := strconv.Atoi(idStr)
-	v := models.DescSeguridadSocial{Id: id}
+	v := models.Pago{Id: id}
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		if err := models.UpdateDescSeguridadSocialById(&v); err == nil {
+		if err := models.UpdatePagoById(&v); err == nil {
 			c.Data["json"] = "OK"
 		} else {
 			c.Data["json"] = err.Error()
@@ -346,15 +371,15 @@ func (c *DescSeguridadSocialController) Put() {
 
 // Delete ...
 // @Title Delete
-// @Description delete the DescSeguridadSocial
+// @Description delete the Pago
 // @Param	id		path 	string	true		"The id you want to delete"
 // @Success 200 {string} delete success!
 // @Failure 403 id is empty
 // @router /:id [delete]
-func (c *DescSeguridadSocialController) Delete() {
+func (c *PagoController) Delete() {
 	idStr := c.Ctx.Input.Param(":id")
 	id, _ := strconv.Atoi(idStr)
-	if err := models.DeleteDescSeguridadSocial(id); err == nil {
+	if err := models.DeletePago(id); err == nil {
 		c.Data["json"] = "OK"
 	} else {
 		c.Data["json"] = err.Error()
