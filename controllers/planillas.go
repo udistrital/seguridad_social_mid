@@ -373,12 +373,12 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 							",IdDetalleLiquidacion:" + strconv.Itoa(detalleLiquidacion[i].Id))
 
 						//Cotización obligatoria a pensiones
-						for _, pagoPension := range pagosSalud {
+						/*for _, pagoPension := range pagosSalud {
 							if pagoPension.TipoPago.Nombre == "Pension" {
 								fila += formatoDato(completarSecuencia(int(pagoPension.Valor), 9), 9)
 								break
 							}
-						}
+						}*/
 
 						fila += formatoDato(completarSecuencia(0, 9), 9) //Aporte voluntario del afiliado al fondo de pensiones obligatorias
 
@@ -411,12 +411,12 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 						fila += formatoDato("12.5", 7)                   //Tarifa de aportes salud
 
 						//Cotización obligatoria a salud
-						for _, pagoSalud := range pagosSalud {
+						/*for _, pagoSalud := range pagosSalud {
 							if pagoSalud.TipoPago.Nombre == "Salud" {
 								fila += formatoDato(completarSecuencia(int(pagoSalud.Valor), 9), 9)
 								break
 							}
-						}
+						}*/
 
 						fila += formatoDato(completarSecuencia(0, 9), 9) //Valor UPC Adicional
 						fila += formatoDato("", 15)                      //Nº de autorización de la incapacidad por enfermedad general
@@ -429,22 +429,22 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 						fila += formatoDato(completarSecuenciaString("0", 9), 9) //Centro de trabajo CT
 
 						//Cotización obligatoria a Sistema General de Riesgos Laborales
-						for _, pagoArl := range pagosSalud {
+						/*for _, pagoArl := range pagosSalud {
 							if pagoArl.TipoPago.Nombre == "ARL" {
 								fila += formatoDato(completarSecuencia(int(pagoArl.Valor), 9), 9)
 								break
 							}
-						}
+						}*/
 
 						fila += formatoDato(completarSecuenciaString("4", 7), 7) //Tarifa de aportes CCF
 
 						//Valor aporte CCF
-						for _, pagoCaja := range pagosSalud {
+						/*for _, pagoCaja := range pagosSalud {
 							if pagoCaja.TipoPago.Nombre == "Caja" {
 								fila += formatoDato(completarSecuencia(int(pagoCaja.Valor), 9), 9)
 								break
 							}
-						}
+						}*/
 
 						fila += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes SENA
 						fila += formatoDato(completarSecuencia(0, 9), 9) //Valor Aportes SENA
@@ -452,11 +452,11 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 						fila += formatoDato(completarSecuencia(3, 7), 7) //Tarifa de aportes ICBF
 
 						//Valor aporte ICBF
-						for _, pagoIcbf := range pagosSalud {
+						/*for _, pagoIcbf := range pagosSalud {
 							if pagoIcbf.TipoPago.Nombre == "ICBF" {
 								fila += formatoDato(completarSecuencia(int(pagoIcbf.Valor), 9), 9)
 							}
-						}
+						}*/
 
 						fila += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes ESAP
 						fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de aporte ESAP
@@ -856,12 +856,13 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 								",IdDetalleLiquidacion:" + strconv.Itoa(detalleLiquidacion[i].Id))
 
 							//Cotización obligatoria a pensiones
-							for _, pagoPension := range pagosSalud {
-								if pagoPension.TipoPago.Nombre == "Pension" {
-									fila += formatoDato(completarSecuencia(int(pagoPension.Valor), 9), 9)
-									break
-								}
-							}
+							/*
+								for _, pagoPension := range pagosSalud {
+									if pagoPension.TipoPago.Nombre == "Pension" {
+										fila += formatoDato(completarSecuencia(int(pagoPension.Valor), 9), 9)
+										break
+									}
+								}*/
 
 							fila += formatoDato(completarSecuencia(0, 9), 9) //Aporte voluntario del afiliado al fondo de pensiones obligatorias
 
@@ -894,12 +895,13 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 							fila += formatoDato("12.5", 7)                   //Tarifa de aportes salud
 
 							//Cotización obligatoria a salud
-							for _, pagoSalud := range pagosSalud {
-								if pagoSalud.TipoPago.Nombre == "Salud" {
-									fila += formatoDato(completarSecuencia(int(pagoSalud.Valor), 9), 9)
-									break
-								}
-							}
+							/*
+								for _, pagoSalud := range pagosSalud {
+									if pagoSalud.TipoPago.Nombre == "Salud" {
+										fila += formatoDato(completarSecuencia(int(pagoSalud.Valor), 9), 9)
+										break
+									}
+								}*/
 
 							fila += formatoDato(completarSecuencia(0, 9), 9) //Valor UPC Adicional
 							fila += formatoDato("", 15)                      //Nº de autorización de la incapacidad por enfermedad general
@@ -912,22 +914,24 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 							fila += formatoDato(completarSecuenciaString("0", 9), 9) //Centro de trabajo CT
 
 							//Cotización obligatoria a Sistema General de Riesgos Laborales
-							for _, pagoArl := range pagosSalud {
-								if pagoArl.TipoPago.Nombre == "ARL" {
-									fila += formatoDato(completarSecuencia(int(pagoArl.Valor), 9), 9)
-									break
-								}
-							}
+							/*
+								for _, pagoArl := range pagosSalud {
+									if pagoArl.TipoPago.Nombre == "ARL" {
+										fila += formatoDato(completarSecuencia(int(pagoArl.Valor), 9), 9)
+										break
+									}
+								}*/
 
 							fila += formatoDato(completarSecuenciaString("4", 7), 7) //Tarifa de aportes CCF
 
 							//Valor aporte CCF
-							for _, pagoCaja := range pagosSalud {
-								if pagoCaja.TipoPago.Nombre == "Caja" {
-									fila += formatoDato(completarSecuencia(int(pagoCaja.Valor), 9), 9)
-									break
-								}
-							}
+							/*
+								for _, pagoCaja := range pagosSalud {
+									if pagoCaja.TipoPago.Nombre == "Caja" {
+										fila += formatoDato(completarSecuencia(int(pagoCaja.Valor), 9), 9)
+										break
+									}
+								}*/
 
 							fila += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes SENA
 							fila += formatoDato(completarSecuencia(0, 9), 9) //Valor Aportes SENA
@@ -935,11 +939,12 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 							fila += formatoDato(completarSecuencia(3, 7), 7) //Tarifa de aportes ICBF
 
 							//Valor aporte ICBF
-							for _, pagoIcbf := range pagosSalud {
-								if pagoIcbf.TipoPago.Nombre == "ICBF" {
-									fila += formatoDato(completarSecuencia(int(pagoIcbf.Valor), 9), 9)
-								}
-							}
+							/*
+								for _, pagoIcbf := range pagosSalud {
+									if pagoIcbf.TipoPago.Nombre == "ICBF" {
+										fila += formatoDato(completarSecuencia(int(pagoIcbf.Valor), 9), 9)
+									}
+								}*/
 
 							fila += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes ESAP
 							fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de aporte ESAP
