@@ -9,47 +9,48 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
-type Concepto struct {
-	Id             int    `orm:"column(id);pk"`
-	NombreConcepto string `orm:"column(nombre_concepto)"`
-	Naturaleza     string `orm:"column(naturaleza);null"`
-	AliasConcepto  string `orm:"column(alias_concepto)"`
-	TipoConcepto   string `orm:"column(tipo)"`
+type Aportante struct {
+	Id              int    `orm:"column(id);pk"`
+	CodArl          string `orm:"column(cod_arl)"`
+	Identificacion  string `orm:"column(identificacion)"`
+	CodDepartamento string `orm:"column(cod_departamento)"`
+	CodMunicio      string `orm:"column(cod_municio)"`
+	Activo          bool   `orm:"column(activo)"`
 }
 
-func (t *Concepto) TableName() string {
-	return "concepto"
+func (t *Aportante) TableName() string {
+	return "aportante"
 }
 
 func init() {
-	orm.RegisterModel(new(Concepto))
+	orm.RegisterModel(new(Aportante))
 }
 
-// AddConcepto insert a new Concepto into database and returns
+// AddAportante insert a new Aportante into database and returns
 // last inserted Id on success.
-func AddConcepto(m *Concepto) (id int64, err error) {
+func AddAportante(m *Aportante) (id int64, err error) {
 	o := orm.NewOrm()
 	id, err = o.Insert(m)
 	return
 }
 
-// GetConceptoById retrieves Concepto by Id. Returns error if
+// GetAportanteById retrieves Aportante by Id. Returns error if
 // Id doesn't exist
-func GetConceptoById(id int) (v *Concepto, err error) {
+func GetAportanteById(id int) (v *Aportante, err error) {
 	o := orm.NewOrm()
-	v = &Concepto{Id: id}
+	v = &Aportante{Id: id}
 	if err = o.Read(v); err == nil {
 		return v, nil
 	}
 	return nil, err
 }
 
-// GetAllConcepto retrieves all Concepto matches certain condition. Returns empty list if
+// GetAllAportante retrieves all Aportante matches certain condition. Returns empty list if
 // no records exist
-func GetAllConcepto(query map[string]string, fields []string, sortby []string, order []string,
+func GetAllAportante(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(Concepto))
+	qs := o.QueryTable(new(Aportante))
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
@@ -99,7 +100,7 @@ func GetAllConcepto(query map[string]string, fields []string, sortby []string, o
 		}
 	}
 
-	var l []Concepto
+	var l []Aportante
 	qs = qs.OrderBy(sortFields...)
 	if _, err = qs.Limit(limit, offset).All(&l, fields...); err == nil {
 		if len(fields) == 0 {
@@ -122,11 +123,11 @@ func GetAllConcepto(query map[string]string, fields []string, sortby []string, o
 	return nil, err
 }
 
-// UpdateConcepto updates Concepto by Id and returns error if
+// UpdateAportante updates Aportante by Id and returns error if
 // the record to be updated doesn't exist
-func UpdateConceptoById(m *Concepto) (err error) {
+func UpdateAportanteById(m *Aportante) (err error) {
 	o := orm.NewOrm()
-	v := Concepto{Id: m.Id}
+	v := Aportante{Id: m.Id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
@@ -137,15 +138,15 @@ func UpdateConceptoById(m *Concepto) (err error) {
 	return
 }
 
-// DeleteConcepto deletes Concepto by Id and returns error if
+// DeleteAportante deletes Aportante by Id and returns error if
 // the record to be deleted doesn't exist
-func DeleteConcepto(id int) (err error) {
+func DeleteAportante(id int) (err error) {
 	o := orm.NewOrm()
-	v := Concepto{Id: id}
+	v := Aportante{Id: id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
-		if num, err = o.Delete(&Concepto{Id: id}); err == nil {
+		if num, err = o.Delete(&Aportante{Id: id}); err == nil {
 			fmt.Println("Number of records deleted in database:", num)
 		}
 	}

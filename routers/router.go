@@ -62,6 +62,12 @@ func init() {
 				&controllers.PlanillasController{},
 			),
 		),
+
+		beego.NSNamespace("/aportante",
+			beego.NSInclude(
+				&controllers.PlanillasController{},
+			),
+		),
 	)
 	beego.AddNamespace(ns)
 }
