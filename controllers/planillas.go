@@ -122,8 +122,9 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 						//var valorIncapacidadLaboral int
 						//var novedad = false
 
-						fila += formatoDato(tipoRegistro, 2)                                    //Tipo Registro
-						fila += formatoDato(completarSecuencia(secuencia, 5), 5)                //Secuencia
+						fila += formatoDato(tipoRegistro, 2)                     //Tipo Registro
+						fila += formatoDato(completarSecuencia(secuencia, 5), 5) //Secuencia
+
 						fila += formatoDato("CC", 2)                                            //Tip de documento del cotizante
 						fila += formatoDato(strconv.Itoa(int(proveedores[j].NumDocumento)), 16) //Número de identificación del cotizante
 						fila += formatoDato(completarSecuencia(1, 2), 2)                        //Tipo Cotizante
@@ -511,6 +512,12 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 	c.ServeJSON()
 }
 
+// Función para generalizar las novedades
+func establecerNovedades(idPersona string) {
+
+}
+
+// Plantillas de pensionados
 func (c *PlanillasController) GenerarPlanillaPensionados() {
 	idStr := c.Ctx.Input.Param(":id")
 	idDescSegSocial, _ := strconv.Atoi(idStr)
