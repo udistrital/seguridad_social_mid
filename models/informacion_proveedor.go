@@ -14,7 +14,7 @@ type InformacionProveedor struct {
 	Id                      int                `orm:"column(id_proveedor);pk"`
 	Tipopersona             string             `orm:"column(tipopersona)"`
 	NumDocumento            float64            `orm:"column(num_documento)"`
-	IdCiudadContacto        *Ciudad            `orm:"column(id_ciudad_contacto);rel(fk)"`
+	IdCiudadContacto        int                `orm:"column(id_ciudad_contacto)"`
 	Direccion               string             `orm:"column(direccion)"`
 	Correo                  string             `orm:"column(correo)"`
 	Web                     string             `orm:"column(web);null"`
