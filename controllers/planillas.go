@@ -67,14 +67,13 @@ var fechaFinIrl = ""
 
 var fechaInicioVsp = ""
 
-// tiposPagoSegSocial := make(map[string]int) //mapa para guardar los tipos de pago de seguridad social
-
 func (c *PlanillasController) GenerarPlanillaActivos() {
 	idStr := c.Ctx.Input.Param(":id")
 	idDescSegSocial, _ := strconv.Atoi(idStr)
 	var proveedores []models.InformacionProveedor
 	var upc []models.UpcAdicional
 	var detalleLiquidacion []models.DetalleLiquidacion
+	var detLiq []models.DetalleLiquidacion
 	var conceptos []models.Concepto
 	var personaNatural []models.InformacionPersonaNatural
 	var conceptosSeguridadSocial []models.Concepto
@@ -95,8 +94,10 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 		errStrings = append(errStrings, errLiquidacion.Error())
 	}
 
-	errProveedores := getJson("http://"+beego.AppConfig.String("agoraServicio")+
+	errProveedores := getJson("http://"+beego.AppConfig.String("titanServicio")+
 		"/informacion_proveedor?limit=0", &proveedores)
+	/*errProveedores := getJson("http://"+beego.AppConfig.String("agoraServicio")+
+	"/informacion_proveedor?limit=0", &proveedores)*/
 	if errProveedores != nil {
 		errStrings = append(errStrings, errProveedores.Error())
 	}
@@ -138,10 +139,15 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 						fila += formatoDato(completarSecuencia(1, 2), 2)                        //Subtipo de Cotizante
 						fila += formatoDato("", 1)                                              //Extranjero no obligado a cotizar pensión
 
-						errPersonaNatural := getJson("http://"+beego.AppConfig.String("agoraServicio")+
+						errPersonaNatural := getJson("http://"+beego.AppConfig.String("titanServicio")+
 							"/informacion_persona_natural"+
 							"?limit=1"+
 							"&query=Id:"+strconv.FormatFloat(proveedores[j].NumDocumento, 'E', -1, 64), &personaNatural)
+
+						/*errPersonaNatural := getJson("http://"+beego.AppConfig.String("agoraServicio")+
+						"/informacion_persona_natural"+
+						"?limit=1"+
+						"&query=Id:"+strconv.FormatFloat(proveedores[j].NumDocumento, 'E', -1, 64), &personaNatural)*/
 
 						if errPersonaNatural != nil {
 							fmt.Println("errPersonaNatural: ", errPersonaNatural)
@@ -193,11 +199,11 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 						errDiasLiquidados := getJson("http://"+beego.AppConfig.String("titanServicio")+
 							"/detalle_liquidacion?limit=0"+
 							"&query=Concepto.NombreConcepto:ibc_novedad,Persona:"+
-							strconv.Itoa(detalleLiquidacion[i].Persona), &detalleLiquidacion)
+							strconv.Itoa(detalleLiquidacion[i].Persona), &detLiq)
 						if errDiasLiquidados != nil {
 							fmt.Println("errDiasLiquidados: ", errDiasLiquidados)
 						}
-						diasCotizados, _ := strconv.Atoi(detalleLiquidacion[0].DiasLiquidados)
+						diasCotizados, _ := strconv.Atoi(detLiq[0].DiasLiquidados)
 
 						if ingreso || retiro {
 							fila += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a pensión
@@ -215,16 +221,15 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 							fila += formatoDato("30", 2) //Número de días cotizados a CCF
 						}
 
+						fmt.Println(detalleLiquidacion[i].Persona)
 						errSalarioBasico := getJson("http://"+beego.AppConfig.String("titanServicio")+
 							"/detalle_liquidacion?limit=0"+
 							"&query=Concepto.NombreConcepto:salarioBase,Persona:"+
-							strconv.Itoa(detalleLiquidacion[i].Persona), &detalleLiquidacion)
+							strconv.Itoa(detalleLiquidacion[i].Persona), &detLiq)
 						if errSalarioBasico != nil {
 							fmt.Println("errSalarioBasico: ", errSalarioBasico)
 						} else {
-							salarioBase := strconv.FormatInt(detalleLiquidacion[0].ValorCalculado, 10)
-							fmt.Println(salarioBase)
-							fmt.Println(detalleLiquidacion[i].Persona)
+							salarioBase := strconv.FormatInt(detLiq[0].ValorCalculado, 10)
 							fila += formatoDato(salarioBase, 9) //Salario básico
 						}
 
@@ -233,11 +238,11 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 						errSoloLiquidado := getJson("http://"+beego.AppConfig.String("titanServicio")+
 							"/detalle_liquidacion?limit=0"+
 							"&query=Concepto.NombreConcepto:ibc_liquidado,Persona:"+
-							strconv.Itoa(detalleLiquidacion[i].Persona), &detalleLiquidacion)
+							strconv.Itoa(detalleLiquidacion[i].Persona), &detLiq)
 						if errSoloLiquidado != nil {
 							fmt.Println("errSoloLiquidado: ", errSoloLiquidado)
 						} else {
-							ibcLiquidado = int(detalleLiquidacion[0].ValorCalculado)
+							ibcLiquidado = int(detLiq[0].ValorCalculado)
 							fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC pensión
 							fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC salud
 							fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC ARL
@@ -250,15 +255,15 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 						for _, pago := range conceptosSeguridadSocial {
 							switch pago.NombreConcepto {
 							case "pensionTotal":
-								pagoPension, _ = strconv.Atoi(obtenerPago(strconv.Itoa(idDescSegSocial), strconv.Itoa(detalleLiquidacion[0].Id), strconv.Itoa(pago.Id)))
+								pagoPension, _ = strconv.Atoi(obtenerPago(strconv.Itoa(idDescSegSocial), strconv.Itoa(detLiq[0].Id), strconv.Itoa(pago.Id)))
 							case "saludTotal":
-								pagoSalud, _ = strconv.Atoi(obtenerPago(strconv.Itoa(idDescSegSocial), strconv.Itoa(detalleLiquidacion[0].Id), strconv.Itoa(pago.Id)))
+								pagoSalud, _ = strconv.Atoi(obtenerPago(strconv.Itoa(idDescSegSocial), strconv.Itoa(detLiq[0].Id), strconv.Itoa(pago.Id)))
 							case "icbf":
-								pagoIcbf, _ = strconv.Atoi(obtenerPago(strconv.Itoa(idDescSegSocial), strconv.Itoa(detalleLiquidacion[0].Id), strconv.Itoa(pago.Id)))
+								pagoIcbf, _ = strconv.Atoi(obtenerPago(strconv.Itoa(idDescSegSocial), strconv.Itoa(detLiq[0].Id), strconv.Itoa(pago.Id)))
 							case "caja":
-								pagoCaja, _ = strconv.Atoi(obtenerPago(strconv.Itoa(idDescSegSocial), strconv.Itoa(detalleLiquidacion[0].Id), strconv.Itoa(pago.Id)))
+								pagoCaja, _ = strconv.Atoi(obtenerPago(strconv.Itoa(idDescSegSocial), strconv.Itoa(detLiq[0].Id), strconv.Itoa(pago.Id)))
 							case "arl":
-								pagoArl, _ = strconv.Atoi(obtenerPago(strconv.Itoa(idDescSegSocial), strconv.Itoa(detalleLiquidacion[0].Id), strconv.Itoa(pago.Id)))
+								pagoArl, _ = strconv.Atoi(obtenerPago(strconv.Itoa(idDescSegSocial), strconv.Itoa(detLiq[0].Id), strconv.Itoa(pago.Id)))
 							}
 						}
 
@@ -269,13 +274,13 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 						//Aporte voluntario del aportante al fondo de pensiones obligatoria
 						errAporteVoluntario := getJson("http://"+beego.AppConfig.String("titanServicio")+
 							"/detalle_liquidacion"+
-							"?query=Persona:"+strconv.Itoa(detalleLiquidacion[i].Persona), &detalleLiquidacion)
+							"?query=Persona:"+strconv.Itoa(detalleLiquidacion[i].Persona), &detLiq)
 
 						if errAporteVoluntario != nil {
 							fmt.Println("errAporteVoluntario", errAporteVoluntario)
 							fila += formatoDato(completarSecuencia(0, 9), 9)
 						} else {
-							for _, liquidado := range detalleLiquidacion {
+							for _, liquidado := range detLiq {
 								if liquidado.Concepto.NombreConcepto == "nombreRegla2176" {
 									fila += formatoDato(strconv.FormatInt(liquidado.ValorCalculado, 10), 9)
 								} else if liquidado.Concepto.NombreConcepto == "nombreRegla2178" {
@@ -369,6 +374,47 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 
 // Función para generalizar las novedades
 func establecerNovedades(idPersona string) {
+
+	//Variables para cada una de las novedades y sus días validos
+	ingreso = false
+	fechaIngreso = ""
+
+	retiro = false
+	fechaRetiro = ""
+
+	trasladoPensiones = false
+	trasladoEps = false
+	exterior = false
+	suspencionContrato = false
+	fechaInicioSuspencion = ""
+	fechaFinSuspencion = ""
+
+	licenciaNoRem = false
+	comisionServicios = false
+	incapacidadGeneral = false
+	fechaInicioIge = ""
+	fechaFinIge = ""
+
+	licenciaMaternidad = false
+	fechaInicioLma = ""
+	fechaFinLma = ""
+
+	vacaciones = false
+	licenciaRem = false
+	fechaInicioVac = ""
+	fechaFinVac = ""
+
+	aporteVoluntario = false
+	variacionCentroTrabajo = false
+	fechaInicioVct = ""
+	fechaFinVct = ""
+
+	diasIncapcidadLaboral = 0
+	fechaInicioIrl = ""
+	fechaFinIrl = ""
+
+	fechaInicioVsp = ""
+
 	// Array para tener todas las novedades
 	var conceptoPersona []models.ConceptoPorPersona
 

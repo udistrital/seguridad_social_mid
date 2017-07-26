@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/astaxie/beego/orm"
 )
 
+/*
 type InformacionPersonaNatural struct {
 	TipoDocumento                     *ParametroEstandar `orm:"column(tipo_documento);rel(fk)"`
 	Id                                int                `orm:"column(num_documento_persona);pk"`
@@ -56,6 +56,28 @@ type InformacionPersonaNatural struct {
 	IdNitCajaCompensacion             float64            `orm:"column(id_nit_caja_compensacion);null"`
 	FechaExpedicionDocumento          time.Time          `orm:"column(fecha_expedicion_documento);type(date)"`
 	IdCiudadExpedicionDocumento       float64            `orm:"column(id_ciudad_expedicion_documento)"`
+}*/
+
+// Titan
+type InformacionPersonaNatural struct {
+	TipoDocumento          int     `orm:"column(tipo_documento)"`
+	Id                     int     `orm:"column(num_documento_persona);pk"`
+	DigitoVerificacion     float64 `orm:"column(digito_verificacion)"`
+	PrimerApellido         string  `orm:"column(primer_apellido)"`
+	SegundoApellido        string  `orm:"column(segundo_apellido);null"`
+	PrimerNombre           string  `orm:"column(primer_nombre)"`
+	SegundoNombre          string  `orm:"column(segundo_nombre);null"`
+	Cargo                  string  `orm:"column(cargo)"`
+	IdPaisNacimiento       int     `orm:"column(id_pais_nacimiento)"`
+	Perfil                 int     `orm:"column(perfil)"`
+	Profesion              string  `orm:"column(profesion);null"`
+	Especialidad           string  `orm:"column(especialidad);null"`
+	MontoCapitalAutorizado float64 `orm:"column(monto_capital_autorizado);null"`
+	Genero                 string  `orm:"column(genero);null"`
+	IdEPS                  int     `orm:"column(id_eps)"`
+	IdARL                  int     `orm:"column(id_arl)"`
+	IdFondoPension         int     `orm:"column(id_fondo_pension)"`
+	IdCajaCompensacion     int     `orm:"column(id_caja_compensacion)"`
 }
 
 func (t *InformacionPersonaNatural) TableName() string {
