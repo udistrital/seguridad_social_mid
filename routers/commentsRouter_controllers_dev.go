@@ -19,13 +19,6 @@ func init() {
 			Router:           `NovedadesPorPersona/:persona`,
 			AllowHTTPMethods: []string{"get"},
 			Params:           nil})
-	/*
-		beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:FuncionarioProveedorController"] = append(beego.GlobalControllerRouter["github.com/miguelramirez93/titan_api_crud/controllers:FuncionarioProveedorController"],
-			beego.ControllerComments{
-				Method:           "ConsultarIDProveedor",
-				Router:           `/`,
-				AllowHTTPMethods: []string{"post"},
-				Params:           nil})*/
 
 	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
 		beego.ControllerComments{
@@ -38,6 +31,20 @@ func init() {
 		beego.ControllerComments{
 			Method:           "GenerarPlanillaActivos",
 			Router:           `GenerarPlanillaActivos/:id`,
+			AllowHTTPMethods: []string{"get"},
+			Params:           nil})
+
+	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"],
+		beego.ControllerComments{
+			Method:           "GenerarPlanillaPensionados",
+			Router:           `GenerarPlanillaPensionados/:id`,
+			AllowHTTPMethods: []string{"get"},
+			Params:           nil})
+
+	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"],
+		beego.ControllerComments{
+			Method:           "GenerarPlanillaN",
+			Router:           `GenerarPlanillaN/:id`,
 			AllowHTTPMethods: []string{"get"},
 			Params:           nil})
 }

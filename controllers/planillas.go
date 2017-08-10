@@ -22,7 +22,8 @@ func (c *PlanillasController) URLMapping() {
 	c.Mapping("Put", c.Put)
 	c.Mapping("Delete", c.Delete)
 	c.Mapping("GenerarPlanillaActivos", c.GenerarPlanillaActivos)
-
+	c.Mapping("GenerarPlanillaPensionados", c.GenerarPlanillaPensionados)
+	c.Mapping("GenerarPlanillaN", c.GenerarPlanillaN)
 }
 
 var formatoFecha = "2006-01-02"
