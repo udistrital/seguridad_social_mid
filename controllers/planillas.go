@@ -22,8 +22,8 @@ func (c *PlanillasController) URLMapping() {
 	c.Mapping("Put", c.Put)
 	c.Mapping("Delete", c.Delete)
 	c.Mapping("GenerarPlanillaActivos", c.GenerarPlanillaActivos)
-	c.Mapping("GenerarPlanillaPensionados", c.GenerarPlanillaPensionados)
-	c.Mapping("GenerarPlanillaN", c.GenerarPlanillaN)
+	//c.Mapping("GenerarPlanillaPensionados", c.GenerarPlanillaPensionados)
+	//c.Mapping("GenerarPlanillaN", c.GenerarPlanillaN)
 }
 
 var formatoFecha = "2006-01-02"
@@ -72,12 +72,14 @@ var fechaInicioVsp = ""
 func (c *PlanillasController) GenerarPlanillaActivos() {
 	idStr := c.Ctx.Input.Param(":id")
 	idDescSegSocial, _ := strconv.Atoi(idStr)
-	var proveedores []models.InformacionProveedor
-	var upc []models.UpcAdicional
-	var detalleLiquidacion []models.DetalleLiquidacion
-	var detLiq []models.DetalleLiquidacion
-	var conceptos []models.Concepto
 	var personaNatural []models.InformacionPersonaNatural
+	var proveedor []models.InformacionProveedor
+	var contratosGeneral []models.ContratoGeneral
+	var contratoGeneral []models.ContratoGeneral
+	var upc []models.UpcAdicional
+	var detallePreliquidacion []models.DetallePreliquidacion
+	var detLiq []models.DetallePreliquidacion
+	var conceptos []models.Concepto
 	var conceptosSeguridadSocial []models.Concepto
 	var errStrings []string
 	tipoRegistro := "02"
@@ -90,17 +92,15 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 	}
 
 	errLiquidacion := getJson("http://"+beego.AppConfig.String("titanServicio")+
-		"/detalle_liquidacion?limit=-1", &detalleLiquidacion)
+		"/detalle_liquidacion?limit=-1", &detallePreliquidacion)
 	if errLiquidacion != nil {
 		errStrings = append(errStrings, errLiquidacion.Error())
 	}
 
-	errProveedores := getJson("http://"+beego.AppConfig.String("titanServicio")+
-		"/informacion_proveedor?limit=0", &proveedores)
-	/*errProveedores := getJson("http://"+beego.AppConfig.String("agoraServicio")+
-	"/informacion_proveedor?limit=0", &proveedores)*/
-	if errProveedores != nil {
-		errStrings = append(errStrings, errProveedores.Error())
+	errContratosGeneral := getJson("http://"+beego.AppConfig.String("agoraServicio")+
+		"/contrato_general?limit=0", &contratosGeneral)
+	if errContratosGeneral != nil {
+		errStrings = append(errStrings, errContratosGeneral.Error())
 	}
 
 	errConceptos := getJson("http://"+beego.AppConfig.String("titanServicio")+
@@ -118,12 +118,13 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 	fmt.Println("errStrings: ", errStrings)
 	if errStrings == nil {
 		secuencia := 1
-		for i := 0; i < len(detalleLiquidacion); i++ {
-			for j := 0; j < len(proveedores); j++ {
-				if detalleLiquidacion[i].Persona == proveedores[j].Id {
-					if strings.Contains(fila, strconv.Itoa(int(proveedores[j].NumDocumento))) {
+		for i := 0; i < len(detallePreliquidacion); i++ {
+			for j := 0; j < len(contratosGeneral); j++ {
+				if detallePreliquidacion[i].NumeroContrato == contratosGeneral[j].Id {
+					if strings.Contains(fila, strconv.Itoa(int(contratosGeneral[j].Contratista))) {
 						break
 					} else {
+
 						var ibcLiquidado = 0
 						var pagoSalud = 0
 						var pagoPension = 0
@@ -134,16 +135,14 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 						fila += formatoDato(tipoRegistro, 2)                     //Tipo Registro
 						fila += formatoDato(completarSecuencia(secuencia, 5), 5) //Secuencia
 
-						fila += formatoDato("CC", 2)                                            //Tip de documento del cotizante
-						fila += formatoDato(strconv.Itoa(int(proveedores[j].NumDocumento)), 16) //Número de identificación del cotizante
-						fila += formatoDato(completarSecuencia(1, 2), 2)                        //Tipo Cotizante
-						fila += formatoDato(completarSecuencia(1, 2), 2)                        //Subtipo de Cotizante
-						fila += formatoDato("", 1)                                              //Extranjero no obligado a cotizar pensión
+						fila += formatoDato("CC", 2)                                                //Tip de documento del cotizante
+						fila += formatoDato(strconv.Itoa(int(contratosGeneral[j].Contratista)), 16) //Número de identificación del cotizante
+						fila += formatoDato(completarSecuencia(1, 2), 2)                            //Tipo Cotizante
+						fila += formatoDato(completarSecuencia(1, 2), 2)                            //Subtipo de Cotizante
+						fila += formatoDato("", 1)                                                  //Extranjero no obligado a cotizar pensión
 
-						errPersonaNatural := getJson("http://"+beego.AppConfig.String("titanServicio")+
-							"/informacion_persona_natural"+
-							"?limit=1"+
-							"&query=Id:"+strconv.FormatFloat(proveedores[j].NumDocumento, 'E', -1, 64), &personaNatural)
+						errPersonaNatural := getJson("http://"+beego.AppConfig.String("agoraServicio")+
+							"/informacion_persona_natural?limit=1&query=Id:"+strconv.Itoa(contratosGeneral[j].Contratista), &personaNatural)
 
 						/*errPersonaNatural := getJson("http://"+beego.AppConfig.String("agoraServicio")+
 						"/informacion_persona_natural"+
@@ -170,7 +169,28 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 						fila += formatoDato(personaNatural[0].SegundoNombre, 30)   //Segundo nombre
 
 						// --AQUÍ VA LA FUNCIÓN DE LAS NOVEDADES!--  //
-						establecerNovedades(strconv.Itoa(detalleLiquidacion[i].Persona))
+						errNumContrato := getJson("http://"+beego.AppConfig.String("argoServicio")+"/contrato_general"+
+							"?query=Id:"+detallePreliquidacion[i].NumeroContrato, &contratoGeneral)
+
+						if errNumContrato != nil {
+							fmt.Println("errNumContrato: ", errNumContrato)
+						}
+
+						errProveedor := getJson("http://"+beego.AppConfig.String("agoraServicio")+
+							"/informacion_proveedor?limit=1&query:NumDocumento:"+strconv.Itoa(contratosGeneral[j].Contratista), &proveedor)
+
+						if errProveedor != nil {
+							fmt.Println("errProveedor: ", errProveedor)
+						}
+
+						/*/errPersonaNatural := getJson("http://"+beego.AppConfig.String("agoraServicio")+
+							"/informacion_persona_natural?limit=1&query=Id:"+strconv.Itoa(contratosGeneral[j].Contratista), &personaNatural)
+
+						if errPersonaNatural != nil {
+							fmt.Println("errPersonaNatural: ", errPersonaNatural)
+						}*/
+
+						establecerNovedades(strconv.Itoa(proveedor[0].Id))
 
 						//Código de la administradora de fondo de pensiones a la cual pertenece el afiliado
 						fila += formatoDato("231001", 6)
@@ -198,13 +218,12 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 						fila += formatoDato("CCF04", 6)
 
 						errDiasLiquidados := getJson("http://"+beego.AppConfig.String("titanServicio")+
-							"/detalle_liquidacion?limit=0"+
-							"&query=Concepto.NombreConcepto:ibc_novedad,Persona:"+
-							strconv.Itoa(detalleLiquidacion[i].Persona), &detLiq)
+							"/detalle_preliquidacion?limit=0"+
+							"&query=Concepto.NombreConcepto:ibc_novedad,NumeroContrato:"+detallePreliquidacion[i].NumeroContrato, &detLiq)
 						if errDiasLiquidados != nil {
 							fmt.Println("errDiasLiquidados: ", errDiasLiquidados)
 						}
-						diasCotizados, _ := strconv.Atoi(detLiq[0].DiasLiquidados)
+						diasCotizados := int(detLiq[0].DiasLiquidados)
 
 						if ingreso || retiro {
 							fila += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a pensión
@@ -222,24 +241,21 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 							fila += formatoDato("30", 2) //Número de días cotizados a CCF
 						}
 
-						fmt.Println(detalleLiquidacion[i].Persona)
 						errSalarioBasico := getJson("http://"+beego.AppConfig.String("titanServicio")+
-							"/detalle_liquidacion?limit=0"+
-							"&query=Concepto.NombreConcepto:salarioBase,Persona:"+
-							strconv.Itoa(detalleLiquidacion[i].Persona), &detLiq)
+							"/detalle_preliquidacion?limit=0"+
+							"&query=Concepto.NombreConcepto:salarioBase,NumeroContrato:"+detallePreliquidacion[i].NumeroContrato, &detLiq)
 						if errSalarioBasico != nil {
 							fmt.Println("errSalarioBasico: ", errSalarioBasico)
 						} else {
-							salarioBase := strconv.FormatInt(detLiq[0].ValorCalculado, 10)
+							salarioBase := strconv.FormatFloat(detLiq[0].ValorCalculado, 'E', -1, 64)
 							fila += formatoDato(salarioBase, 9) //Salario básico
 						}
 
 						fila += formatoDato("", 1) //Salario integral
 
 						errSoloLiquidado := getJson("http://"+beego.AppConfig.String("titanServicio")+
-							"/detalle_liquidacion?limit=0"+
-							"&query=Concepto.NombreConcepto:ibc_liquidado,Persona:"+
-							strconv.Itoa(detalleLiquidacion[i].Persona), &detLiq)
+							"/detalle_preliquidacion?limit=0"+
+							"&query=Concepto.NombreConcepto:ibc_liquidado,NumeroContrato:"+detallePreliquidacion[i].NumeroContrato, &detLiq)
 						if errSoloLiquidado != nil {
 							fmt.Println("errSoloLiquidado: ", errSoloLiquidado)
 						} else {
@@ -274,8 +290,8 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 
 						//Aporte voluntario del aportante al fondo de pensiones obligatoria
 						errAporteVoluntario := getJson("http://"+beego.AppConfig.String("titanServicio")+
-							"/detalle_liquidacion"+
-							"?query=Persona:"+strconv.Itoa(detalleLiquidacion[i].Persona), &detLiq)
+							"/detalle_preliquidacion"+
+							"?query=NumeroContrato:"+detallePreliquidacion[i].NumeroContrato, &detLiq)
 
 						if errAporteVoluntario != nil {
 							fmt.Println("errAporteVoluntario", errAporteVoluntario)
@@ -283,11 +299,11 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 						} else {
 							for _, liquidado := range detLiq {
 								if liquidado.Concepto.NombreConcepto == "nombreRegla2176" {
-									fila += formatoDato(strconv.FormatInt(liquidado.ValorCalculado, 10), 9)
+									fila += formatoDato(strconv.FormatFloat(liquidado.ValorCalculado, 'E', -1, 64), 9)
 								} else if liquidado.Concepto.NombreConcepto == "nombreRegla2178" {
-									fila += formatoDato(strconv.FormatInt(liquidado.ValorCalculado, 10), 9)
+									fila += formatoDato(strconv.FormatFloat(liquidado.ValorCalculado, 'E', -1, 64), 9)
 								} else if liquidado.Concepto.NombreConcepto == "nombreRegla2173" {
-									fila += formatoDato(strconv.FormatInt(liquidado.ValorCalculado, 10), 9)
+									fila += formatoDato(strconv.FormatFloat(liquidado.ValorCalculado, 'E', -1, 64), 9)
 								} else {
 									break
 								}
@@ -328,7 +344,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 
 						//Para los registros de las UPC
 						/*for _, upcAdicional := range upc {
-							if upcAdicional.PersonaAsociada == detalleLiquidacion[i].Persona {
+							if upcAdicional.PersonaAsociada == detallePreliquidacion[i].Persona {
 								fila += formatoDato(texto, longitud)
 							}
 						}*/
@@ -382,7 +398,7 @@ func AgregarUpc(idPersonaAsociada string) {
 	errDiasLiquidados := getJson("http://"+beego.AppConfig.String("titanServicio")+
 		"/detalle_liquidacion?limit=0"+
 		"&query=Concepto.NombreConcepto:ibc_novedad,Persona:"+
-		strconv.Itoa(detalleLiquidacion[i].Persona), &detLiq)*/
+		strconv.Itoa(detallePreliquidacion[i].Persona), &detLiq)*/
 }
 
 // Función para generalizar las novedades
@@ -430,14 +446,15 @@ func establecerNovedades(idPersona string) {
 
 	// Array para tener todas las novedades
 	var conceptoPersona []models.ConceptoPorPersona
+	var ConceptoNominaPersona []models.ConceptoNominaPorPersona
 
-	var detalleLiquidacion []models.DetalleLiquidacion
+	var detallePreliquidacion []models.DetallePreliquidacion
 
 	errConceptoPersona := getJson("http://"+beego.AppConfig.String("titanServicio")+
-		"/concepto_por_persona"+
+		"/concepto_nomina_por_persona"+
 		"?limit=0"+
-		"&query=EstadoNovedad:Activo,Persona.Id:"+idPersona+
-		",Concepto.Naturaleza:seguridad_social", &conceptoPersona)
+		"&query=activo:true,Persona:"+idPersona+
+		",Concepto.NaturalezaConcepto.Nombre:seguridad_social", &ConceptoNominaPersona)
 
 	if errConceptoPersona != nil {
 		fmt.Println("errConceptoPersona: ", errConceptoPersona)
@@ -497,11 +514,11 @@ func establecerNovedades(idPersona string) {
 			//novedad = true
 		case "incapacidad_laboral":
 			errEnfermedadLaboral := getJson("http://"+beego.AppConfig.String("titanServicio")+
-				"/detalle_liquidacion?limit=-1", &detalleLiquidacion)
+				"/detalle_liquidacion?limit=-1", &detallePreliquidacion)
 			if errEnfermedadLaboral != nil {
 				fmt.Println("errEnfermedadLaboral: ", errEnfermedadLaboral)
 			}
-			diasIncapcidadLaboral, _ = strconv.Atoi(detalleLiquidacion[0].DiasLiquidados)
+			diasIncapcidadLaboral = int(detallePreliquidacion[0].DiasLiquidados)
 			fechaInicioIrl = conceptoPersona[h].FechaDesde.Format(formatoFecha)
 			fechaFinIrl = conceptoPersona[h].FechaHasta.Format(formatoFecha)
 			//valorIncapacidadLaboral = int(detalleIncapcidadLaboral[0].ValorCalculado)
@@ -582,7 +599,7 @@ func obtenerPago(idPeriodoPago, idDetalleLiqidacion, idTipoPago string) (valorPa
 	/* Se obtiene un pago especefico con el periodo de pago, el detalle de la
 	liquidacion y el tipo de pago */
 	errPagosSalud := getJson("http://"+beego.AppConfig.String("seguridadSocialService")+
-		"/pago?limit=1&query=PeriodoPago.Id:"+idPeriodoPago+",DetalleLiquidacion:"+idDetalleLiqidacion+
+		"/pago?limit=1&query=PeriodoPago.Id:"+idPeriodoPago+",DetallePreliquidacion:"+idDetalleLiqidacion+
 		",TipoPago:"+idTipoPago, &pago)
 	if errPagosSalud != nil {
 		fmt.Println("errPagosSalud: ", errPagosSalud)
@@ -595,6 +612,8 @@ func obtenerPago(idPeriodoPago, idDetalleLiqidacion, idTipoPago string) (valorPa
 func establecerNovedadesTranslado() {
 }
 
+/*
+
 // Plantillas de pensionados
 func (c *PlanillasController) GenerarPlanillaPensionados() {
 	idStr := c.Ctx.Input.Param(":id")
@@ -603,16 +622,16 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 	var personasNatural []models.InformacionPersonaNatural
 	var informacionPensionado []models.InformacionPensionado
 	var conceptoPersona []models.ConceptoPorPersona
-	var detalleLiquidacion []models.DetalleLiquidacion
+	var detallePreliquidacion []models.DetallePreliquidacion
 	var personaNatural []models.InformacionPersonaNatural
 	var pagosSalud []models.Pago
-	var detalleLiquidacionConceptos []models.DetalleLiquidacion
+	var detallePreliquidacionConceptos []models.DetallePreliquidacion
 	var errStrings []string
 	tipoRegistro := "02"
 	fila := ""
 
-	errLiquidacion := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_liquidacion"+
-		"?limit=-1", &detalleLiquidacion)
+	errLiquidacion := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
+		"?limit=-1", &detallePreliquidacion)
 	if errLiquidacion != nil {
 		errStrings = append(errStrings, errLiquidacion.Error())
 	}
@@ -633,9 +652,9 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 	if errStrings == nil {
 		secuencia := 1
 		for i := 0; i < len(proveedores); i++ {
-			for j := 0; j < len(detalleLiquidacion); j++ {
+			for j := 0; j < len(detallePreliquidacion); j++ {
 				for k := 0; k < len(personasNatural); k++ {
-					if proveedores[i].Id == detalleLiquidacion[j].Persona {
+					if proveedores[i].Id == detallePreliquidacion[j].Persona {
 						if int(proveedores[i].NumDocumento) == personasNatural[k].Id {
 							var ibcLiquidado int = 0
 							//Novedades
@@ -706,14 +725,14 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 							errConceptoPersona := getJson("http://"+beego.AppConfig.String("titanServicio")+
 								"/concepto_por_persona"+
 								"?limit=0"+
-								"&query=EstadoNovedad:Activo,Persona.Id:"+strconv.Itoa(detalleLiquidacion[i].Persona)+
+								"&query=EstadoNovedad:Activo,Persona.Id:"+strconv.Itoa(detallePreliquidacion[i].Persona)+
 								",Concepto.Naturaleza:seguridad_social", &conceptoPersona)
 
 							if errConceptoPersona != nil {
 								fmt.Println("errConceptoPersona: ", errConceptoPersona)
 							}
 
-							fmt.Println("Conceptos para el id: ", detalleLiquidacion[i].Persona)
+							fmt.Println("Conceptos para el id: ", detallePreliquidacion[i].Persona)
 							fmt.Println(conceptoPersona[0].Concepto.NombreConcepto)
 							for h := 0; h < len(conceptoPersona); h++ {
 								switch conceptoPersona[h].Concepto.NombreConcepto {
@@ -751,11 +770,11 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 									//novedad = true
 								case "incapacidad_laboral":
 									errEnfermedadLaboral := getJson("http://"+beego.AppConfig.String("titanServicio")+
-										"/detalle_liquidacion?limit=-1", &detalleLiquidacionConceptos)
+										"/detalle_liquidacion?limit=-1", &detallePreliquidacionConceptos)
 									if errEnfermedadLaboral != nil {
 										fmt.Println("errEnfermedadLaboral: ", errEnfermedadLaboral)
 									}
-									diasIncapacidadLaboral, _ = strconv.Atoi(detalleLiquidacionConceptos[0].DiasLiquidados)
+									diasIncapacidadLaboral, _ = strconv.Atoi(detallePreliquidacionConceptos[0].DiasLiquidados)
 									//valorIncapacidadLaboral = int(detalleIncapcidadLaboral[0].ValorCalculado)
 									//novedad = true
 								}
@@ -778,7 +797,7 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 							/*errPersonaNatural := getJson("http://"+beego.AppConfig.String("agoraServicio")+
 							"/informacion_persona_natural"+
 							"?limit=1"+
-							"&query=Id:"+strconv.FormatFloat(proveedores[j].NumDocumento, 'E', -1, 64), &personaNatural)*/
+							"&query=Id:"+strconv.FormatFloat(proveedores[j].NumDocumento, 'E', -1, 64), &personaNatural)
 
 							if errPersonaNatural != nil {
 								fmt.Println("errPersonaNatural: ", errPersonaNatural)
@@ -877,11 +896,11 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 							errDiasLiquidados := getJson("http://"+beego.AppConfig.String("titanServicio")+
 								"/detalle_liquidacion?limit=0"+
 								"&query=Concepto.NombreConcepto:ibc_novedad,Persona:"+
-								strconv.Itoa(detalleLiquidacion[i].Persona), &detalleLiquidacionConceptos)
+								strconv.Itoa(detallePreliquidacion[i].Persona), &detallePreliquidacionConceptos)
 							if errDiasLiquidados != nil {
 								fmt.Println("errDiasLiquidados: ", errDiasLiquidados)
 							}
-							diasCotizados, _ := strconv.Atoi(detalleLiquidacionConceptos[0].DiasLiquidados)
+							diasCotizados, _ := strconv.Atoi(detallePreliquidacionConceptos[0].DiasLiquidados)
 
 							if ingreso || retiro {
 								fila += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a pensión
@@ -902,11 +921,11 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 							errSalarioBasico := getJson("http://"+beego.AppConfig.String("titanServicio")+
 								"/detalle_liquidacion?limit=0"+
 								"&query=Concepto.NombreConcepto:salarioBase,Persona:"+
-								strconv.Itoa(detalleLiquidacion[i].Persona), &detalleLiquidacionConceptos)
+								strconv.Itoa(detallePreliquidacion[i].Persona), &detallePreliquidacionConceptos)
 							if errSalarioBasico != nil {
 								fmt.Println("errSalarioBasico: ", errSalarioBasico)
 							} else {
-								salarioBase := strconv.FormatInt(detalleLiquidacionConceptos[0].ValorCalculado, 10)
+								salarioBase := strconv.FormatInt(detallePreliquidacionConceptos[0].ValorCalculado, 10)
 								fila += formatoDato(salarioBase, 9) //Salario básico
 							}
 
@@ -915,11 +934,11 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 							errSoloLiquidado := getJson("http://"+beego.AppConfig.String("titanServicio")+
 								"/detalle_liquidacion?limit=0"+
 								"&query=Concepto.NombreConcepto:ibc_liquidado,Persona:"+
-								strconv.Itoa(detalleLiquidacion[i].Persona), &detalleLiquidacionConceptos)
+								strconv.Itoa(detallePreliquidacion[i].Persona), &detallePreliquidacionConceptos)
 							if errSoloLiquidado != nil {
 								fmt.Println("errSoloLiquidado: ", errSoloLiquidado)
 							} else {
-								ibcLiquidado = int(detalleLiquidacionConceptos[0].ValorCalculado)
+								ibcLiquidado = int(detallePreliquidacionConceptos[0].ValorCalculado)
 								fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC pensión
 								fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC salud
 								fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC ARL
@@ -931,7 +950,7 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 							errPagosSalud := getJson("http://"+beego.AppConfig.String("seguridadSocialService")+
 								"/pago"+
 								"?query=PeriodoPago.Id:"+strconv.Itoa(idDescSegSocial)+
-								",DetalleLiquidacion:"+strconv.Itoa(detalleLiquidacionConceptos[0].Id), &pagosSalud)
+								",DetallePreliquidacion:"+strconv.Itoa(detallePreliquidacionConceptos[0].Id), &pagosSalud)
 							if errPagosSalud != nil {
 								fmt.Println("errPagosSalud: ", errPagosSalud)
 							}
@@ -939,7 +958,7 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 							fmt.Println("http://" + beego.AppConfig.String("seguridadSocialService") +
 								"/pago" +
 								"?query=PeriodoPago.Id:" + strconv.Itoa(idDescSegSocial) +
-								",DetalleLiquidacion:" + strconv.Itoa(detalleLiquidacion[i].Id))
+								",DetallePreliquidacion:" + strconv.Itoa(detallePreliquidacion[i].Id))
 
 							//Cotización obligatoria a pensiones
 							/*
@@ -948,20 +967,20 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 										fila += formatoDato(completarSecuencia(int(pagoPension.Valor), 9), 9)
 										break
 									}
-								}*/
+								}
 
 							fila += formatoDato(completarSecuencia(0, 9), 9) //Aporte voluntario del afiliado al fondo de pensiones obligatorias
 
 							//Aporte voluntario del aportante al fondo de pensiones obligatoria
 							errAporteVoluntario := getJson("http://"+beego.AppConfig.String("titanServicio")+
 								"/detalle_liquidacion"+
-								",Persona:"+strconv.Itoa(detalleLiquidacion[i].Persona), &detalleLiquidacionConceptos)
+								",Persona:"+strconv.Itoa(detallePreliquidacion[i].Persona), &detallePreliquidacionConceptos)
 
 							if errAporteVoluntario != nil {
 								fmt.Println("errAporteVoluntario", errAporteVoluntario)
 								fila += formatoDato(completarSecuencia(0, 9), 9)
 							} else {
-								for _, liquidado := range detalleLiquidacionConceptos {
+								for _, liquidado := range detallePreliquidacionConceptos {
 									if liquidado.Concepto.NombreConcepto == "nombreRegla2176" {
 										fila += formatoDato(strconv.FormatInt(liquidado.ValorCalculado, 10), 9)
 									} else if liquidado.Concepto.NombreConcepto == "nombreRegla2178" {
@@ -987,7 +1006,7 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 										fila += formatoDato(completarSecuencia(int(pagoSalud.Valor), 9), 9)
 										break
 									}
-								}*/
+								}
 
 							fila += formatoDato(completarSecuencia(0, 9), 9) //Valor UPC Adicional
 							fila += formatoDato("", 15)                      //Nº de autorización de la incapacidad por enfermedad general
@@ -1006,7 +1025,7 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 										fila += formatoDato(completarSecuencia(int(pagoArl.Valor), 9), 9)
 										break
 									}
-								}*/
+								}
 
 							fila += formatoDato(completarSecuenciaString("4", 7), 7) //Tarifa de aportes CCF
 
@@ -1017,7 +1036,7 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 										fila += formatoDato(completarSecuencia(int(pagoCaja.Valor), 9), 9)
 										break
 									}
-								}*/
+								}
 
 							fila += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes SENA
 							fila += formatoDato(completarSecuencia(0, 9), 9) //Valor Aportes SENA
@@ -1030,7 +1049,7 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 									if pagoIcbf.TipoPago.Nombre == "ICBF" {
 										fila += formatoDato(completarSecuencia(int(pagoIcbf.Valor), 9), 9)
 									}
-								}*/
+								}
 
 							fila += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes ESAP
 							fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de aporte ESAP
@@ -1039,10 +1058,10 @@ func (c *PlanillasController) GenerarPlanillaPensionados() {
 
 							//Para los registros de las UPC
 							/*for _, upcAdicional := range upc {
-								if upcAdicional.PersonaAsociada == detalleLiquidacion[i].Persona {
+								if upcAdicional.PersonaAsociada == detallePreliquidacion[i].Persona {
 									fila += formatoDato(texto, longitud)
 								}
-							}*/
+							}
 
 							// Estos campos están vacios porque solo aplican a los registros que osn upc
 							fila += formatoDato(" ", 2)  //Tipo de documento del cotizante principal
@@ -1091,8 +1110,8 @@ func (c *PlanillasController) GenerarPlanillaN() {
 	idDescSegSocial, _ := strconv.Atoi(idStr)
 	var proveedores []models.InformacionProveedor
 	var upc []models.UpcAdicional
-	var detalleLiquidacion []models.DetalleLiquidacion
-	var detLiq []models.DetalleLiquidacion
+	var detallePreliquidacion []models.DetallePreliquidacion
+	var detLiq []models.DetallePreliquidacion
 	var conceptos []models.Concepto
 	var personaNatural []models.InformacionPersonaNatural
 	var conceptosSeguridadSocial []models.Concepto
@@ -1108,7 +1127,7 @@ func (c *PlanillasController) GenerarPlanillaN() {
 	}
 
 	errLiquidacion := getJson("http://"+beego.AppConfig.String("titanServicio")+
-		"/detalle_liquidacion?limit=-1", &detalleLiquidacion)
+		"/detalle_liquidacion?limit=-1", &detallePreliquidacion)
 	if errLiquidacion != nil {
 		errStrings = append(errStrings, errLiquidacion.Error())
 	}
@@ -1116,7 +1135,7 @@ func (c *PlanillasController) GenerarPlanillaN() {
 	errProveedores := getJson("http://"+beego.AppConfig.String("titanServicio")+
 		"/informacion_proveedor?limit=0", &proveedores)
 	/*errProveedores := getJson("http://"+beego.AppConfig.String("agoraServicio")+
-	"/informacion_proveedor?limit=0", &proveedores)*/
+	"/informacion_proveedor?limit=0", &proveedores)
 	if errProveedores != nil {
 		errStrings = append(errStrings, errProveedores.Error())
 	}
@@ -1136,9 +1155,9 @@ func (c *PlanillasController) GenerarPlanillaN() {
 	fmt.Println("errStrings: ", errStrings)
 	if errStrings == nil {
 		secuencia := 1
-		for i := 0; i < len(detalleLiquidacion); i++ {
+		for i := 0; i < len(detallePreliquidacion); i++ {
 			for j := 0; j < len(proveedores); j++ {
-				if detalleLiquidacion[i].Persona == proveedores[j].Id {
+				if detallePreliquidacion[i].Persona == proveedores[j].Id {
 					if strings.Contains(fila, strconv.Itoa(int(proveedores[j].NumDocumento))) {
 						break
 					} else {
@@ -1166,7 +1185,7 @@ func (c *PlanillasController) GenerarPlanillaN() {
 						/*errPersonaNatural := getJson("http://"+beego.AppConfig.String("agoraServicio")+
 						"/informacion_persona_natural"+
 						"?limit=1"+
-						"&query=Id:"+strconv.FormatFloat(proveedores[j].NumDocumento, 'E', -1, 64), &personaNatural)*/
+						"&query=Id:"+strconv.FormatFloat(proveedores[j].NumDocumento, 'E', -1, 64), &personaNatural)
 
 						if errPersonaNatural != nil {
 							fmt.Println("errPersonaNatural: ", errPersonaNatural)
@@ -1188,7 +1207,7 @@ func (c *PlanillasController) GenerarPlanillaN() {
 						fila += formatoDato(personaNatural[0].SegundoNombre, 30)   //Segundo nombre
 
 						// --AQUÍ VA LA FUNCIÓN DE LAS NOVEDADES!--  //
-						establecerNovedades(strconv.Itoa(detalleLiquidacion[i].Persona))
+						establecerNovedades(strconv.Itoa(detallePreliquidacion[i].Persona))
 
 						//Código de la administradora de fondo de pensiones a la cual pertenece el afiliado
 						fila += formatoDato("231001", 6)
@@ -1218,7 +1237,7 @@ func (c *PlanillasController) GenerarPlanillaN() {
 						errDiasLiquidados := getJson("http://"+beego.AppConfig.String("titanServicio")+
 							"/detalle_liquidacion?limit=0"+
 							"&query=Concepto.NombreConcepto:ibc_novedad,Persona:"+
-							strconv.Itoa(detalleLiquidacion[i].Persona), &detLiq)
+							strconv.Itoa(detallePreliquidacion[i].Persona), &detLiq)
 						if errDiasLiquidados != nil {
 							fmt.Println("errDiasLiquidados: ", errDiasLiquidados)
 						}
@@ -1240,11 +1259,11 @@ func (c *PlanillasController) GenerarPlanillaN() {
 							fila += formatoDato("30", 2) //Número de días cotizados a CCF
 						}
 
-						fmt.Println(detalleLiquidacion[i].Persona)
+						fmt.Println(detallePreliquidacion[i].Persona)
 						errSalarioBasico := getJson("http://"+beego.AppConfig.String("titanServicio")+
 							"/detalle_liquidacion?limit=0"+
 							"&query=Concepto.NombreConcepto:salarioBase,Persona:"+
-							strconv.Itoa(detalleLiquidacion[i].Persona), &detLiq)
+							strconv.Itoa(detallePreliquidacion[i].Persona), &detLiq)
 						if errSalarioBasico != nil {
 							fmt.Println("errSalarioBasico: ", errSalarioBasico)
 						} else {
@@ -1257,7 +1276,7 @@ func (c *PlanillasController) GenerarPlanillaN() {
 						errSoloLiquidado := getJson("http://"+beego.AppConfig.String("titanServicio")+
 							"/detalle_liquidacion?limit=0"+
 							"&query=Concepto.NombreConcepto:ibc_liquidado,Persona:"+
-							strconv.Itoa(detalleLiquidacion[i].Persona), &detLiq)
+							strconv.Itoa(detallePreliquidacion[i].Persona), &detLiq)
 						if errSoloLiquidado != nil {
 							fmt.Println("errSoloLiquidado: ", errSoloLiquidado)
 						} else {
@@ -1293,7 +1312,7 @@ func (c *PlanillasController) GenerarPlanillaN() {
 						//Aporte voluntario del aportante al fondo de pensiones obligatoria
 						errAporteVoluntario := getJson("http://"+beego.AppConfig.String("titanServicio")+
 							"/detalle_liquidacion"+
-							"?query=Persona:"+strconv.Itoa(detalleLiquidacion[i].Persona), &detLiq)
+							"?query=Persona:"+strconv.Itoa(detallePreliquidacion[i].Persona), &detLiq)
 
 						if errAporteVoluntario != nil {
 							fmt.Println("errAporteVoluntario", errAporteVoluntario)
@@ -1346,10 +1365,10 @@ func (c *PlanillasController) GenerarPlanillaN() {
 
 						//Para los registros de las UPC
 						/*for _, upcAdicional := range upc {
-							if upcAdicional.PersonaAsociada == detalleLiquidacion[i].Persona {
+							if upcAdicional.PersonaAsociada == detallePreliquidacion[i].Persona {
 								fila += formatoDato(texto, longitud)
 							}
-						}*/
+						}
 
 						// Estos campos están vacios porque solo aplican a los registros que son upc
 						fila += formatoDato(" ", 2)  // Tipo de documento del cotizante principal
@@ -1390,6 +1409,7 @@ func (c *PlanillasController) GenerarPlanillaN() {
 	}
 	c.ServeJSON()
 }
+*/
 
 func completarSecuencia(num, cantSecuencia int) (secuencia string) {
 	tamanioNum := len(strconv.Itoa(num))

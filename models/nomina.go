@@ -10,13 +10,10 @@ import (
 )
 
 type Nomina struct {
-	Id          int              `orm:"auto;column(id);pk"`
-	Vinculacion *TipoVinculacion `orm:"column(vinculacion);rel(fk)"`
-	Nombre      string           `orm:"column(nombre)"`
-	Descripcion string           `orm:"column(descripcion)"`
-	Estado      string           `orm:"column(estado)"`
-	Periodo     string           `orm:"column(periodo);null"`
-	TipoNomina  *TipoNomina      `orm:"column(tipo_nomina);rel(fk)"`
+	Id 							int               `orm:"auto;column(id);pk"`
+	Descripcion     string           `orm:"column(descripcion)"`
+	TipoNomina      *TipoNomina      `orm:"column(tipo_nomina);rel(fk)"`
+	Activo          bool             `orm:"column(activo)"`
 }
 
 func (t *Nomina) TableName() string {
@@ -51,7 +48,7 @@ func GetNominaById(id int) (v *Nomina, err error) {
 func GetAllNomina(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(Nomina))
+	qs := o.QueryTable(new(Nomina)).RelatedSel(5)
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
@@ -102,7 +99,7 @@ func GetAllNomina(query map[string]string, fields []string, sortby []string, ord
 	}
 
 	var l []Nomina
-	qs = qs.OrderBy(sortFields...).RelatedSel(5)
+	qs = qs.OrderBy(sortFields...)
 	if _, err = qs.Limit(limit, offset).All(&l, fields...); err == nil {
 		if len(fields) == 0 {
 			for _, v := range l {

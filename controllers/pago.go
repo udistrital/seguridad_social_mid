@@ -38,7 +38,7 @@ func (c *PagoController) ConceptosIbc() {
 	err := getJson("http://"+beego.AppConfig.String("rulerServicio")+
 		"/predicado?limit=-1&query=Nombre__startswith:conceptos_ibc,Dominio.Id:4", &predicados)
 	errConceptoTitan := getJson("http://"+beego.AppConfig.String("titanServicio")+
-		"/concepto?limit=-1", &conceptos)
+		"/concepto_nomina?limit=-1", &conceptos)
 	if err != nil && errConceptoTitan != nil {
 		c.Data["json"] = err.Error() + errConceptoTitan.Error()
 	} else {
@@ -66,21 +66,21 @@ func (c *PagoController) NovedadesPorPersona() {
 	_, err := strconv.Atoi(personaStr)
 	var alertas []string
 	var errores string
-	var concepto models.ConceptoPorPersona
-	var detalleLiquidacion []models.DetalleLiquidacion
-	var conceptoPorPersona []models.ConceptoPorPersona
+	var concepto models.ConceptoNominaPorPersona
+	var detallePreliquidacion []models.DetallePreliquidacion
+	var conceptoPorPersona []models.ConceptoNominaPorPersona
 	var novedadesPersonaSs []models.NovedadesPersonaSS
 
 	if err != nil {
 		c.Data["json"] = err.Error()
 	} else {
 		err := getJson("http://"+beego.AppConfig.String("titanServicio")+
-			"/detalle_liquidacion"+
+			"/detalle_preliquidacion"+
 			"?limit=0"+
 			"&query=Persona:"+personaStr+",Concepto.Naturaleza:seguridad_social"+
-			"&fields=Concepto,ValorCalculado", &detalleLiquidacion)
+			"&fields=Concepto,ValorCalculado", &detallePreliquidacion)
 		errConcepto := getJson("http://"+beego.AppConfig.String("titanServicio")+
-			"concepto_por_persona"+
+			"concepto_nomina_por_persona"+
 			"?limit=0"+
 			"&query=Persona:"+personaStr+",Concepto.Naturaleza:seguridad_social,EstadoNovedad:Activo"+
 			"&fields=Concepto,Persona,FechaDesde,FechaHasta", &conceptoPorPersona)
@@ -94,15 +94,15 @@ func (c *PagoController) NovedadesPorPersona() {
 			c.Data["json"] = alertas
 		} else {
 			persona, _ := strconv.ParseInt(personaStr, 10, 64)
-			for index := 0; index < len(detalleLiquidacion); index++ {
-				if detalleLiquidacion[index].Concepto == conceptoPorPersona[index].Concepto {
+			for index := 0; index < len(detallePreliquidacion); index++ {
+				if detallePreliquidacion[index].Concepto == conceptoPorPersona[index].Concepto {
 					concepto = conceptoPorPersona[index]
 					fmt.Println(concepto)
 				}
 				novedadesPersonaSs = append(novedadesPersonaSs, models.NovedadesPersonaSS{
-					Persona:         persona,
-					Liquidacion:     detalleLiquidacion[index],
-					ConceptoPersona: concepto})
+					Persona:                  persona,
+					Preliquidacion:           detallePreliquidacion[index],
+					ConceptoNominaPorPersona: concepto})
 			}
 
 			c.Data["json"] = novedadesPersonaSs
@@ -118,7 +118,7 @@ func (c *PagoController) CalcularSegSocial() {
 	var predicado []models.Predicado
 	var buffer bytes.Buffer //objeto para concatenar strings a la variable errores
 
-	var detalleLiquidacion []models.DetalleLiquidacion
+	var detallePreliquidacion []models.DetallePreliquidacion
 	var pagosSeguridadSocial []models.PagosSeguridadSocial
 
 	if err != nil {
@@ -126,8 +126,8 @@ func (c *PagoController) CalcularSegSocial() {
 		fmt.Println("Error en detalle liquidacion: ", err)
 	} else {
 
-		err := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_liquidacion"+
-			"?limit=0&query=Liquidacion.Id:"+idStr+",Concepto.NombreConcepto:ibc_liquidado", &detalleLiquidacion)
+		err := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
+			"?limit=0&query=Preliquidacion.Id:"+idStr+",Concepto.NombreConcepto:ibc_liquidado", &detallePreliquidacion)
 
 		fmt.Println(buffer.String())
 
@@ -137,10 +137,10 @@ func (c *PagoController) CalcularSegSocial() {
 			c.Data["json"] = alertas
 		} else {
 
-			for index := 0; index < len(detalleLiquidacion); index++ {
-				predicado = append(predicado, models.Predicado{Nombre: "ibc(" + strconv.Itoa(detalleLiquidacion[index].Persona) + "," + strconv.Itoa(int(detalleLiquidacion[index].ValorCalculado)) + ", salud)."})
-				predicado = append(predicado, models.Predicado{Nombre: "ibc(" + strconv.Itoa(detalleLiquidacion[index].Persona) + "," + strconv.Itoa(int(detalleLiquidacion[index].ValorCalculado)) + ", riesgos)."})
-				predicado = append(predicado, models.Predicado{Nombre: "ibc(" + strconv.Itoa(detalleLiquidacion[index].Persona) + "," + strconv.Itoa(int(detalleLiquidacion[index].ValorCalculado)) + ", apf)."})
+			for index := 0; index < len(detallePreliquidacion); index++ {
+				predicado = append(predicado, models.Predicado{Nombre: "ibc(" + detallePreliquidacion[index].NumeroContrato + "," + strconv.Itoa(int(detallePreliquidacion[index].ValorCalculado)) + ", salud)."})
+				predicado = append(predicado, models.Predicado{Nombre: "ibc(" + detallePreliquidacion[index].NumeroContrato + "," + strconv.Itoa(int(detallePreliquidacion[index].ValorCalculado)) + ", riesgos)."})
+				predicado = append(predicado, models.Predicado{Nombre: "ibc(" + detallePreliquidacion[index].NumeroContrato + "," + strconv.Itoa(int(detallePreliquidacion[index].ValorCalculado)) + ", apf)."})
 			}
 
 			reglas := CargarReglasBase() + FormatoReglas(predicado) + CargarNovedades(idStr) +
@@ -157,15 +157,15 @@ func (c *PagoController) CalcularSegSocial() {
 
 			for index := 0; index < len(ids); index++ {
 				aux := models.PagosSeguridadSocial{
-					Persona:              ids[index],
-					SaludUd:              saludUd[index],
-					SaludTotal:           saludTotal[index],
-					PensionUd:            pensionUd[index],
-					PensionTotal:         pensionTotal[index],
-					Caja:                 caja[index],
-					Icbf:                 icbf[index],
-					IdDetalleLiquidacion: detalleLiquidacion[index].Id,
-					Arl:                  arl[index]}
+					Persona:      ids[index],
+					SaludUd:      saludUd[index],
+					SaludTotal:   saludTotal[index],
+					PensionUd:    pensionUd[index],
+					PensionTotal: pensionTotal[index],
+					Caja:         caja[index],
+					Icbf:         icbf[index],
+					IdDetallePreliquidacion: detallePreliquidacion[index].Id,
+					Arl: arl[index]}
 
 				pagosSeguridadSocial = append(pagosSeguridadSocial, aux)
 			}
@@ -181,17 +181,17 @@ func (c *PagoController) CalcularSegSocial() {
 // @Description Crea todos los hechos con la información del valor de salud
 // @Param	idLiquidacion		id de la liquidacion correspondiente
 func ValorSaludEmpleado(idLiquidacion string) (valorSaludEmpleado string) {
-	var detalleLiquSalud []models.DetalleLiquidacion
+	var detalleLiquSalud []models.DetallePreliquidacion
 	var predicado []models.Predicado
 
-	errSalud := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_liquidacion"+
+	errSalud := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
 		"?limit=0&query=Liquidacion.Id:"+idLiquidacion+",Concepto.NombreConcepto:salud", &detalleLiquSalud)
 
 	if errSalud != nil {
 		fmt.Println("Error en ValorSaludEmpleado:\n", errSalud)
 	} else {
 		for index := 0; index < len(detalleLiquSalud); index++ {
-			predicado = append(predicado, models.Predicado{Nombre: "v_salud_func(" + strconv.Itoa(detalleLiquSalud[index].Persona) + ", " + strconv.Itoa(int(detalleLiquSalud[index].ValorCalculado)) + ")."})
+			predicado = append(predicado, models.Predicado{Nombre: "v_salud_func(" + detalleLiquSalud[index].NumeroContrato + ", " + strconv.Itoa(int(detalleLiquSalud[index].ValorCalculado)) + ")."})
 			valorSaludEmpleado += predicado[index].Nombre + "\n"
 		}
 	}
@@ -203,17 +203,17 @@ func ValorSaludEmpleado(idLiquidacion string) (valorSaludEmpleado string) {
 // @Description Crea todos los hechos con la información del valor de la pensión
 // @Param	idLiquidacion		id de la liquidacion correspondiente
 func ValorPensionEmpleado(idLiquidacion string) (valorPensionEmpleado string) {
-	var detalleLiquPension []models.DetalleLiquidacion
+	var detalleLiquPension []models.DetallePreliquidacion
 	var predicado []models.Predicado
 
-	errPension := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_liquidacion"+
+	errPension := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
 		"?limit=0&query=Liquidacion.Id:"+idLiquidacion+",Concepto.NombreConcepto:pension", &detalleLiquPension)
 
 	if errPension != nil {
 		fmt.Println("Error en ValorPensionEmpleado:\n", errPension)
 	} else {
 		for index := 0; index < len(detalleLiquPension); index++ {
-			predicado = append(predicado, models.Predicado{Nombre: "v_pen_func(" + strconv.Itoa(detalleLiquPension[index].Persona) + ", " + strconv.Itoa(int(detalleLiquPension[index].ValorCalculado)) + ")."})
+			predicado = append(predicado, models.Predicado{Nombre: "v_pen_func(" + detalleLiquPension[index].NumeroContrato + ", " + strconv.Itoa(int(detalleLiquPension[index].ValorCalculado)) + ")."})
 			valorPensionEmpleado += predicado[index].Nombre + "\n"
 		}
 	}
@@ -222,19 +222,20 @@ func ValorPensionEmpleado(idLiquidacion string) (valorPensionEmpleado string) {
 
 // CargarNovedades ...
 // @Title CargarNovedades
-// @Description obtiene todas los conceptos con naturaleza seguridad_social desde detalle_liquidacion por el id
+// @Description obtiene todas los conceptos con naturaleza seguridad_social desde detalle_preliquidacion por el id
 // @Param	id		path 	string	true		"The key for staticblock"
 func CargarNovedades(id string) (novedades string) {
-	var conceptos []models.DetalleLiquidacion
+	var conceptosPreliquidacion []models.DetallePreliquidacion
 	var predicado []models.Predicado
 
-	errLincNo := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_liquidacion?limit=0&query=Liquidacion.Id:"+id+",Concepto.naturaleza:seguridad_social&fields=Concepto,Persona", &conceptos)
+	errLincNo := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
+		"?limit=0&query=Liquidacion.Id:"+id+",Concepto.naturaleza:seguridad_social&fields=Concepto,Persona", &conceptosPreliquidacion)
 
 	if errLincNo != nil {
 		fmt.Println("error en CargarNovedades()", errLincNo)
 	} else {
-		for index := 0; index < len(conceptos); index++ {
-			predicado = append(predicado, models.Predicado{Nombre: "novedad_persona(" + conceptos[index].Concepto.NombreConcepto + ", " + strconv.Itoa(int(conceptos[index].Persona)) + ")."})
+		for index := 0; index < len(conceptosPreliquidacion); index++ {
+			predicado = append(predicado, models.Predicado{Nombre: "novedad_persona(" + conceptosPreliquidacion[index].Concepto.NombreConcepto + ", " + conceptosPreliquidacion[index].NumeroContrato + ")."})
 			novedades += predicado[index].Nombre + "\n"
 		}
 	}

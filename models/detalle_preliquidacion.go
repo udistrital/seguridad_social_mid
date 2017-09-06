@@ -9,48 +9,51 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
-type TipoNomina struct {
-	Id 								int     `orm:"auto;column(id);pk"`
-	Nombre            string  `orm:"column(nombre)"`
-	Descripcion       string  `orm:"column(descripcion);null"`
-	CodigoAbreviacion string  `orm:"column(codigo_abreviacion);null"`
-	Activo            bool    `orm:"column(activo)"`
-	NumeroOrden       float64 `orm:"column(numero_orden);null"`
+type DetallePreliquidacion struct {
+	Id 								int                    `orm:"auto;column(id);pk"`
+	ValorCalculado     float64               `orm:"column(valor_calculado)"`
+	NumeroContrato     string                `orm:"column(numero_contrato);null"`
+	VigenciaContrato   int                   `orm:"column(vigencia_contrato);null"`
+	DiasLiquidados     float64               `orm:"column(dias_liquidados);null"`
+	TipoPreliquidacion *TipoPreliquidacion   `orm:"column(tipo_preliquidacion);rel(fk)"`
+	Preliquidacion     *Preliquidacion       `orm:"column(preliquidacion);rel(fk)"`
+	Concepto           *ConceptoNomina       `orm:"column(concepto);rel(fk)"`
 }
 
-func (t *TipoNomina) TableName() string {
-	return "tipo_nomina"
+func (t *DetallePreliquidacion) TableName() string {
+	return "detalle_preliquidacion"
 }
 
 func init() {
-	orm.RegisterModel(new(TipoNomina))
+	orm.RegisterModel(new(DetallePreliquidacion))
 }
 
-// AddTipoNomina insert a new TipoNomina into database and returns
+// AddDetallePreliquidacion insert a new DetallePreliquidacion into database and returns
 // last inserted Id on success.
-func AddTipoNomina(m *TipoNomina) (id int64, err error) {
+func AddDetallePreliquidacion(m *DetallePreliquidacion) (id int64, err error) {
 	o := orm.NewOrm()
 	id, err = o.Insert(m)
+	fmt.Println(err)
 	return
 }
 
-// GetTipoNominaById retrieves TipoNomina by Id. Returns error if
+// GetDetallePreliquidacionById retrieves DetallePreliquidacion by Id. Returns error if
 // Id doesn't exist
-func GetTipoNominaById(id int) (v *TipoNomina, err error) {
+func GetDetallePreliquidacionById(id int) (v *DetallePreliquidacion, err error) {
 	o := orm.NewOrm()
-	v = &TipoNomina{Id: id}
+	v = &DetallePreliquidacion{Id: id}
 	if err = o.Read(v); err == nil {
 		return v, nil
 	}
 	return nil, err
 }
 
-// GetAllTipoNomina retrieves all TipoNomina matches certain condition. Returns empty list if
+// GetAllDetallePreliquidacion retrieves all DetallePreliquidacion matches certain condition. Returns empty list if
 // no records exist
-func GetAllTipoNomina(query map[string]string, fields []string, sortby []string, order []string,
+func GetAllDetallePreliquidacion(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(TipoNomina))
+	qs := o.QueryTable(new(DetallePreliquidacion)).RelatedSel(5)
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
@@ -100,7 +103,7 @@ func GetAllTipoNomina(query map[string]string, fields []string, sortby []string,
 		}
 	}
 
-	var l []TipoNomina
+	var l []DetallePreliquidacion
 	qs = qs.OrderBy(sortFields...)
 	if _, err = qs.Limit(limit, offset).All(&l, fields...); err == nil {
 		if len(fields) == 0 {
@@ -123,11 +126,11 @@ func GetAllTipoNomina(query map[string]string, fields []string, sortby []string,
 	return nil, err
 }
 
-// UpdateTipoNomina updates TipoNomina by Id and returns error if
+// UpdateDetallePreliquidacion updates DetallePreliquidacion by Id and returns error if
 // the record to be updated doesn't exist
-func UpdateTipoNominaById(m *TipoNomina) (err error) {
+func UpdateDetallePreliquidacionById(m *DetallePreliquidacion) (err error) {
 	o := orm.NewOrm()
-	v := TipoNomina{Id: m.Id}
+	v := DetallePreliquidacion{Id: m.Id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
@@ -138,17 +141,14 @@ func UpdateTipoNominaById(m *TipoNomina) (err error) {
 	return
 }
 
-// DeleteTipoNomina deletes TipoNomina by Id and returns error if
+// DeleteDetallePreliquidacion deletes DetallePreliquidacion by Id and returns error if
 // the record to be deleted doesn't exist
-func DeleteTipoNomina(id int) (err error) {
+func DeleteDetallePreliquidacion(id int) (err error) {
 	o := orm.NewOrm()
-	v := TipoNomina{Id: id}
-	// ascertain id exists in the database
-	if err = o.Read(&v); err == nil {
-		var num int64
-		if num, err = o.Delete(&TipoNomina{Id: id}); err == nil {
-			fmt.Println("Number of records deleted in database:", num)
-		}
+	res, err := o.Raw("DELETE FROM detalle_preliquidacion WHERE preliquidacion = ?", id).Exec()
+	if err == nil {
+    num, _ := res.RowsAffected()
+    fmt.Println("row affected nums: ", num)
 	}
 	return
 }

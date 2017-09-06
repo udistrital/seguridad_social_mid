@@ -9,48 +9,46 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
-type TipoNomina struct {
-	Id 								int     `orm:"auto;column(id);pk"`
-	Nombre            string  `orm:"column(nombre)"`
-	Descripcion       string  `orm:"column(descripcion);null"`
-	CodigoAbreviacion string  `orm:"column(codigo_abreviacion);null"`
-	Activo            bool    `orm:"column(activo)"`
-	NumeroOrden       float64 `orm:"column(numero_orden);null"`
+type ResolucionVinculacionDocente struct {
+	Id             int    `orm:"column(id_resolucion);pk;auto"`
+	IdFacultad     int    `orm:"column(id_facultad)"`
+	Dedicacion     string `orm:"column(dedicacion)"`
+	NivelAcademico string `orm:"column(nivel_academico)"`
 }
 
-func (t *TipoNomina) TableName() string {
-	return "tipo_nomina"
+func (t *ResolucionVinculacionDocente) TableName() string {
+	return "resolucion_vinculacion_docente"
 }
 
 func init() {
-	orm.RegisterModel(new(TipoNomina))
+	orm.RegisterModel(new(ResolucionVinculacionDocente))
 }
 
-// AddTipoNomina insert a new TipoNomina into database and returns
+// AddResolucionVinculacionDocente insert a new ResolucionVinculacionDocente into database and returns
 // last inserted Id on success.
-func AddTipoNomina(m *TipoNomina) (id int64, err error) {
+func AddResolucionVinculacionDocente(m *ResolucionVinculacionDocente) (id int64, err error) {
 	o := orm.NewOrm()
 	id, err = o.Insert(m)
 	return
 }
 
-// GetTipoNominaById retrieves TipoNomina by Id. Returns error if
+// GetResolucionVinculacionDocenteById retrieves ResolucionVinculacionDocente by Id. Returns error if
 // Id doesn't exist
-func GetTipoNominaById(id int) (v *TipoNomina, err error) {
+func GetResolucionVinculacionDocenteById(id int) (v *ResolucionVinculacionDocente, err error) {
 	o := orm.NewOrm()
-	v = &TipoNomina{Id: id}
+	v = &ResolucionVinculacionDocente{Id: id}
 	if err = o.Read(v); err == nil {
 		return v, nil
 	}
 	return nil, err
 }
 
-// GetAllTipoNomina retrieves all TipoNomina matches certain condition. Returns empty list if
+// GetAllResolucionVinculacionDocente retrieves all ResolucionVinculacionDocente matches certain condition. Returns empty list if
 // no records exist
-func GetAllTipoNomina(query map[string]string, fields []string, sortby []string, order []string,
+func GetAllResolucionVinculacionDocente(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(TipoNomina))
+	qs := o.QueryTable(new(ResolucionVinculacionDocente)).RelatedSel(5)
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
@@ -100,7 +98,7 @@ func GetAllTipoNomina(query map[string]string, fields []string, sortby []string,
 		}
 	}
 
-	var l []TipoNomina
+	var l []ResolucionVinculacionDocente
 	qs = qs.OrderBy(sortFields...)
 	if _, err = qs.Limit(limit, offset).All(&l, fields...); err == nil {
 		if len(fields) == 0 {
@@ -123,11 +121,11 @@ func GetAllTipoNomina(query map[string]string, fields []string, sortby []string,
 	return nil, err
 }
 
-// UpdateTipoNomina updates TipoNomina by Id and returns error if
+// UpdateResolucionVinculacionDocente updates ResolucionVinculacionDocente by Id and returns error if
 // the record to be updated doesn't exist
-func UpdateTipoNominaById(m *TipoNomina) (err error) {
+func UpdateResolucionVinculacionDocenteById(m *ResolucionVinculacionDocente) (err error) {
 	o := orm.NewOrm()
-	v := TipoNomina{Id: m.Id}
+	v := ResolucionVinculacionDocente{Id: m.Id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
@@ -138,15 +136,15 @@ func UpdateTipoNominaById(m *TipoNomina) (err error) {
 	return
 }
 
-// DeleteTipoNomina deletes TipoNomina by Id and returns error if
+// DeleteResolucionVinculacionDocente deletes ResolucionVinculacionDocente by Id and returns error if
 // the record to be deleted doesn't exist
-func DeleteTipoNomina(id int) (err error) {
+func DeleteResolucionVinculacionDocente(id int) (err error) {
 	o := orm.NewOrm()
-	v := TipoNomina{Id: id}
+	v := ResolucionVinculacionDocente{Id: id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
-		if num, err = o.Delete(&TipoNomina{Id: id}); err == nil {
+		if num, err = o.Delete(&ResolucionVinculacionDocente{Id: id}); err == nil {
 			fmt.Println("Number of records deleted in database:", num)
 		}
 	}

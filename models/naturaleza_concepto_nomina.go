@@ -9,8 +9,8 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
-type TipoNomina struct {
-	Id 								int     `orm:"auto;column(id);pk"`
+type NaturalezaConceptoNomina struct {
+	Id 								int    `orm:"auto;column(id);pk"`
 	Nombre            string  `orm:"column(nombre)"`
 	Descripcion       string  `orm:"column(descripcion);null"`
 	CodigoAbreviacion string  `orm:"column(codigo_abreviacion);null"`
@@ -18,39 +18,39 @@ type TipoNomina struct {
 	NumeroOrden       float64 `orm:"column(numero_orden);null"`
 }
 
-func (t *TipoNomina) TableName() string {
-	return "tipo_nomina"
+func (t *NaturalezaConceptoNomina) TableName() string {
+	return "naturaleza_concepto_nomina"
 }
 
 func init() {
-	orm.RegisterModel(new(TipoNomina))
+	orm.RegisterModel(new(NaturalezaConceptoNomina))
 }
 
-// AddTipoNomina insert a new TipoNomina into database and returns
+// AddNaturalezaConceptoNomina insert a new NaturalezaConceptoNomina into database and returns
 // last inserted Id on success.
-func AddTipoNomina(m *TipoNomina) (id int64, err error) {
+func AddNaturalezaConceptoNomina(m *NaturalezaConceptoNomina) (id int64, err error) {
 	o := orm.NewOrm()
 	id, err = o.Insert(m)
 	return
 }
 
-// GetTipoNominaById retrieves TipoNomina by Id. Returns error if
+// GetNaturalezaConceptoNominaById retrieves NaturalezaConceptoNomina by Id. Returns error if
 // Id doesn't exist
-func GetTipoNominaById(id int) (v *TipoNomina, err error) {
+func GetNaturalezaConceptoNominaById(id int) (v *NaturalezaConceptoNomina, err error) {
 	o := orm.NewOrm()
-	v = &TipoNomina{Id: id}
+	v = &NaturalezaConceptoNomina{Id: id}
 	if err = o.Read(v); err == nil {
 		return v, nil
 	}
 	return nil, err
 }
 
-// GetAllTipoNomina retrieves all TipoNomina matches certain condition. Returns empty list if
+// GetAllNaturalezaConceptoNomina retrieves all NaturalezaConceptoNomina matches certain condition. Returns empty list if
 // no records exist
-func GetAllTipoNomina(query map[string]string, fields []string, sortby []string, order []string,
+func GetAllNaturalezaConceptoNomina(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(TipoNomina))
+	qs := o.QueryTable(new(NaturalezaConceptoNomina))
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
@@ -100,7 +100,7 @@ func GetAllTipoNomina(query map[string]string, fields []string, sortby []string,
 		}
 	}
 
-	var l []TipoNomina
+	var l []NaturalezaConceptoNomina
 	qs = qs.OrderBy(sortFields...)
 	if _, err = qs.Limit(limit, offset).All(&l, fields...); err == nil {
 		if len(fields) == 0 {
@@ -123,11 +123,11 @@ func GetAllTipoNomina(query map[string]string, fields []string, sortby []string,
 	return nil, err
 }
 
-// UpdateTipoNomina updates TipoNomina by Id and returns error if
+// UpdateNaturalezaConceptoNomina updates NaturalezaConceptoNomina by Id and returns error if
 // the record to be updated doesn't exist
-func UpdateTipoNominaById(m *TipoNomina) (err error) {
+func UpdateNaturalezaConceptoNominaById(m *NaturalezaConceptoNomina) (err error) {
 	o := orm.NewOrm()
-	v := TipoNomina{Id: m.Id}
+	v := NaturalezaConceptoNomina{Id: m.Id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
@@ -138,15 +138,15 @@ func UpdateTipoNominaById(m *TipoNomina) (err error) {
 	return
 }
 
-// DeleteTipoNomina deletes TipoNomina by Id and returns error if
+// DeleteNaturalezaConceptoNomina deletes NaturalezaConceptoNomina by Id and returns error if
 // the record to be deleted doesn't exist
-func DeleteTipoNomina(id int) (err error) {
+func DeleteNaturalezaConceptoNomina(id int) (err error) {
 	o := orm.NewOrm()
-	v := TipoNomina{Id: id}
+	v := NaturalezaConceptoNomina{Id: id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
-		if num, err = o.Delete(&TipoNomina{Id: id}); err == nil {
+		if num, err = o.Delete(&NaturalezaConceptoNomina{Id: id}); err == nil {
 			fmt.Println("Number of records deleted in database:", num)
 		}
 	}
