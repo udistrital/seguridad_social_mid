@@ -146,7 +146,10 @@ func (c *PagoController) CalcularSegSocial() {
 			reglas := CargarReglasBase() + FormatoReglas(predicado) + CargarNovedades(idStr) +
 				ValorSaludEmpleado(idStr) + ValorPensionEmpleado(idStr)
 
-			ids := golog.GetInt64(reglas, "v_salud_ud(I,Y).", "I")
+			fmt.Println("http://" + beego.AppConfig.String("titanServicio") + "/detalle_preliquidacion" +
+				"?limit=0&query=Preliquidacion.Id:" + idStr + ",Concepto.NombreConcepto:ibc_liquidado")
+
+			numContrato := golog.GetString(reglas, "v_salud_ud(I,Y).", "I")
 			saludUd := golog.GetFloat(reglas, "v_salud_ud(I,Y).", "Y")
 			saludTotal := golog.GetInt64(reglas, "v_total_salud(X,T).", "T")
 			pensionUd := golog.GetFloat(reglas, "v_pen_ud(I,Y).", "Y")
@@ -155,15 +158,15 @@ func (c *PagoController) CalcularSegSocial() {
 			caja := golog.GetInt64(reglas, "v_caja(I,Y).", "Y")
 			icbf := golog.GetInt64(reglas, "v_icbf(I,Y).", "Y")
 
-			for index := 0; index < len(ids); index++ {
+			for index := 0; index < len(numContrato); index++ {
 				aux := models.PagosSeguridadSocial{
-					Persona:      ids[index],
-					SaludUd:      saludUd[index],
-					SaludTotal:   saludTotal[index],
-					PensionUd:    pensionUd[index],
-					PensionTotal: pensionTotal[index],
-					Caja:         caja[index],
-					Icbf:         icbf[index],
+					NumeroContrato: numContrato[index],
+					SaludUd:        saludUd[index],
+					SaludTotal:     saludTotal[index],
+					PensionUd:      pensionUd[index],
+					PensionTotal:   pensionTotal[index],
+					Caja:           caja[index],
+					Icbf:           icbf[index],
 					IdDetallePreliquidacion: detallePreliquidacion[index].Id,
 					Arl: arl[index]}
 
@@ -185,7 +188,7 @@ func ValorSaludEmpleado(idLiquidacion string) (valorSaludEmpleado string) {
 	var predicado []models.Predicado
 
 	errSalud := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
-		"?limit=0&query=Liquidacion.Id:"+idLiquidacion+",Concepto.NombreConcepto:salud", &detalleLiquSalud)
+		"?limit=0&query=Preliquidacion:"+idLiquidacion+",Concepto.NombreConcepto:salud", &detalleLiquSalud)
 
 	if errSalud != nil {
 		fmt.Println("Error en ValorSaludEmpleado:\n", errSalud)
@@ -207,7 +210,7 @@ func ValorPensionEmpleado(idLiquidacion string) (valorPensionEmpleado string) {
 	var predicado []models.Predicado
 
 	errPension := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
-		"?limit=0&query=Liquidacion.Id:"+idLiquidacion+",Concepto.NombreConcepto:pension", &detalleLiquPension)
+		"?limit=0&query=Preliquidacion:"+idLiquidacion+",Concepto.NombreConcepto:pension", &detalleLiquPension)
 
 	if errPension != nil {
 		fmt.Println("Error en ValorPensionEmpleado:\n", errPension)
@@ -229,7 +232,7 @@ func CargarNovedades(id string) (novedades string) {
 	var predicado []models.Predicado
 
 	errLincNo := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
-		"?limit=0&query=Liquidacion.Id:"+id+",Concepto.naturaleza:seguridad_social&fields=Concepto,Persona", &conceptosPreliquidacion)
+		"?limit=0&query=Preliquidacion:"+id+",Concepto.NaturalezaConcepto.Nombre:seguridad_social&fields=Concepto,NumeroContrato", &conceptosPreliquidacion)
 
 	if errLincNo != nil {
 		fmt.Println("error en CargarNovedades()", errLincNo)

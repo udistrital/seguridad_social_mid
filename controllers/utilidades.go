@@ -106,7 +106,7 @@ func CargarReglasBase() (reglas string) {
 			concepto(descuento, porcentaje,	icbf, 5, 0.03, 2017).	%%ICBF
 
 			%%		NOVEDADES
-			%%(descripcion, valor, persona)
+			%%(descripcion, persona)
 			novedad(exterior_familia, 0).
 
 			%%salario minimo legal mensual vigente

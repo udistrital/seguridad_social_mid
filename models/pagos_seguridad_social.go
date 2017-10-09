@@ -1,7 +1,7 @@
 package models
 
 type PagosSeguridadSocial struct {
-	Persona                 int64
+	NumeroContrato          string
 	SaludUd                 float64
 	SaludTotal              int64
 	PensionUd               float64
