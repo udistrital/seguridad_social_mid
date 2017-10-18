@@ -125,13 +125,13 @@ func CargarReglasBase() (reglas string) {
 			v_arl(I,Y) :- concepto(Z,T,arl,X,V,2017), ibc(I,W,riesgos), Y is (V * W) approach 100.
 
 			%%		FONDO DE SOLIDARIDAD
-			v_fondo1(X,S,D,Y) :- ibc(X,W,apf,H), smlmv(M,2017),
+			v_fondo1(X,S,D,Y) :- ibc(X,W,apf), smlmv(M,2017),
 			(S is 4*M, W@>= S, D is 16*M, W@< D -> Y is W * 0.01;
 				S is 16*M, W@>= S, D is 17*M, W@< D -> Y is W * 0.012;
 				S is 17*M, W@>= S, D is 18*M, W@< D -> Y is W * 0.014;
 				S is 18*M, W@>= S, D is 19*M, W@< D -> Y is W * 0.016;
 				S is 19*M, W@>= S, D is 20*M, W@=< D -> Y is W * 0.018;
-				S is 20*M, W@> S -> Y is W * 0.02), Y approach 100.	%calculo de fondo de solidaridad 1
+				S is 20*M, W@> S -> Y is W * 0.02), Y is Y approach 100.	%calculo de fondo de solidaridad 1
 
 				%% 		PAGO UPC
 				v_upc(I,Y,Z) :- ibc(I,W,salud,D), upc(Z,V,I), Y is W - V.

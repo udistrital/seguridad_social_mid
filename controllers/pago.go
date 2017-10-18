@@ -146,6 +146,8 @@ func (c *PagoController) CalcularSegSocial() {
 			reglas := CargarReglasBase() + FormatoReglas(predicado) + CargarNovedades(idStr) +
 				ValorSaludEmpleado(idStr) + ValorPensionEmpleado(idStr)
 
+			fmt.Println(reglas)
+
 			fmt.Println("http://" + beego.AppConfig.String("titanServicio") + "/detalle_preliquidacion" +
 				"?limit=0&query=Preliquidacion.Id:" + idStr + ",Concepto.NombreConcepto:ibc_liquidado")
 
