@@ -11,7 +11,6 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/udistrital/ss_mid_api/golog"
 	"github.com/udistrital/ss_mid_api/models"
-	"github.com/udistrital/ss_mid_api/utilidades"
 )
 
 // PagoController operations for Pago
@@ -31,6 +30,7 @@ func (c *PagoController) URLMapping() {
 	c.Mapping("GetNovedadesPorPersona", c.NovedadesPorPersona)
 }
 
+/*
 func detallePagos_X_Contrato(idDetalleLiquidacion string) (contratoPersona string, err error) {
 	var detalleLiqudacion interface{}
 	if err := getJson("http://"+beego.AppConfig.String("titanService")+"/detalle_preliquidacion?limit=1?query=Id:"+idDetalleLiquidacion, detalleLiqudacion); err == nil {
@@ -53,41 +53,39 @@ func detallePagos_X_Contrato(idDetalleLiquidacion string) (contratoPersona strin
 
 func formatoListaSSLiquidacion(interfaceNecesaria interface{}, params ...interface{}) (res interface{}) {
 	row, e := interfaceNecesaria.(map[string]interface{})
-	out := make (map[string]interface{})
+	out := make(map[string]interface{})
 	//var infoPersona interface{}
-	if e {
-	/*if err := getJsonWSO2("http://jbpm.udistritaloas.edu.co:8280/services/contrato_suscrito_DataService.HTTPEndpoint/informacion_contrato_elaborado_contratista/"+row["NumeroContrato"].(string)+"/"+strconv.Itoa(int(row["VigenciaContrato"].(float64))), &infoPersona); err == nil {
-		row["infoPersona"], e = infoPersona.(map[string]interface{})["informacion_contratista"]
-		fmt.Println(infoPersona)*/
-		/*if e {
-			return row
-		} else {
-			fmt.Println("e")
-			return
-		}*/
+	if e {*/
+/*if err := getJsonWSO2("http://jbpm.udistritaloas.edu.co:8280/services/contrato_suscrito_DataService.HTTPEndpoint/informacion_contrato_elaborado_contratista/"+row["NumeroContrato"].(string)+"/"+strconv.Itoa(int(row["VigenciaContrato"].(float64))), &infoPersona); err == nil {
+row["infoPersona"], e = infoPersona.(map[string]interface{})["informacion_contratista"]
+fmt.Println(infoPersona)*/
+/*if e {
+	return row
+} else {
+	fmt.Println("e")
+	return
+}*/
 
-		/*} else {
-			return
-		}*/
-
-
+/*} else {
+	return
+}*/
+/*
 		switch os := row["TipoPago"].(float64); os {
-			case 1: 
-				out
-			case 2:
-				return nil
-			default:
-				return nil
+		case 1:
+			out["SaludUd"] = row["Valor"]
+		case 2:
+			out["SaludT"] = row["Valor"]
+		default:
+			return nil
 		}
 
-
-
-		} else {
-			return
-		}
+	} else {
 		return
-}
+	}
+	return
+}*/
 
+/*
 // PagoSeguridadSocial_X_Persona ...
 // @Title PagoSeguridadSocial_X_Persona
 // @Description trae los pagos de seguridad social por persona
@@ -150,7 +148,7 @@ func (c *PagoController) PagoSeguridadSocial_X_Persona() {
 		c.Data["json"] = models.Alert{Code: "E_0458", Body: "Not enough parameter", Type: "error"}
 	}
 	c.ServeJSON()
-}
+}*/
 
 func (c *PagoController) ConceptosIbc() {
 	fmt.Println("GetConceptosIbc")
