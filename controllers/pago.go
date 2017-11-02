@@ -30,126 +30,6 @@ func (c *PagoController) URLMapping() {
 	c.Mapping("GetNovedadesPorPersona", c.NovedadesPorPersona)
 }
 
-/*
-func detallePagos_X_Contrato(idDetalleLiquidacion string) (contratoPersona string, err error) {
-	var detalleLiqudacion interface{}
-	if err := getJson("http://"+beego.AppConfig.String("titanService")+"/detalle_preliquidacion?limit=1?query=Id:"+idDetalleLiquidacion, detalleLiqudacion); err == nil {
-		if detalleLiqudacion != nil {
-			if detalleLiqudacion.(map[string]interface{})["Id"] != nil {
-				contratoPersona = liquidacion.(map[string]interface{})["Id"].(string)
-			} else {
-				return nil
-			}
-		} else {
-			fmt.Println("detalleLiquidacion es nil")
-		}
-	} else {
-		fmt.Println("Error en la solicitud asincrona")
-		return nil
-
-	}
-	return
-}
-
-func formatoListaSSLiquidacion(interfaceNecesaria interface{}, params ...interface{}) (res interface{}) {
-	row, e := interfaceNecesaria.(map[string]interface{})
-	out := make(map[string]interface{})
-	//var infoPersona interface{}
-	if e {*/
-/*if err := getJsonWSO2("http://jbpm.udistritaloas.edu.co:8280/services/contrato_suscrito_DataService.HTTPEndpoint/informacion_contrato_elaborado_contratista/"+row["NumeroContrato"].(string)+"/"+strconv.Itoa(int(row["VigenciaContrato"].(float64))), &infoPersona); err == nil {
-row["infoPersona"], e = infoPersona.(map[string]interface{})["informacion_contratista"]
-fmt.Println(infoPersona)*/
-/*if e {
-	return row
-} else {
-	fmt.Println("e")
-	return
-}*/
-
-/*} else {
-	return
-}*/
-/*
-		switch os := row["TipoPago"].(float64); os {
-		case 1:
-			out["SaludUd"] = row["Valor"]
-		case 2:
-			out["SaludT"] = row["Valor"]
-		default:
-			return nil
-		}
-
-	} else {
-		return
-	}
-	return
-}*/
-
-/*
-// PagoSeguridadSocial_X_Persona ...
-// @Title PagoSeguridadSocial_X_Persona
-// @Description trae los pagos de seguridad social por persona
-// @Param idNomina query string false "nomina a listar"
-// @Param mesLiquidacion query string false "mes de la liquidacion a listar"
-// @Param anioLiquidacion query string false "anio de la liquidacion a listar"
-// @Success 201 {object} models.Alert
-// @Failure 403 body is empty
-// @router /ListaLiquidacionNominaHomologada [get]
-func (c *PagoController) PagoSeguridadSocial_X_Persona() {
-	idNomina, err1 := c.GetInt("idNomina")
-	mesLiquidacion, err2 := c.GetInt("mesLiquidacion")
-	anioLiquidacion, err3 := c.GetInt("anioLiquidacion")
-	if err1 == nil && err2 == nil && err3 == nil {
-		var respuesta []map[string]interface{}
-		var liquidacion interface{}
-		//fmt.Println("http://" + beego.AppConfig.String("titanService") + "preliquidacion/contratos_x_preliquidacion?idNomina=" + strconv.Itoa(idNomina) + "&mesLiquidacion=" + strconv.Itoa(mesLiquidacion) + "&anioLiquidacion=" + strconv.Itoa(anioLiquidacion))
-		if err := getJson("http://"+beego.AppConfig.String("titanService")+"preliquidacion/contratos_x_preliquidacion?idNomina="+strconv.Itoa(idNomina)+"&mesLiquidacion="+strconv.Itoa(mesLiquidacion)+"&anioLiquidacion="+strconv.Itoa(anioLiquidacion), &liquidacion); err == nil {
-			if liquidacion != nil {
-				var pagosSegSocial []interface{}
-				//fmt.Println(liquidacion)
-
-				if liquidacion.(map[string]interface{})["Id_Preliq"] != nil {
-					idLiquidacion := liquidacion.(map[string]interface{})["Id_Preliq"].(string)
-
-						//var pagosSeguridadSocial []models.PagosSeguridadSocial
-						if err := getJson("http://"+beego.AppConfig.String("ss_crud_api")+"pago?limit=-1&query=PeriodoPago.Liquidacion:"+strconv.FormatFloat(idLiquidacion, 'f', 0, 64)+",PeriodoPago.Mes:"+strconv.Itoa(mesLiquidacion)+",PeriodoPago.Anio:"+strconv.Itoa(anioLiquidacion), &pagosSegSocial); err == nil {
-							if pagosSegSocial != nil {
-								done := make(chan interface{})
-								defer close(done)
-
-								resch := utilidades.GenChanInterface(pagosSegSocial...)
-								chlistaLiquidacion := utilidades.Digest(done, formatoListaLiquidacion, resch, nil)
-
-
-							} else {
-									c.Data["json"] = models.Alert{Code: "E_0458", Body: nil, Type: "error"}
-							}
-						}
-
-					} else {
-						c.Data["json"] = models.Alert{Code: "E_0458", Body: nil, Type: "error"}
-					}
-
-					res := liquidacion.(map[string]interface{})
-					res["Contratos_por_preliq"] = respuesta
-					c.Data["json"] = res
-				} else {
-					c.Data["json"] = models.Alert{Code: "E_0458", Body: nil, Type: "error"}
-				}
-
-			} else {
-				c.Data["json"] = liquidacion
-			}
-
-		} else {
-			c.Data["json"] = models.Alert{Code: "E_0458", Body: err.Error(), Type: "error"}
-		}
-	} else {
-		c.Data["json"] = models.Alert{Code: "E_0458", Body: "Not enough parameter", Type: "error"}
-	}
-	c.ServeJSON()
-}*/
-
 func (c *PagoController) ConceptosIbc() {
 	fmt.Println("GetConceptosIbc")
 	var predicados []models.Predicado
@@ -250,16 +130,7 @@ func (c *PagoController) CalcularSegSocial() {
 			"?limit=0&query=Preliquidacion.Id:"+idStr+",Concepto.NombreConcepto:salarioBase", &detallePreliquidacion)
 
 		fmt.Println(buffer.String())
-		/*
-				fmt.Println(detallePreliquidacion[0])
 
-				if detallePreliquidacion[0].Preliquidacion.Nomina.Id == 5 {
-				fmt.Println("honorarios")
-
-				fmt.Println(SaludHCHonorarios(idStr))
-
-			}
-		*/
 		if err != nil {
 			fmt.Println("ERROR EN LA PETICION:\n", buffer.String())
 			alertas = append(alertas, "error al traer detalle liquidacion")
