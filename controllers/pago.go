@@ -136,6 +136,7 @@ func (c *PagoController) CalcularSegSocial() {
 			alertas = append(alertas, "error al traer detalle liquidacion")
 			c.Data["json"] = alertas
 		} else {
+			idDetallePreliquidacion := detallePreliquidacion[0].Preliquidacion.Id
 
 			for index := 0; index < len(detallePreliquidacion); index++ {
 				predicado = append(predicado, models.Predicado{Nombre: "ibc(" + detallePreliquidacion[index].NumeroContrato + "," + strconv.Itoa(int(detallePreliquidacion[index].ValorCalculado)) + ", salud)."})
@@ -158,13 +159,14 @@ func (c *PagoController) CalcularSegSocial() {
 			// Acá se debe cambiar como se arma el modelo
 			for index := 0; index < len(numContrato); index++ {
 				aux := models.PagosSeguridadSocial{
-					NumeroContrato: numContrato[index],
-					SaludUd:        saludUd[index],
-					SaludTotal:     saludTotal[index],
-					PensionUd:      pensionUd[index],
-					PensionTotal:   pensionTotal[index],
-					Caja:           caja[index],
-					Icbf:           icbf[index],
+					NumeroContrato:          numContrato[index],
+					SaludUd:                 saludUd[index],
+					SaludTotal:              saludTotal[index],
+					PensionUd:               pensionUd[index],
+					PensionTotal:            pensionTotal[index],
+					Caja:                    caja[index],
+					Icbf:                    icbf[index],
+					IdPreliquidacion:        idDetallePreliquidacion,
 					IdDetallePreliquidacion: detallePreliquidacion[index].Id,
 					Arl: arl[index]}
 

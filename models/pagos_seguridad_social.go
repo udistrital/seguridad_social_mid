@@ -10,5 +10,6 @@ type PagosSeguridadSocial struct {
 	Caja                    int64 //Caja de compensación
 	Icbf                    int64 //Instituto Colombiano de Bienestar Familiar
 	IdDetallePreliquidacion int
+	IdPreliquidacion        int
 	UpcAdicional            []UpcAdicional
 }
