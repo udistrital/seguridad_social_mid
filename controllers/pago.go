@@ -11,6 +11,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/udistrital/ss_mid_api/golog"
 	"github.com/udistrital/ss_mid_api/models"
+	"github.com/udistrital/ss_mid_api/utilidades"
 )
 
 // PagoController operations for Pago
@@ -28,6 +29,127 @@ func (c *PagoController) URLMapping() {
 	c.Mapping("CalcularSegSocial", c.CalcularSegSocial)
 	c.Mapping("ConceptosIbc", c.ConceptosIbc)
 	c.Mapping("GetNovedadesPorPersona", c.NovedadesPorPersona)
+}
+
+func detallePagos_X_Contrato(idDetalleLiquidacion string) (contratoPersona string, err error) {
+	var detalleLiqudacion interface{}
+	if err := getJson("http://"+beego.AppConfig.String("titanService")+"/detalle_preliquidacion?limit=1?query=Id:"+idDetalleLiquidacion, detalleLiqudacion); err == nil {
+		if detalleLiqudacion != nil {
+			if detalleLiqudacion.(map[string]interface{})["Id"] != nil {
+				contratoPersona = liquidacion.(map[string]interface{})["Id"].(string)
+			} else {
+				return nil
+			}
+		} else {
+			fmt.Println("detalleLiquidacion es nil")
+		}
+	} else {
+		fmt.Println("Error en la solicitud asincrona")
+		return nil
+
+	}
+	return
+}
+
+func formatoListaSSLiquidacion(interfaceNecesaria interface{}, params ...interface{}) (res interface{}) {
+	row, e := interfaceNecesaria.(map[string]interface{})
+	out := make (map[string]interface{})
+	//var infoPersona interface{}
+	if e {
+	/*if err := getJsonWSO2("http://jbpm.udistritaloas.edu.co:8280/services/contrato_suscrito_DataService.HTTPEndpoint/informacion_contrato_elaborado_contratista/"+row["NumeroContrato"].(string)+"/"+strconv.Itoa(int(row["VigenciaContrato"].(float64))), &infoPersona); err == nil {
+		row["infoPersona"], e = infoPersona.(map[string]interface{})["informacion_contratista"]
+		fmt.Println(infoPersona)*/
+		/*if e {
+			return row
+		} else {
+			fmt.Println("e")
+			return
+		}*/
+
+		/*} else {
+			return
+		}*/
+
+
+		switch os := row["TipoPago"].(float64); os {
+			case 1: 
+				out
+			case 2:
+				return nil
+			default:
+				return nil
+		}
+
+
+
+		} else {
+			return
+		}
+		return
+}
+
+// PagoSeguridadSocial_X_Persona ...
+// @Title PagoSeguridadSocial_X_Persona
+// @Description trae los pagos de seguridad social por persona
+// @Param idNomina query string false "nomina a listar"
+// @Param mesLiquidacion query string false "mes de la liquidacion a listar"
+// @Param anioLiquidacion query string false "anio de la liquidacion a listar"
+// @Success 201 {object} models.Alert
+// @Failure 403 body is empty
+// @router /ListaLiquidacionNominaHomologada [get]
+func (c *PagoController) PagoSeguridadSocial_X_Persona() {
+	idNomina, err1 := c.GetInt("idNomina")
+	mesLiquidacion, err2 := c.GetInt("mesLiquidacion")
+	anioLiquidacion, err3 := c.GetInt("anioLiquidacion")
+	if err1 == nil && err2 == nil && err3 == nil {
+		var respuesta []map[string]interface{}
+		var liquidacion interface{}
+		//fmt.Println("http://" + beego.AppConfig.String("titanService") + "preliquidacion/contratos_x_preliquidacion?idNomina=" + strconv.Itoa(idNomina) + "&mesLiquidacion=" + strconv.Itoa(mesLiquidacion) + "&anioLiquidacion=" + strconv.Itoa(anioLiquidacion))
+		if err := getJson("http://"+beego.AppConfig.String("titanService")+"preliquidacion/contratos_x_preliquidacion?idNomina="+strconv.Itoa(idNomina)+"&mesLiquidacion="+strconv.Itoa(mesLiquidacion)+"&anioLiquidacion="+strconv.Itoa(anioLiquidacion), &liquidacion); err == nil {
+			if liquidacion != nil {
+				var pagosSegSocial []interface{}
+				//fmt.Println(liquidacion)
+
+				if liquidacion.(map[string]interface{})["Id_Preliq"] != nil {
+					idLiquidacion := liquidacion.(map[string]interface{})["Id_Preliq"].(string)
+
+						//var pagosSeguridadSocial []models.PagosSeguridadSocial
+						if err := getJson("http://"+beego.AppConfig.String("ss_crud_api")+"pago?limit=-1&query=PeriodoPago.Liquidacion:"+strconv.FormatFloat(idLiquidacion, 'f', 0, 64)+",PeriodoPago.Mes:"+strconv.Itoa(mesLiquidacion)+",PeriodoPago.Anio:"+strconv.Itoa(anioLiquidacion), &pagosSegSocial); err == nil {
+							if pagosSegSocial != nil {
+								done := make(chan interface{})
+								defer close(done)
+
+								resch := utilidades.GenChanInterface(pagosSegSocial...)
+								chlistaLiquidacion := utilidades.Digest(done, formatoListaLiquidacion, resch, nil)
+
+
+							} else {
+									c.Data["json"] = models.Alert{Code: "E_0458", Body: nil, Type: "error"}
+							}
+						}
+
+					} else {
+						c.Data["json"] = models.Alert{Code: "E_0458", Body: nil, Type: "error"}
+					}
+
+					res := liquidacion.(map[string]interface{})
+					res["Contratos_por_preliq"] = respuesta
+					c.Data["json"] = res
+				} else {
+					c.Data["json"] = models.Alert{Code: "E_0458", Body: nil, Type: "error"}
+				}
+
+			} else {
+				c.Data["json"] = liquidacion
+			}
+
+		} else {
+			c.Data["json"] = models.Alert{Code: "E_0458", Body: err.Error(), Type: "error"}
+		}
+	} else {
+		c.Data["json"] = models.Alert{Code: "E_0458", Body: "Not enough parameter", Type: "error"}
+	}
+	c.ServeJSON()
 }
 
 func (c *PagoController) ConceptosIbc() {
@@ -127,10 +249,19 @@ func (c *PagoController) CalcularSegSocial() {
 	} else {
 
 		err := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
-			"?limit=0&query=Preliquidacion.Id:"+idStr+",Concepto.NombreConcepto:ibc_liquidado", &detallePreliquidacion)
+			"?limit=0&query=Preliquidacion.Id:"+idStr+",Concepto.NombreConcepto:salarioBase", &detallePreliquidacion)
 
 		fmt.Println(buffer.String())
+		/*
+				fmt.Println(detallePreliquidacion[0])
 
+				if detallePreliquidacion[0].Preliquidacion.Nomina.Id == 5 {
+				fmt.Println("honorarios")
+
+				fmt.Println(SaludHCHonorarios(idStr))
+
+			}
+		*/
 		if err != nil {
 			fmt.Println("ERROR EN LA PETICION:\n", buffer.String())
 			alertas = append(alertas, "error al traer detalle liquidacion")
@@ -146,11 +277,6 @@ func (c *PagoController) CalcularSegSocial() {
 			reglas := CargarReglasBase() + FormatoReglas(predicado) + CargarNovedades(idStr) +
 				ValorSaludEmpleado(idStr) + ValorPensionEmpleado(idStr)
 
-			fmt.Println(reglas)
-
-			fmt.Println("http://" + beego.AppConfig.String("titanServicio") + "/detalle_preliquidacion" +
-				"?limit=0&query=Preliquidacion.Id:" + idStr + ",Concepto.NombreConcepto:ibc_liquidado")
-
 			numContrato := golog.GetString(reglas, "v_salud_ud(I,Y).", "I")
 			saludUd := golog.GetFloat(reglas, "v_salud_ud(I,Y).", "Y")
 			saludTotal := golog.GetInt64(reglas, "v_total_salud(X,T).", "T")
@@ -160,6 +286,7 @@ func (c *PagoController) CalcularSegSocial() {
 			caja := golog.GetInt64(reglas, "v_caja(I,Y).", "Y")
 			icbf := golog.GetInt64(reglas, "v_icbf(I,Y).", "Y")
 
+			// Acá se debe cambiar como se arma el modelo
 			for index := 0; index < len(numContrato); index++ {
 				aux := models.PagosSeguridadSocial{
 					NumeroContrato: numContrato[index],
@@ -186,6 +313,28 @@ func (c *PagoController) CalcularSegSocial() {
 // @Description Crea todos los hechos con la información del valor de salud
 // @Param	idLiquidacion		id de la liquidacion correspondiente
 func ValorSaludEmpleado(idLiquidacion string) (valorSaludEmpleado string) {
+	var detalleLiquSalud []models.DetallePreliquidacion
+	var predicado []models.Predicado
+
+	errSalud := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
+		"?limit=0&query=Preliquidacion:"+idLiquidacion+",Concepto.NombreConcepto:salud", &detalleLiquSalud)
+
+	if errSalud != nil {
+		fmt.Println("Error en ValorSaludEmpleado:\n", errSalud)
+	} else {
+		for index := 0; index < len(detalleLiquSalud); index++ {
+			predicado = append(predicado, models.Predicado{Nombre: "v_salud_func(" + detalleLiquSalud[index].NumeroContrato + ", " + strconv.Itoa(int(detalleLiquSalud[index].ValorCalculado)) + ")."})
+			valorSaludEmpleado += predicado[index].Nombre + "\n"
+		}
+	}
+	return
+}
+
+// SaludHCHonorarios
+//@Title Valor correspondiente a salud de hora catedra honorarios
+//@Description consulta una preliqudacion correspondiente a hora catedra
+//@Param idLiquidacion id de la preliquidacion correspondiente
+func SaludHCHonorarios(idLiquidacion string) (valorSaludEmpleado string) {
 	var detalleLiquSalud []models.DetallePreliquidacion
 	var predicado []models.Predicado
 

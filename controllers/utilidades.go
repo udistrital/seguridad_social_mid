@@ -108,6 +108,7 @@ func CargarReglasBase() (reglas string) {
 			%%		NOVEDADES
 			%%(descripcion, persona)
 			novedad(exterior_familia, 0).
+			novedad_persona(-1,-1).
 
 			%%salario minimo legal mensual vigente
 			smlmv(737717, 2017).
