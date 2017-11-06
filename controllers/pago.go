@@ -289,6 +289,20 @@ func (c *PagoController) Post() {
 	c.ServeJSON()
 }
 
+/*
+// Get ...
+// @Title ObtenerSegSocial_X_Facultad
+// @Param idPeriodoPago "corresponde al al id del periodo del pago de seguridad social"
+// @Succes 201 {object} models.Pago
+// @Failure 403 :id is empty
+// @router /:id [get]
+func (c *PagoController) ObtenerSegSocial_X_Facultad() {
+	idPeriodoPago := c.Ctx.Input.Param(":id")
+	id, _ : := strconv.Atoi(idStr)
+	v, err := models
+}
+
+*/
 // GetOne ...
 // @Title Get One
 // @Description get Pago by id
