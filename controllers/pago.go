@@ -28,10 +28,36 @@ func (c *PagoController) URLMapping() {
 	c.Mapping("CalcularSegSocial", c.CalcularSegSocial)
 	c.Mapping("ConceptosIbc", c.ConceptosIbc)
 	c.Mapping("GetNovedadesPorPersona", c.NovedadesPorPersona)
+	c.Mapping("SumarPagosSalud", c.SumarPagosSalud)
+}
+
+// SumarPagosSalud ...
+// @Title Sumar pagos de salid
+// @Description Suma el total de los pagos de salud y pensión de ud
+// con el total de pagos de salud y pensión del empleado
+// @Param	idPeriodoPago		id del periodo pago de seguridad social
+// @router SumarPagosSalud/:idPeriodoPago [get]
+func (c *PagoController) SumarPagosSalud() {
+	idStr := c.Ctx.Input.Param(":idPeriodoPago")
+	//id, _ := strconv.Atoi(idStr)
+	var pagosUd []models.TotalPagosUd
+	errTotalPagos := getJson("http://"+beego.AppConfig.String("segSocialService")+
+		"/pago/GetPagos/"+idStr, &pagosUd)
+	fmt.Println("http://" + beego.AppConfig.String("segSocialService") +
+		"/pago/GetPagos/" + idStr)
+
+	if errTotalPagos != nil {
+		c.Data["json"] = errTotalPagos.Error()
+	} else {
+		/*for i := 0; i < len(errTotalPagos); i++ {
+
+		}*/
+		c.Data["json"] = pagosUd
+	}
+	c.ServeJSON()
 }
 
 func (c *PagoController) ConceptosIbc() {
-	fmt.Println("GetConceptosIbc")
 	var predicados []models.Predicado
 	var conceptos []models.Concepto
 	var conceptosIbc []models.ConceptosIbc

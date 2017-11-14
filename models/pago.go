@@ -18,6 +18,25 @@ type Pago struct {
 	PeriodoPago        *PeriodoPago `orm:"column(periodo_pago);rel(fk)"`
 }
 
+type TotalPagosUnidos struct {
+	TipoPago       int
+	Total          float64
+	NombreConcepto string
+	AliasConcepto  string
+}
+
+type TotalPagosUd struct {
+	TipoPago int
+	Total    float64
+}
+
+type TotalPagos struct {
+	TipoPago       int
+	Total          float64
+	NombreConcepto string
+	AliasConcepto  string
+}
+
 func (t *Pago) TableName() string {
 	return "pago"
 }
