@@ -79,38 +79,39 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 	var upc []models.UpcAdicional
 	var detallePreliquidacion []models.DetallePreliquidacion
 	var detLiq []models.DetallePreliquidacion
-	var conceptos []models.Concepto
-	var conceptosSeguridadSocial []models.Concepto
+	var conceptos []models.ConceptoNomina
+	var conceptosSeguridadSocial []models.ConceptoNomina
 	var errStrings []string
 	tipoRegistro := "02"
 
 	// Se obtienen todos los conceptos de seguridad social en tabla conceptos de titan
 	errConceptosSs := getJson("http://"+beego.AppConfig.String("titanServicio")+
-		"/concepto?limit=0&query=Naturaleza:seguridad_social", &conceptosSeguridadSocial)
+		"/concepto_nomina?limit=0&query=NaturalezaConcepto.Nombre:seguridad_social", &conceptosSeguridadSocial)
 	if errConceptosSs != nil {
 		fmt.Println("errConceptosSs: ", errConceptosSs)
 	}
 
 	errLiquidacion := getJson("http://"+beego.AppConfig.String("titanServicio")+
-		"/detalle_liquidacion?limit=-1", &detallePreliquidacion)
+		"/detalle_preliquidacion?limit=-1", &detallePreliquidacion)
 	if errLiquidacion != nil {
 		errStrings = append(errStrings, errLiquidacion.Error())
 	}
 
-	errContratosGeneral := getJson("http://"+beego.AppConfig.String("agoraServicio")+
+	errContratosGeneral := getJson("http://"+beego.AppConfig.String("argoServicio")+
 		"/contrato_general?limit=0", &contratosGeneral)
 	if errContratosGeneral != nil {
 		errStrings = append(errStrings, errContratosGeneral.Error())
 	}
 
 	errConceptos := getJson("http://"+beego.AppConfig.String("titanServicio")+
-		"/concepto?limit=0", &conceptos)
+		"/concepto_nomina?limit=0", &conceptos)
 	if errConceptos != nil {
 		errStrings = append(errStrings, errConceptos.Error())
 	}
 
-	errUpc := getJson("http://"+beego.AppConfig.String("seguridadSocialService")+
+	errUpc := getJson("http://"+beego.AppConfig.String("segSocialService")+
 		"/upc_adicional?limit=0", &upc)
+
 	if errUpc != nil {
 		errStrings = append(errStrings, errUpc.Error())
 	}

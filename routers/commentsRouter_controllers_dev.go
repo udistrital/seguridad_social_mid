@@ -1,8 +1,6 @@
 package routers
 
-import (
-	"github.com/astaxie/beego"
-)
+import "github.com/astaxie/beego"
 
 func init() {
 

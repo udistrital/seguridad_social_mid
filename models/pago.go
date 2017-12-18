@@ -37,6 +37,12 @@ type TotalPagos struct {
 	AliasConcepto  string
 }
 
+type TrPeriodoPago struct {
+	Contratos   []string
+	PeriodoPago *PeriodoPago
+	Pagos       []*Pago
+}
+
 func (t *Pago) TableName() string {
 	return "pago"
 }

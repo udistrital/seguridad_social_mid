@@ -10,10 +10,12 @@ import (
 )
 
 type PeriodoPago struct {
-	Id              int     `orm:"column(id);pk"`
-	Mes             float64 `orm:"column(mes)"`
-	Anio            float64 `orm:"column(anio)"`
-	TipoLiquidacion string  `orm:"column(tipo_liquidacion)"`
+	Id                    int                    `orm:"column(id);pk"`
+	Mes                   float64                `orm:"column(mes)"`
+	Anio                  float64                `orm:"column(anio)"`
+	Liquidacion           int                    `orm:"column(liquidacion)"`
+	TipoLiquidacion       string                 `orm:"column(tipo_liquidacion)"`
+	EstadoSeguridadSocial *EstadoSeguridadSocial `orm:"column(estado_seguridad_social);rel(fk)"`
 }
 
 func (t *PeriodoPago) TableName() string {

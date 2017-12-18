@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/astaxie/beego/orm"
 )
 
-/*
 type InformacionPersonaNatural struct {
 	TipoDocumento                     *ParametroEstandar `orm:"column(tipo_documento);rel(fk)"`
-	Id                                int                `orm:"column(num_documento_persona);pk"`
+	Id                                string             `orm:"column(num_documento_persona);pk"`
 	DigitoVerificacion                float64            `orm:"column(digito_verificacion)"`
 	PrimerApellido                    string             `orm:"column(primer_apellido)"`
 	SegundoApellido                   string             `orm:"column(segundo_apellido);null"`
@@ -50,34 +50,8 @@ type InformacionPersonaNatural struct {
 	IdEps                             int                `orm:"column(id_eps);null"`
 	IdFondoPension                    int                `orm:"column(id_fondo_pension);null"`
 	IdCajaCompensacion                int                `orm:"column(id_caja_compensacion);null"`
-	IdNitArl                          float64            `orm:"column(id_nit_arl);null"`
-	IdNitEps                          float64            `orm:"column(id_nit_eps);null"`
-	IdNitFondoPension                 float64            `orm:"column(id_nit_fondo_pension);null"`
-	IdNitCajaCompensacion             float64            `orm:"column(id_nit_caja_compensacion);null"`
 	FechaExpedicionDocumento          time.Time          `orm:"column(fecha_expedicion_documento);type(date)"`
 	IdCiudadExpedicionDocumento       float64            `orm:"column(id_ciudad_expedicion_documento)"`
-}*/
-
-// Titan
-type InformacionPersonaNatural struct {
-	TipoDocumento          int     `orm:"column(tipo_documento)"`
-	Id                     int     `orm:"column(num_documento_persona);pk"`
-	DigitoVerificacion     float64 `orm:"column(digito_verificacion)"`
-	PrimerApellido         string  `orm:"column(primer_apellido)"`
-	SegundoApellido        string  `orm:"column(segundo_apellido);null"`
-	PrimerNombre           string  `orm:"column(primer_nombre)"`
-	SegundoNombre          string  `orm:"column(segundo_nombre);null"`
-	Cargo                  string  `orm:"column(cargo)"`
-	IdPaisNacimiento       int     `orm:"column(id_pais_nacimiento)"`
-	Perfil                 int     `orm:"column(perfil)"`
-	Profesion              string  `orm:"column(profesion);null"`
-	Especialidad           string  `orm:"column(especialidad);null"`
-	MontoCapitalAutorizado float64 `orm:"column(monto_capital_autorizado);null"`
-	Genero                 string  `orm:"column(genero);null"`
-	IdEPS                  int     `orm:"column(id_eps)"`
-	IdARL                  int     `orm:"column(id_arl)"`
-	IdFondoPension         int     `orm:"column(id_fondo_pension)"`
-	IdCajaCompensacion     int     `orm:"column(id_caja_compensacion)"`
 }
 
 func (t *InformacionPersonaNatural) TableName() string {
@@ -90,15 +64,15 @@ func init() {
 
 // AddInformacionPersonaNatural insert a new InformacionPersonaNatural into database and returns
 // last inserted Id on success.
-func AddInformacionPersonaNatural(m *InformacionPersonaNatural) (id int64, err error) {
+func AddInformacionPersonaNatural(m *InformacionPersonaNatural) (id string, err error) {
 	o := orm.NewOrm()
-	id, err = o.Insert(m)
+	_, err = o.Insert(m)
 	return
 }
 
 // GetInformacionPersonaNaturalById retrieves InformacionPersonaNatural by Id. Returns error if
 // Id doesn't exist
-func GetInformacionPersonaNaturalById(id int) (v *InformacionPersonaNatural, err error) {
+func GetInformacionPersonaNaturalById(id string) (v *InformacionPersonaNatural, err error) {
 	o := orm.NewOrm()
 	v = &InformacionPersonaNatural{Id: id}
 	if err = o.Read(v); err == nil {
@@ -112,7 +86,7 @@ func GetInformacionPersonaNaturalById(id int) (v *InformacionPersonaNatural, err
 func GetAllInformacionPersonaNatural(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(InformacionPersonaNatural))
+	qs := o.QueryTable(new(InformacionPersonaNatural)).RelatedSel(5)
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
@@ -202,7 +176,7 @@ func UpdateInformacionPersonaNaturalById(m *InformacionPersonaNatural) (err erro
 
 // DeleteInformacionPersonaNatural deletes InformacionPersonaNatural by Id and returns error if
 // the record to be deleted doesn't exist
-func DeleteInformacionPersonaNatural(id int) (err error) {
+func DeleteInformacionPersonaNatural(id string) (err error) {
 	o := orm.NewOrm()
 	v := InformacionPersonaNatural{Id: id}
 	// ascertain id exists in the database
