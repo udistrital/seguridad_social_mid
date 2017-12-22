@@ -3,6 +3,7 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -75,6 +76,10 @@ func diff(a, b time.Time) (year, month, day int) {
 	}
 
 	return
+}
+
+func describe(i interface{}) {
+	fmt.Printf("(%v, %T)\n", i, i)
 }
 
 /*func CargarReglasBase(dominio string) (reglas string) {

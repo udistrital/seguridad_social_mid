@@ -68,6 +68,11 @@ func init() {
 				&controllers.PlanillasController{},
 			),
 		),
+		beego.NSNamespace("/incapacidades",
+			beego.NSInclude(
+				&controllers.IncapacidadesController{},
+			),
+		),
 	)
 	beego.AddNamespace(ns)
 }
