@@ -1,7 +1,7 @@
 package models
 
 type NovedadesPersonaSS struct {
-	Persona         int64
-	Liquidacion     DetalleLiquidacion
-	ConceptoPersona ConceptoPorPersona
+	Persona                  int64
+	Preliquidacion           DetallePreliquidacion
+	ConceptoNominaPorPersona ConceptoNominaPorPersona
 }

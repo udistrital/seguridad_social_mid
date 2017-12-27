@@ -11,16 +11,13 @@ import (
 )
 
 type Preliquidacion struct {
-	Nombre      string    `orm:"column(nombre)"`
-	Nomina      *Nomina   `orm:"column(nomina);rel(fk)"`
-	Estado      string    `orm:"column(estado)"`
-	Fecha       time.Time `orm:"column(fecha);type(date)"`
-	Descripcion string    `orm:"column(descripcion);null"`
-	FechaInicio time.Time `orm:"column(fecha_inicio);type(date)"`
-	FechaFin    time.Time `orm:"column(fecha_fin);type(date)"`
-	Tipo     string    `orm:"column(tipo)"`
-	Id          int       `orm:"auto;column(id);pk"`
-	Liquidada   string    `orm:"column(liquidada)"`
+	Nomina               *Nomina               `orm:"column(nomina);rel(fk)"`
+	Id 									int                      `orm:"auto;column(id);pk"`
+	Descripcion          string                `orm:"column(descripcion);null"`
+	Mes                  int                   `orm:"column(mes)"`
+	Ano                  int                   `orm:"column(ano)"`
+	FechaRegistro        time.Time             `orm:"column(fecha_registro);type(timestamp with time zone)"`
+	EstadoPreliquidacion *EstadoPreliquidacion `orm:"column(estado_preliquidacion);rel(fk)"`
 }
 
 type InformePreliquidacion struct {
@@ -35,7 +32,9 @@ type ConceptosInforme struct {
 	Nombre     string `orm:"column(nombre)"`
 	Naturaleza string `orm:"column(naturaleza)"`
 	Valor      string `orm:"column(valor)"`
+	TipoPreliquidacion string `orm:"column(tipo)"`
 }
+
 
 func (t *Preliquidacion) TableName() string {
 	return "preliquidacion"
@@ -69,7 +68,7 @@ func GetPreliquidacionById(id int) (v *Preliquidacion, err error) {
 func GetAllPreliquidacion(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(Preliquidacion))
+	qs := o.QueryTable(new(Preliquidacion)).RelatedSel(5)
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
@@ -120,7 +119,7 @@ func GetAllPreliquidacion(query map[string]string, fields []string, sortby []str
 	}
 
 	var l []Preliquidacion
-	qs = qs.OrderBy(sortFields...).RelatedSel(5)
+	qs = qs.OrderBy(sortFields...)
 	if _, err = qs.Limit(limit, offset).All(&l, fields...); err == nil {
 		if len(fields) == 0 {
 			for _, v := range l {
@@ -180,9 +179,9 @@ func ResumenPreliquidacion(v *Preliquidacion) (resumen []InformePreliquidacion, 
 	_, err = o.Raw("select numero_contrato from titan.detalle_preliquidacion where preliquidacion = ? group by numero_contrato", v.Id).QueryRows(&numero_contratos)
 	if numero_contratos != nil && err == nil {
 		for _, contrato := range numero_contratos {
-			err = o.Raw("select a.id_proveedor as id ,a.nom_proveedor as nombre, a.num_documento as documento from agora.informacion_proveedor as a inner join argo.contrato_general as b on a.num_documento = b.contratista  where b.numero_contrato = ? and b.vigencia = ?", contrato, v.Nomina.Periodo).QueryRow(&informe)
+			err = o.Raw("select a.id_proveedor as id ,a.nom_proveedor as nombre, a.num_documento as documento from agora.informacion_proveedor as a inner join argo.contrato_general as b on a.num_documento = b.contratista  where b.numero_contrato = ?", contrato).QueryRow(&informe)
 			if err == nil {
-				_, err = o.Raw("select  a.concepto as id , b.alias_concepto as nombre , b.naturaleza as naturaleza, a.valor_calculado as valor from titan.detalle_preliquidacion as a inner join titan.concepto as b on a.concepto = b.id where a.numero_contrato = ? and a.preliquidacion = ?;", contrato, v.Id).QueryRows(&informe.Conceptos)
+				_, err = o.Raw("SELECT concepto.id as id, concepto.alias_concepto as nombre, naturaleza.nombre as naturaleza, detalle.valor_calculado as valor, tipo.nombre as tipo from titan.detalle_preliquidacion as detalle, titan.concepto_nomina as concepto, titan.naturaleza_concepto_nomina as naturaleza, titan.tipo_preliquidacion as tipo WHERE detalle.concepto = concepto.id AND concepto.naturaleza_concepto = naturaleza.id AND detalle.tipo_preliquidacion = tipo.id AND detalle.preliquidacion = ? AND detalle.numero_contrato = ?",v.Id, contrato).QueryRows(&informe.Conceptos)
 				if err != nil {
 					fmt.Println("err3: ", err)
 				}

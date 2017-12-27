@@ -1,36 +1,55 @@
 package routers
 
-import (
-	"github.com/astaxie/beego"
-)
+import "github.com/astaxie/beego"
 
 func init() {
 
-	beego.GlobalControllerRouter["ss_api_mid/controllers:SegSocialController"] = append(beego.GlobalControllerRouter["ss_api_mid/controllers:SegSocialController"],
+	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
 		beego.ControllerComments{
 			Method:           "CalcularSegSocial",
 			Router:           `CalcularSegSocial/:id`,
 			AllowHTTPMethods: []string{"get"},
 			Params:           nil})
 
-	beego.GlobalControllerRouter["ss_api_mid/controllers:SegSocialDetalleController"] = append(beego.GlobalControllerRouter["ss_api_mid/controllers:SegSocialDetalleController"],
+	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
 		beego.ControllerComments{
-			Method:           "GetNovedadesPorPersona",
-			Router:           `GetNovedadesPorPersona/:persona`,
+			Method:           "NovedadesPorPersona",
+			Router:           `NovedadesPorPersona/:persona`,
 			AllowHTTPMethods: []string{"get"},
 			Params:           nil})
 
-	beego.GlobalControllerRouter["ss_api_mid/controllers:FuncionarioProveedorController"] = append(beego.GlobalControllerRouter["github.com/miguelramirez93/titan_api_crud/controllers:FuncionarioProveedorController"],
+	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
 		beego.ControllerComments{
-			Method:           "ConsultarIDProveedor",
-			Router:           `/`,
-			AllowHTTPMethods: []string{"post"},
-			Params:           nil})
-
-	beego.GlobalControllerRouter["ss_api_mid/controllers:SegSocialController"] = append(beego.GlobalControllerRouter["ss_api_mid/controllers:SegSocialController"],
-		beego.ControllerComments{
-			Method:           "GetConceptosIbc",
+			Method:           "ConceptosIbc",
 			Router:           `ConceptosIbc`,
 			AllowHTTPMethods: []string{"get"},
 			Params:           nil})
+
+	/*beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
+	beego.ControllerComments{
+		Method:           "SumarPagosSalud",
+		Router:           `SumarPagosSalud/:idPeriodoPago`,
+		AllowHTTPMethods: []string{"get"},
+		Params:           nil})*/
+
+	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"],
+		beego.ControllerComments{
+			Method:           "GenerarPlanillaActivos",
+			Router:           `GenerarPlanillaActivos/:id`,
+			AllowHTTPMethods: []string{"get"},
+			Params:           nil})
+
+	/*beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"],
+	beego.ControllerComments{
+		Method:           "GenerarPlanillaPensionados",
+		Router:           `GenerarPlanillaPensionados/:id`,
+		AllowHTTPMethods: []string{"get"},
+		Params:           nil})*/
+
+	/*beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"],
+	beego.ControllerComments{
+		Method:           "GenerarPlanillaN",
+		Router:           `GenerarPlanillaN/:id`,
+		AllowHTTPMethods: []string{"get"},
+		Params:           nil})*/
 }

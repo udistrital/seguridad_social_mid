@@ -10,7 +10,7 @@ import (
 )
 
 type LugarEjecucion struct {
-	Id          int     `orm:"column(id);pk"`
+	Id          int     `orm:"column(id);pk;auto"`
 	Direccion   string  `orm:"column(direccion)"`
 	Sede        string  `orm:"column(sede);null"`
 	Dependencia string  `orm:"column(dependencia);null"`
@@ -49,7 +49,7 @@ func GetLugarEjecucionById(id int) (v *LugarEjecucion, err error) {
 func GetAllLugarEjecucion(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(LugarEjecucion))
+	qs := o.QueryTable(new(LugarEjecucion)).RelatedSel(5)
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute

@@ -8,13 +8,30 @@
 package routers
 
 import (
-	"ss_api_mid/controllers"
-
 	"github.com/astaxie/beego"
+	"github.com/udistrital/ss_mid_api/controllers"
 )
 
 func init() {
 	ns := beego.NewNamespace("/v1",
+
+		beego.NSNamespace("/tipo_pago",
+			beego.NSInclude(
+				&controllers.TipoPagoController{},
+			),
+		),
+
+		beego.NSNamespace("/periodo_pago",
+			beego.NSInclude(
+				&controllers.PeriodoPagoController{},
+			),
+		),
+
+		beego.NSNamespace("/pago",
+			beego.NSInclude(
+				&controllers.PagoController{},
+			),
+		),
 
 		beego.NSNamespace("/upc_adicional",
 			beego.NSInclude(
@@ -22,27 +39,38 @@ func init() {
 			),
 		),
 
-		beego.NSNamespace("/seg_social",
+		beego.NSNamespace("/zona_upc",
 			beego.NSInclude(
-				&controllers.SegSocialController{},
+				&controllers.ZonaUpcController{},
 			),
 		),
 
-		beego.NSNamespace("/seg_social_detalle",
+		beego.NSNamespace("/rango_edad_upc",
 			beego.NSInclude(
-				&controllers.SegSocialDetalleController{},
-			),
-		),
-
-		beego.NSNamespace("/zona",
-			beego.NSInclude(
-				&controllers.ZonaController{},
+				&controllers.RangoEdadUpcController{},
 			),
 		),
 
 		beego.NSNamespace("/tipo_upc",
 			beego.NSInclude(
 				&controllers.TipoUpcController{},
+			),
+		),
+
+		beego.NSNamespace("/planillas",
+			beego.NSInclude(
+				&controllers.PlanillasController{},
+			),
+		),
+
+		beego.NSNamespace("/aportante",
+			beego.NSInclude(
+				&controllers.PlanillasController{},
+			),
+		),
+		beego.NSNamespace("/incapacidades",
+			beego.NSInclude(
+				&controllers.IncapacidadesController{},
 			),
 		),
 	)

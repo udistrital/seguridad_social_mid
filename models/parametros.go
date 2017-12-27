@@ -11,7 +11,7 @@ import (
 )
 
 type Parametros struct {
-	Id                int                `orm:"column(id_parametro);pk"`
+	Id                int                `orm:"column(id_parametro);pk;auto"`
 	Descripcion       string             `orm:"column(descripcion)"`
 	CodigoContraloria string             `orm:"column(codigo_contraloria);null"`
 	RelParametro      *RelacionParametro `orm:"column(rel_parametro);rel(fk)"`
@@ -51,7 +51,7 @@ func GetParametrosById(id int) (v *Parametros, err error) {
 func GetAllParametros(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(Parametros))
+	qs := o.QueryTable(new(Parametros)).RelatedSel(5)
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute

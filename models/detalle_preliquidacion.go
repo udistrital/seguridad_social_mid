@@ -10,12 +10,14 @@ import (
 )
 
 type DetallePreliquidacion struct {
-	Id             int       `orm:"column(id);pk;auto"`
-	ValorCalculado int64     `orm:"column(valor_calculado)"`
-	Preliquidacion int       `orm:"column(preliquidacion)"`
-	Persona        int       `orm:"column(persona)"`
-	Concepto       *Concepto `orm:"column(concepto);rel(fk)"`
-	NumeroContrato *ContratoGeneral `orm:"column(numero_contrato);rel(fk)"`
+	Id 								int                    `orm:"auto;column(id);pk"`
+	ValorCalculado     float64               `orm:"column(valor_calculado)"`
+	NumeroContrato     string                `orm:"column(numero_contrato);null"`
+	VigenciaContrato   int                   `orm:"column(vigencia_contrato);null"`
+	DiasLiquidados     float64               `orm:"column(dias_liquidados);null"`
+	TipoPreliquidacion *TipoPreliquidacion   `orm:"column(tipo_preliquidacion);rel(fk)"`
+	Preliquidacion     *Preliquidacion       `orm:"column(preliquidacion);rel(fk)"`
+	Concepto           *ConceptoNomina       `orm:"column(concepto);rel(fk)"`
 }
 
 func (t *DetallePreliquidacion) TableName() string {
@@ -25,11 +27,13 @@ func (t *DetallePreliquidacion) TableName() string {
 func init() {
 	orm.RegisterModel(new(DetallePreliquidacion))
 }
+
 // AddDetallePreliquidacion insert a new DetallePreliquidacion into database and returns
 // last inserted Id on success.
 func AddDetallePreliquidacion(m *DetallePreliquidacion) (id int64, err error) {
 	o := orm.NewOrm()
 	id, err = o.Insert(m)
+	fmt.Println(err)
 	return
 }
 
@@ -49,7 +53,7 @@ func GetDetallePreliquidacionById(id int) (v *DetallePreliquidacion, err error) 
 func GetAllDetallePreliquidacion(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(DetallePreliquidacion))
+	qs := o.QueryTable(new(DetallePreliquidacion)).RelatedSel(5)
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute

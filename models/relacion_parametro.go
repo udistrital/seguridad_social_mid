@@ -11,7 +11,7 @@ import (
 )
 
 type RelacionParametro struct {
-	Id             int       `orm:"column(id_rel_parametro);pk"`
+	Id             int       `orm:"column(id_rel_parametro);pk;auto"`
 	Descripcion    string    `orm:"column(descripcion)"`
 	EstadoRegistro bool      `orm:"column(estado_registro)"`
 	FechaRegistro  time.Time `orm:"column(fecha_registro);type(date)"`
@@ -49,7 +49,7 @@ func GetRelacionParametroById(id int) (v *RelacionParametro, err error) {
 func GetAllRelacionParametro(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(RelacionParametro))
+	qs := o.QueryTable(new(RelacionParametro)).RelatedSel(5)
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute

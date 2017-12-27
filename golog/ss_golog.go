@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	. "github.com/mndrix/golog"
+	. "github.com/udistrital/golog"
 )
 
 func GetInt64(reglas string, regla_inyectada string, variable_a_obtener string) []int64 {

@@ -14,6 +14,7 @@ type Concepto struct {
 	NombreConcepto string `orm:"column(nombre_concepto)"`
 	Naturaleza     string `orm:"column(naturaleza);null"`
 	AliasConcepto  string `orm:"column(alias_concepto)"`
+	TipoConcepto   string `orm:"column(tipo)"`
 }
 
 func (t *Concepto) TableName() string {

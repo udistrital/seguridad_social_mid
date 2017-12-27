@@ -10,13 +10,12 @@ import (
 )
 
 type TipoUpc struct {
-	Id         int    `orm:"column(id_tipo);pk"`
-	Valor      int64  `orm:"column(valor)"`
-	Acuerdo    string `orm:"column(acuerdo)"`
-	EdadMinima int16  `orm:"column(edad_minima)"`
-	EdadMax    int16  `orm:"column(edad_max)"`
-	IdZonaZona *Zona  `orm:"column(id_zona_zona);rel(fk)"`
-	Vigencia   int    `orm:"column(vigencia)"`
+	Id           int           `orm:"column(id);pk"`
+	Valor        float64       `orm:"column(valor)"`
+	Vigencia     float64       `orm:"column(vigencia)"`
+	ZonaUpc      *ZonaUpc      `orm:"column(zona_upc);rel(fk)"`
+	RangoEdadUpc *RangoEdadUpc `orm:"column(rango_edad_upc);rel(fk)"`
+	Resolucion   string        `orm:"column(resolucion);null"`
 }
 
 func (t *TipoUpc) TableName() string {
@@ -56,7 +55,11 @@ func GetAllTipoUpc(query map[string]string, fields []string, sortby []string, or
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
 		k = strings.Replace(k, ".", "__", -1)
-		qs = qs.Filter(k, v)
+		if strings.Contains(k, "isnull") {
+			qs = qs.Filter(k, (v == "true" || v == "1"))
+		} else {
+			qs = qs.Filter(k, v)
+		}
 	}
 	// order by:
 	var sortFields []string

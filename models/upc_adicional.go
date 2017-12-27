@@ -11,17 +11,17 @@ import (
 )
 
 type UpcAdicional struct {
-	Id               int       `orm:"column(id_upc);pk"`
-	PersonaAsociada  int       `orm:"column(persona_asociada)"`
-	Parentesco       string    `orm:"column(parentesco)"`
-	FechaNacimiento  time.Time `orm:"column(fecha_nacimiento);type(date)"`
-	TipoDocumento    string    `orm:"column(tipo_documento)"`
-	Documento        string    `orm:"column(documento)"`
-	PrimerNombre     string    `orm:"column(primer_nombre)"`
-	SegudoNombre     string    `orm:"column(segudo_nombre)"`
-	PrimerApellido   string    `orm:"column(primer_apellido)"`
-	SegudoApellido   string    `orm:"column(segudo_apellido)"`
-	UbicacionLaboral string    `orm:"column(ubicacion_laboral)"`
+	Id                int       `orm:"column(id);pk"`
+	PersonaAsociada   int       `orm:"column(persona_asociada)"`
+	ParametroEstandar int       `orm:"column(parametro_estandar)"`
+	NumDocumento      string    `orm:"column(num_documento)"`
+	TipoUpc           *TipoUpc  `orm:"column(tipo_upc);rel(fk)"`
+	PrimerNombre      string    `orm:"column(primer_nombre)"`
+	SegundoNombre     string    `orm:"column(segundo_nombre);null"`
+	PrimerApellido    string    `orm:"column(primer_apellido)"`
+	SegundoApellido   string    `orm:"column(segundo_apellido);null"`
+	FechaDeNacimiento time.Time `orm:"column(fecha_de_nacimiento);type(date)"`
+	Activo            bool      `orm:"column(activo);null"`
 }
 
 func (t *UpcAdicional) TableName() string {
@@ -61,7 +61,11 @@ func GetAllUpcAdicional(query map[string]string, fields []string, sortby []strin
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
 		k = strings.Replace(k, ".", "__", -1)
-		qs = qs.Filter(k, v)
+		if strings.Contains(k, "isnull") {
+			qs = qs.Filter(k, (v == "true" || v == "1"))
+		} else {
+			qs = qs.Filter(k, v)
+		}
 	}
 	// order by:
 	var sortFields []string

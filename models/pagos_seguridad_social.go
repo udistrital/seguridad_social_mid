@@ -1,10 +1,15 @@
 package models
 
 type PagosSeguridadSocial struct {
-	Persona      int64
-	SaludUd      float64
-	SaludTotal   float64
-	PensionUd    float64
-	PensionTotal float64
-	Arl          float64
+	NombrePersona           string
+	NumeroContrato          string
+	SaludUd                 float64
+	SaludTotal              int64
+	PensionUd               float64
+	PensionTotal            int64
+	Arl                     int64
+	Caja                    int64 //Caja de compensación
+	Icbf                    int64 //Instituto Colombiano de Bienestar Familiar
+	IdPreliquidacion        int
+	IdDetallePreliquidacion int
 }
