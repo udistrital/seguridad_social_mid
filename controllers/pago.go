@@ -374,29 +374,21 @@ func (c *PagoController) RegistrarPagos() {
 			c.Data["json"] = err.Error()
 		}
 
-		log.Println(PeriodoPago.Contratos)
-
 		pagosSeg, _ := getPagosSeg()
 		contPagos, contContratista := 0, 0 // conPagos sirve para que cuente los 5 pagos de seguridad social, contContratista es para que recorrer los contratistas
 		for i := range PeriodoPago.Pagos {
 			nombrePago := pagosSeg[PeriodoPago.Pagos[i].TipoPago]
-			log.Println(nombrePago, PeriodoPago.Contratos[contContratista])
 
 			switch nombrePago {
 			case "arl":
-				log.Println("arl: ", mapPersonas[PeriodoPago.Contratos[contContratista]].IdArl)
 				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[PeriodoPago.Contratos[contContratista]].IdArl
 			case "pension_ud":
-				log.Println("pension_ud: ", mapPersonas[PeriodoPago.Contratos[contContratista]].IdFondoPension)
 				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[PeriodoPago.Contratos[contContratista]].IdFondoPension
 			case "salud_ud":
-				log.Println("salud_ud: ", mapPersonas[PeriodoPago.Contratos[contContratista]].IdEps)
 				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[PeriodoPago.Contratos[contContratista]].IdEps
 			case "caja_compensacion":
-				log.Println("caja_compensacion: ", mapPersonas[PeriodoPago.Contratos[contContratista]].IdCajaCompensacion)
 				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[PeriodoPago.Contratos[contContratista]].IdCajaCompensacion
 			default: // ICBF
-				log.Println("ICBF")
 				PeriodoPago.Pagos[i].EntidadPago = 0
 			}
 			contPagos++
