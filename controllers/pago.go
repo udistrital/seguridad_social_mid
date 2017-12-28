@@ -3,7 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -109,7 +109,7 @@ func (c *PagoController) NovedadesPorPersona() {
 			"&query=Persona:"+personaStr+",Concepto.Naturaleza:seguridad_social,EstadoNovedad:Activo"+
 			"&fields=Concepto,Persona,FechaDesde,FechaHasta", &conceptoPorPersona)
 		errores = ""
-		fmt.Println(err, errConcepto)
+		log.Println(err, errConcepto)
 		if errores != "" {
 			alertas = append(alertas, "error al traer detalle liquidacion")
 			c.Data["json"] = alertas
@@ -131,13 +131,33 @@ func (c *PagoController) NovedadesPorPersona() {
 	}
 }
 
+// getInfoProveedor Recibe un arreglo de strings con los contratos y devuelve un map con la información del proveedor
+func getInfoProveedor(contratos []string) (map[string]models.InformacionProveedor, error) {
+	personas := make(map[string]models.InformacionProveedor)
+	var (
+		proveedor models.InformacionProveedor
+		contrato  models.ContratoGeneral
+	)
+	for i := range contratos {
+		if err := getJson("http://"+beego.AppConfig.String("argoServicio")+"/contrato_general/"+contratos[i], &contrato); err == nil {
+			if err = getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_proveedor/"+strconv.Itoa(contrato.Contratista), &proveedor); err == nil {
+				personas[contratos[i]] = proveedor
+			} else {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+	return personas, nil
+}
+
 func (c *PagoController) CalcularSegSocial() {
 	idStr := c.Ctx.Input.Param(":id")
 	_, err := strconv.Atoi(idStr)
 	var (
-		alertas, contratos []string
-		predicado          []models.Predicado
-		//buffer                bytes.Buffer //objeto para concatenar strings a la variable errores
+		alertas, contratos    []string
+		predicado             []models.Predicado
 		detallePreliquidacion []models.DetallePreliquidacion
 		pagosSeguridadSocial  []*models.PagosSeguridadSocial
 	)
@@ -194,7 +214,7 @@ func (c *PagoController) CalcularSegSocial() {
 
 			mapProveedores, _ := getInfoProveedor(contratos)
 
-			for i, _ := range pagosSeguridadSocial {
+			for i := range pagosSeguridadSocial {
 				pagosSeguridadSocial[i].NombrePersona = mapProveedores[pagosSeguridadSocial[i].NumeroContrato].NomProveedor
 			}
 
@@ -238,7 +258,7 @@ func SaludHCHonorarios(idLiquidacion string) (valorSaludEmpleado string) {
 		"?limit=0&query=Preliquidacion:"+idLiquidacion+",Concepto.NombreConcepto:salud", &detalleLiquSalud)
 
 	if errSalud != nil {
-		fmt.Println("Error en ValorSaludEmpleado:\n", errSalud)
+		log.Println("Error en ValorSaludEmpleado:\n", errSalud)
 	} else {
 		for index := 0; index < len(detalleLiquSalud); index++ {
 			predicado = append(predicado, models.Predicado{Nombre: "v_salud_func(" + detalleLiquSalud[index].NumeroContrato + ", " + strconv.Itoa(int(detalleLiquSalud[index].ValorCalculado)) + ")."})
@@ -260,7 +280,7 @@ func ValorPensionEmpleado(idLiquidacion string) (valorPensionEmpleado string) {
 		"?limit=0&query=Preliquidacion:"+idLiquidacion+",Concepto.NombreConcepto:pension", &detalleLiquPension)
 
 	if errPension != nil {
-		fmt.Println("Error en ValorPensionEmpleado:\n", errPension)
+		log.Println("Error en ValorPensionEmpleado:\n", errPension)
 	} else {
 		for index := 0; index < len(detalleLiquPension); index++ {
 			predicado = append(predicado, models.Predicado{Nombre: "v_pen_func(" + detalleLiquPension[index].NumeroContrato + ", " + strconv.Itoa(int(detalleLiquPension[index].ValorCalculado)) + ")."})
@@ -282,7 +302,7 @@ func CargarNovedades(id string) (novedades string) {
 		"?limit=0&query=Preliquidacion:"+id+",Concepto.NaturalezaConcepto.Nombre:seguridad_social&fields=Concepto,NumeroContrato", &conceptosPreliquidacion)
 
 	if errLincNo != nil {
-		fmt.Println("error en CargarNovedades()", errLincNo)
+		log.Println("error en CargarNovedades()", errLincNo)
 	} else {
 		for index := 0; index < len(conceptosPreliquidacion); index++ {
 			predicado = append(predicado, models.Predicado{Nombre: "novedad_persona(" + conceptosPreliquidacion[index].Concepto.NombreConcepto + ", " + conceptosPreliquidacion[index].NumeroContrato + ")."})
@@ -370,27 +390,6 @@ func (c *PagoController) RegistrarPagos() {
 		c.Data["json"] = err.Error()
 	}
 	c.ServeJSON()
-}
-
-// getInfoProveedor Recibe un arreglo de strings con los contratos y devuelve un map con la información del proveedor
-func getInfoProveedor(contratos []string) (map[string]models.InformacionProveedor, error) {
-	personas := make(map[string]models.InformacionProveedor)
-	var (
-		proveedor models.InformacionProveedor
-		contrato  models.ContratoGeneral
-	)
-	for i := range contratos {
-		if err := getJson("http://"+beego.AppConfig.String("argoServicio")+"/contrato_general/"+contratos[i], &contrato); err == nil {
-			if err = getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_proveedor/"+strconv.Itoa(contrato.Contratista), &proveedor); err == nil {
-				personas[contratos[i]] = proveedor
-			} else {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
-	}
-	return personas, nil
 }
 
 // getInfoPersona recibe un map de proveedores para consultar el número de contrato y devuelve un mapa con la inforamción de la persona, cuya llave es también el número de contrato
