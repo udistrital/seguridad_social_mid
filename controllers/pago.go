@@ -152,6 +152,21 @@ func getInfoProveedor(contratos []string) (map[string]models.InformacionProveedo
 	return personas, nil
 }
 
+// getInfoPersona recibe un map de proveedores para consultar el número de contrato y devuelve un mapa con la inforamción de la persona, cuya llave es también el número de contrato
+func getInfoPersona(proveedores map[string]models.InformacionProveedor) (map[string]models.InformacionPersonaNatural, error) {
+	personas := make(map[string]models.InformacionPersonaNatural)
+	var persona models.InformacionPersonaNatural
+	for key, value := range proveedores {
+		if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_persona_natural/"+value.NumDocumento, &persona); err == nil {
+			log.Println(key, "http://"+beego.AppConfig.String("agoraServicio")+"/informacion_persona_natural/"+value.NumDocumento)
+			personas[key] = persona
+		} else {
+			return nil, err
+		}
+	}
+	return personas, nil
+}
+
 func (c *PagoController) CalcularSegSocial() {
 	idStr := c.Ctx.Input.Param(":id")
 	_, err := strconv.Atoi(idStr)
@@ -359,25 +374,36 @@ func (c *PagoController) RegistrarPagos() {
 			c.Data["json"] = err.Error()
 		}
 
+		log.Println(PeriodoPago.Contratos)
+
 		pagosSeg, _ := getPagosSeg()
-		contContratista := 0
+		contPagos, contContratista := 0, 0 // conPagos sirve para que cuente los 5 pagos de seguridad social, contContratista es para que recorrer los contratistas
 		for i := range PeriodoPago.Pagos {
 			nombrePago := pagosSeg[PeriodoPago.Pagos[i].TipoPago]
+			log.Println(nombrePago, PeriodoPago.Contratos[contContratista])
+
 			switch nombrePago {
 			case "arl":
+				log.Println("arl: ", mapPersonas[PeriodoPago.Contratos[contContratista]].IdArl)
 				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[PeriodoPago.Contratos[contContratista]].IdArl
 			case "pension_ud":
+				log.Println("pension_ud: ", mapPersonas[PeriodoPago.Contratos[contContratista]].IdFondoPension)
 				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[PeriodoPago.Contratos[contContratista]].IdFondoPension
 			case "salud_ud":
+				log.Println("salud_ud: ", mapPersonas[PeriodoPago.Contratos[contContratista]].IdEps)
 				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[PeriodoPago.Contratos[contContratista]].IdEps
 			case "caja_compensacion":
+				log.Println("caja_compensacion: ", mapPersonas[PeriodoPago.Contratos[contContratista]].IdCajaCompensacion)
 				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[PeriodoPago.Contratos[contContratista]].IdCajaCompensacion
 			default: // ICBF
+				log.Println("ICBF")
 				PeriodoPago.Pagos[i].EntidadPago = 0
 			}
-			contContratista++
-			if contContratista == 5 {
-				contContratista = 0
+			contPagos++
+			// Como se tienen 5 pagos, cada vez que se asigne uno nuevo, el contratista debe pasar al siguiente
+			if contPagos == 5 {
+				contPagos = 0
+				contContratista++
 			}
 		}
 
@@ -390,20 +416,6 @@ func (c *PagoController) RegistrarPagos() {
 		c.Data["json"] = err.Error()
 	}
 	c.ServeJSON()
-}
-
-// getInfoPersona recibe un map de proveedores para consultar el número de contrato y devuelve un mapa con la inforamción de la persona, cuya llave es también el número de contrato
-func getInfoPersona(proveedores map[string]models.InformacionProveedor) (map[string]models.InformacionPersonaNatural, error) {
-	personas := make(map[string]models.InformacionPersonaNatural)
-	var persona models.InformacionPersonaNatural
-	for key, value := range proveedores {
-		if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_persona_natural/"+value.NumDocumento, &persona); err == nil {
-			personas[key] = persona
-		} else {
-			return nil, err
-		}
-	}
-	return personas, nil
 }
 
 /* getPagosSeg busca todos los pagos correspondientes a seguridad social en los
