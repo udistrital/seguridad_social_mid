@@ -12,6 +12,18 @@ import (
 	"github.com/astaxie/beego"
 )
 
+func convertirMapa(arr []interface{}) (map[string]interface{}, error) {
+	returnedMap := make(map[string]interface{})
+	for i := range arr {
+		tempMap := arr[i].(map[string]interface{})
+		for key, value := range tempMap {
+			//fmt.Println("key: ", key, "value: ", reflect.TypeOf(value))
+			returnedMap[key] = value
+		}
+	}
+	return returnedMap, nil
+}
+
 func sendJson(url string, trequest string, target interface{}, datajson interface{}) error {
 	b := new(bytes.Buffer)
 	if datajson != nil {

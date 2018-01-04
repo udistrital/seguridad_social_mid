@@ -2,10 +2,8 @@ package controllers
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/ss_mid_api/golog"
@@ -19,11 +17,6 @@ type PagoController struct {
 
 // URLMapping ...
 func (c *PagoController) URLMapping() {
-	c.Mapping("Post", c.Post)
-	c.Mapping("GetOne", c.GetOne)
-	c.Mapping("GetAll", c.GetAll)
-	c.Mapping("Put", c.Put)
-	c.Mapping("Delete", c.Delete)
 	c.Mapping("CalcularSegSocial", c.CalcularSegSocial)
 	c.Mapping("ConceptosIbc", c.ConceptosIbc)
 	c.Mapping("GetNovedadesPorPersona", c.NovedadesPorPersona)
@@ -192,7 +185,7 @@ func (c *PagoController) CalcularSegSocial() {
 				pagosSeguridadSocial = append(pagosSeguridadSocial, aux)
 			}
 
-			mapProveedores, _ := getInfoProveedor(contratos)
+			mapProveedores, _ := GetInfoProveedor(contratos)
 
 			for i, _ := range pagosSeguridadSocial {
 				pagosSeguridadSocial[i].NombrePersona = mapProveedores[pagosSeguridadSocial[i].NumeroContrato].NomProveedor
@@ -292,28 +285,6 @@ func CargarNovedades(id string) (novedades string) {
 	return
 }
 
-// Post ...
-// @Title Post
-// @Description create Pago
-// @Param	body		body 	models.Pago	true		"body for Pago content"
-// @Success 201 {int} models.Pago
-// @Failure 403 body is empty
-// @router / [post]
-func (c *PagoController) Post() {
-	var v models.Pago
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		if _, err := models.AddPago(&v); err == nil {
-			c.Ctx.Output.SetStatus(201)
-			c.Data["json"] = v
-		} else {
-			c.Data["json"] = err.Error()
-		}
-	} else {
-		c.Data["json"] = err.Error()
-	}
-	c.ServeJSON()
-}
-
 // RegistrarPagos ...
 // @Title Registrar pagos de seguridad social
 // @Description Recibe los pagos para registrar seguridad social, les agrega un estado,
@@ -329,12 +300,12 @@ func (c *PagoController) RegistrarPagos() {
 	)
 
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &PeriodoPago); err == nil {
-		mapProveedores, err := getInfoProveedor(PeriodoPago.Contratos)
+		mapProveedores, err := GetInfoProveedor(PeriodoPago.Contratos)
 		if err != nil {
 			c.Data["json"] = err.Error()
 		}
 
-		mapPersonas, err := getInfoPersona(mapProveedores)
+		mapPersonas, err := GetInfoPersona(mapProveedores)
 		if err != nil {
 			c.Data["json"] = err.Error()
 		}
@@ -373,7 +344,7 @@ func (c *PagoController) RegistrarPagos() {
 }
 
 // getInfoProveedor Recibe un arreglo de strings con los contratos y devuelve un map con la información del proveedor
-func getInfoProveedor(contratos []string) (map[string]models.InformacionProveedor, error) {
+func GetInfoProveedor(contratos []string) (map[string]models.InformacionProveedor, error) {
 	personas := make(map[string]models.InformacionProveedor)
 	var (
 		proveedor models.InformacionProveedor
@@ -394,7 +365,7 @@ func getInfoProveedor(contratos []string) (map[string]models.InformacionProveedo
 }
 
 // getInfoPersona recibe un map de proveedores para consultar el número de contrato y devuelve un mapa con la inforamción de la persona, cuya llave es también el número de contrato
-func getInfoPersona(proveedores map[string]models.InformacionProveedor) (map[string]models.InformacionPersonaNatural, error) {
+func GetInfoPersona(proveedores map[string]models.InformacionProveedor) (map[string]models.InformacionPersonaNatural, error) {
 	personas := make(map[string]models.InformacionPersonaNatural)
 	var persona models.InformacionPersonaNatural
 	for key, value := range proveedores {
@@ -424,142 +395,4 @@ func getPagosSeg() (map[int]string, error) {
 		pagos[int(interfaceArr[i].(map[string]interface{})["Id"].(float64))] = interfaceArr[i].(map[string]interface{})["NombreConcepto"].(string)
 	}
 	return pagos, nil
-}
-
-/*
-// Get ...
-// @Title ObtenerSegSocial_X_Facultad
-// @Param idPeriodoPago "corresponde al al id del periodo del pago de seguridad social"
-// @Succes 201 {object} models.Pago
-// @Failure 403 :id is empty
-// @router /:id [get]
-func (c *PagoController) ObtenerSegSocial_X_Facultad() {
-	idPeriodoPago := c.Ctx.Input.Param(":id")
-	id, _ : := strconv.Atoi(idStr)
-	v, err := models
-}
-
-*/
-// GetOne ...
-// @Title Get One
-// @Description get Pago by id
-// @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} models.Pago
-// @Failure 403 :id is empty
-// @router /:id [get]
-func (c *PagoController) GetOne() {
-	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	v, err := models.GetPagoById(id)
-	if err != nil {
-		c.Data["json"] = err.Error()
-	} else {
-		c.Data["json"] = v
-	}
-	c.ServeJSON()
-}
-
-// GetAll ...
-// @Title Get All
-// @Description get Pago
-// @Param	query	query	string	false	"Filter. e.g. col1:v1,col2:v2 ..."
-// @Param	fields	query	string	false	"Fields returned. e.g. col1,col2 ..."
-// @Param	sortby	query	string	false	"Sorted-by fields. e.g. col1,col2 ..."
-// @Param	order	query	string	false	"Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ..."
-// @Param	limit	query	string	false	"Limit the size of result set. Must be an integer"
-// @Param	offset	query	string	false	"Start position of result set. Must be an integer"
-// @Success 200 {object} models.Pago
-// @Failure 403
-// @router / [get]
-func (c *PagoController) GetAll() {
-	var fields []string
-	var sortby []string
-	var order []string
-	var query = make(map[string]string)
-	var limit int64 = 10
-	var offset int64
-
-	// fields: col1,col2,entity.col3
-	if v := c.GetString("fields"); v != "" {
-		fields = strings.Split(v, ",")
-	}
-	// limit: 10 (default is 10)
-	if v, err := c.GetInt64("limit"); err == nil {
-		limit = v
-	}
-	// offset: 0 (default is 0)
-	if v, err := c.GetInt64("offset"); err == nil {
-		offset = v
-	}
-	// sortby: col1,col2
-	if v := c.GetString("sortby"); v != "" {
-		sortby = strings.Split(v, ",")
-	}
-	// order: desc,asc
-	if v := c.GetString("order"); v != "" {
-		order = strings.Split(v, ",")
-	}
-	// query: k:v,k:v
-	if v := c.GetString("query"); v != "" {
-		for _, cond := range strings.Split(v, ",") {
-			kv := strings.SplitN(cond, ":", 2)
-			if len(kv) != 2 {
-				c.Data["json"] = errors.New("Error: invalid query key/value pair")
-				c.ServeJSON()
-				return
-			}
-			k, v := kv[0], kv[1]
-			query[k] = v
-		}
-	}
-
-	l, err := models.GetAllPago(query, fields, sortby, order, offset, limit)
-	if err != nil {
-		c.Data["json"] = err.Error()
-	} else {
-		c.Data["json"] = l
-	}
-	c.ServeJSON()
-}
-
-// Put ...
-// @Title Put
-// @Description update the Pago
-// @Param	id		path 	string	true		"The id you want to update"
-// @Param	body		body 	models.Pago	true		"body for Pago content"
-// @Success 200 {object} models.Pago
-// @Failure 403 :id is not int
-// @router /:id [put]
-func (c *PagoController) Put() {
-	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	v := models.Pago{Id: id}
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		if err := models.UpdatePagoById(&v); err == nil {
-			c.Data["json"] = "OK"
-		} else {
-			c.Data["json"] = err.Error()
-		}
-	} else {
-		c.Data["json"] = err.Error()
-	}
-	c.ServeJSON()
-}
-
-// Delete ...
-// @Title Delete
-// @Description delete the Pago
-// @Param	id		path 	string	true		"The id you want to delete"
-// @Success 200 {string} delete success!
-// @Failure 403 id is empty
-// @router /:id [delete]
-func (c *PagoController) Delete() {
-	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	if err := models.DeletePago(id); err == nil {
-		c.Data["json"] = "OK"
-	} else {
-		c.Data["json"] = err.Error()
-	}
-	c.ServeJSON()
 }
