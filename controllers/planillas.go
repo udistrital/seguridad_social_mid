@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/ss_mid_api/models"
@@ -78,38 +77,45 @@ var (
 // @router /GenerarPlanillaActivos [post]
 func (c *PlanillasController) GenerarPlanillaActivos() {
 	var (
-		periodoPago *models.PeriodoPago
-		v           []interface{}
-		contratos   []string
+		periodoPago                               *models.PeriodoPago
+		detallePreliquidacion, conceptosSegSocial []interface{}
+
+		contratos []string
 	)
 	tipoRegistro := "02"
 	secuencia := 1
 
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &periodoPago); err == nil {
-		fmt.Println("Periodo pago: ", *periodoPago)
 		if err = getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion?"+
-			"query=Preliquidacion.Id:"+strconv.Itoa(periodoPago.Liquidacion), &v); err == nil {
+			"limit=-1"+
+			"&query=Preliquidacion.Id:"+strconv.Itoa(periodoPago.Liquidacion), &detallePreliquidacion); err == nil {
 
-			for i := range v {
-				for key, value := range v[i].(map[string]interface{}) {
-					if strings.Compare(key, "NumeroContrato") == 0 {
-						contratos = append(contratos, value.(string))
-					}
-				}
+			// Se obtienen todos los conceptos de seguridad social en tabla conceptos de titan
+			err = getJson("http://"+beego.AppConfig.String("titanServicio")+
+				"/concepto_nomina?limit=0&query=NaturalezaConcepto.Nombre:seguridad_social", &conceptosSegSocial)
+
+			for i := range detallePreliquidacion {
+				tempMap := detallePreliquidacion[i].(map[string]interface{})
+				contratos = append(contratos, tempMap["NumeroContrato"].(string))
 			}
+
+			contratos = []string{"DVE2", "DVE3", "DVE4", "DVE5", "DVE6", "DVE7", "DVE13", "DVE14", "DVE15", "DVE16", "DVE17"}
+			fmt.Println(contratos)
 
 			mapProveedores, _ := GetInfoProveedor(contratos)
 			mapPersonas, _ := GetInfoPersona(mapProveedores)
 
 			for key, value := range mapPersonas {
-				/*var (
-				ibcLiquidado = 0
-				pagoSalud    = 0
-				pagoPension  = 0
-				pagoArl      = 0
-				pagoCaja     = 0
-				pagoIcbf     = 0
-				)*/
+				var (
+					preliquidacion []interface{}
+					diasCotizados  = 30
+					ibcLiquidado,
+					pagoSalud,
+					pagoPension,
+					pagoArl,
+					pagoCaja,
+					pagoIcbf string
+				)
 
 				fila += formatoDato(tipoRegistro, 2)                     //Tipo Registro
 				fila += formatoDato(completarSecuencia(secuencia, 5), 5) //Secuencia
@@ -162,10 +168,103 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				//Código CCF a la cual pertenece el afiliado
 				fila += formatoDato("CCF04", 6)
 
+				err = getJson("http://"+beego.AppConfig.String("titanServicio")+
+					"/detalle_preliquidacion?limit=1"+
+					"&fields=DiasLiquidados"+
+					"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",Concepto.NombreConcepto:ibc_novedad,NumeroContrato:"+key, &preliquidacion)
+				if err == nil {
+					if preliquidacion != nil {
+						tempMap := preliquidacion[0].(map[string]interface{})
+						diasCotizados = int(tempMap["ValorCalculado"].(float64))
+					}
+				}
+
+				fila += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a pensión
+				fila += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a salud
+
+				fila += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a ARL
+				fila += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a CCF
+
+				err = getJson("http://"+beego.AppConfig.String("titanServicio")+
+					"/detalle_preliquidacion?limit=1"+
+					"&fields=ValorCalculado"+
+					"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",Concepto.NombreConcepto:salarioBase,NumeroContrato:"+key, &preliquidacion)
+				if err == nil {
+					salarioBase := strconv.Itoa(int(preliquidacion[0].(map[string]interface{})["ValorCalculado"].(float64)))
+					fila += formatoDato(salarioBase, 9) //Salario básico
+				}
+
+				fila += formatoDato("", 1) //Salario integral
+
+				err = getJson("http://"+beego.AppConfig.String("titanServicio")+
+					"/detalle_preliquidacion?limit=1"+
+					"&fields=ValorCalculado"+
+					"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",Concepto.NombreConcepto:ibc_liquidado,NumeroContrato:"+key, &preliquidacion)
+				if err == nil {
+					ibcLiquidado := int(preliquidacion[0].(map[string]interface{})["ValorCalculado"].(float64))
+					fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC pensión
+					fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC salud
+					fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC ARL
+					fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC CCF
+				}
+
+				fila += formatoDato(completarSecuencia(16, 7), 7) //Tarifa de aportes pensiones
+
+				//Cotización obligatoria a pensiones
+				for i := 0; i < len(conceptosSegSocial); i++ {
+					tempMap := conceptosSegSocial[i].(map[string]interface{})
+					idPago := tempMap["Id"]
+					switch tempMap["NombreConcepto"] {
+					case "pensionTotal":
+						pagoPension = obtenerPago(strconv.Itoa(periodoPago.Id), strconv.Itoa(periodoPago.Liquidacion), strconv.Itoa(int(idPago.(float64))))
+					case "saludTotal":
+						pagoSalud = obtenerPago(strconv.Itoa(periodoPago.Id), strconv.Itoa(periodoPago.Liquidacion), strconv.Itoa(int(idPago.(float64))))
+					case "icbf":
+						pagoIcbf = obtenerPago(strconv.Itoa(periodoPago.Id), strconv.Itoa(periodoPago.Liquidacion), strconv.Itoa(int(idPago.(float64))))
+					case "caja":
+						pagoCaja = obtenerPago(strconv.Itoa(periodoPago.Id), strconv.Itoa(periodoPago.Liquidacion), strconv.Itoa(int(idPago.(float64))))
+					case "arl":
+						pagoArl = obtenerPago(strconv.Itoa(periodoPago.Id), strconv.Itoa(periodoPago.Liquidacion), strconv.Itoa(int(idPago.(float64))))
+					}
+				}
+
+				fmt.Println(ibcLiquidado, pagoSalud, pagoArl, pagoIcbf, pagoCaja)
+
+				fila += formatoDato(completarSecuenciaString(pagoPension, 9), 9) // Cotización obligatoria a pensiones
+
+				fila += formatoDato(completarSecuencia(0, 9), 9) //Aporte voluntario del afiliado al fondo de pensiones obligatorias
+
+				//Aporte voluntario del aportante al fondo de pensiones obligatoria
+				err = getJson("http://"+beego.AppConfig.String("titanServicio")+
+					"/detalle_preliquidacion"+
+					"?query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+"NumeroContrato:"+key, &preliquidacion)
+
+				if err != nil {
+					fila += formatoDato(completarSecuencia(0, 9), 9)
+				} else {
+					for i := 0; i < len(preliquidacion); i++ {
+						tempMap := preliquidacion[i].(map[string]interface{})
+						fmt.Println(tempMap)
+					}
+
+					/*for _, liquidado := range preliquidacion {
+						if liquidado.Concepto.NombreConcepto == "nombreRegla2176" {
+							fila += formatoDato(strconv.FormatFloat(liquidado.ValorCalculado, 'E', -1, 64), 9)
+						} else if liquidado.Concepto.NombreConcepto == "nombreRegla2178" {
+							fila += formatoDato(strconv.FormatFloat(liquidado.ValorCalculado, 'E', -1, 64), 9)
+						} else if liquidado.Concepto.NombreConcepto == "nombreRegla2173" {
+							fila += formatoDato(strconv.FormatFloat(liquidado.ValorCalculado, 'E', -1, 64), 9)
+						} else {
+							break
+						}
+					}*/
+				}
+
 				fila += "\n" // siguiente persona...
 				secuencia++
 			}
-			fmt.Println(fila)
+
+			//fmt.Println(fila)
 			c.Data["json"] = fila
 		} else {
 			c.Data["json"] = err.Error()
@@ -409,10 +508,13 @@ func obtenerPago(idPeriodoPago, idDetalleLiqidacion, idTipoPago string) (valorPa
 	var pago []models.Pago
 	/* Se obtiene un pago especefico con el periodo de pago, el detalle de la
 	   liquidacion y el tipo de pago */
-	errPagosSalud := getJson("http://"+beego.AppConfig.String("seguridadSocialService")+
+	errPagosSalud := getJson("http://"+beego.AppConfig.String("segSocialService")+
 		"/pago?limit=1&query=PeriodoPago.Id:"+idPeriodoPago+",DetallePreliquidacion:"+idDetalleLiqidacion+
 		",TipoPago:"+idTipoPago, &pago)
 	if errPagosSalud != nil {
+		fmt.Println("http://" + beego.AppConfig.String("segSocialService") +
+			"/pago?limit=1&query=PeriodoPago.Id:" + idPeriodoPago + ",DetallePreliquidacion:" + idDetalleLiqidacion +
+			",TipoPago:" + idTipoPago)
 		fmt.Println("errPagosSalud: ", errPagosSalud)
 	} else {
 		valorPago = strconv.FormatFloat(pago[0].Valor, 'G', -1, 64)
