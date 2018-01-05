@@ -104,7 +104,6 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 
 			mapProveedores, _ := GetInfoProveedor(contratos)
 			mapPersonas, _ := GetInfoPersona(mapProveedores)
-
 			for key, value := range mapPersonas {
 				var (
 					preliquidacion []interface{}
@@ -215,20 +214,26 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					tempMap := conceptosSegSocial[i].(map[string]interface{})
 					idPago := tempMap["Id"]
 					switch tempMap["NombreConcepto"] {
-					case "pensionTotal":
+					case "pension_ud":
+						fmt.Println(tempMap["NombreConcepto"])
 						pagoPension = obtenerPago(strconv.Itoa(periodoPago.Id), strconv.Itoa(periodoPago.Liquidacion), strconv.Itoa(int(idPago.(float64))))
-					case "saludTotal":
+					case "salud_ud":
+						fmt.Println(tempMap["NombreConcepto"])
 						pagoSalud = obtenerPago(strconv.Itoa(periodoPago.Id), strconv.Itoa(periodoPago.Liquidacion), strconv.Itoa(int(idPago.(float64))))
+						fmt.Println("pago: ", periodoPago.Id, periodoPago.Liquidacion, int(idPago.(float64)))
 					case "icbf":
+						fmt.Println(tempMap["NombreConcepto"])
 						pagoIcbf = obtenerPago(strconv.Itoa(periodoPago.Id), strconv.Itoa(periodoPago.Liquidacion), strconv.Itoa(int(idPago.(float64))))
-					case "caja":
+					case "caja_compensacion":
+						fmt.Println(tempMap["NombreConcepto"])
 						pagoCaja = obtenerPago(strconv.Itoa(periodoPago.Id), strconv.Itoa(periodoPago.Liquidacion), strconv.Itoa(int(idPago.(float64))))
 					case "arl":
+						fmt.Println(tempMap["NombreConcepto"])
 						pagoArl = obtenerPago(strconv.Itoa(periodoPago.Id), strconv.Itoa(periodoPago.Liquidacion), strconv.Itoa(int(idPago.(float64))))
 					}
 				}
 
-				fmt.Println(ibcLiquidado, pagoSalud, pagoArl, pagoIcbf, pagoCaja)
+				fmt.Println("ibc: "+ibcLiquidado, "salud: "+pagoSalud, "arl: "+pagoArl, "icbf: "+pagoIcbf, "caja: "+pagoCaja)
 
 				fila += formatoDato(completarSecuenciaString(pagoPension, 9), 9) // Cotización obligatoria a pensiones
 
@@ -237,14 +242,23 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				//Aporte voluntario del aportante al fondo de pensiones obligatoria
 				err = getJson("http://"+beego.AppConfig.String("titanServicio")+
 					"/detalle_preliquidacion"+
-					"?query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+"NumeroContrato:"+key, &preliquidacion)
+					"?fields=Concepto,Id"+
+					"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",NumeroContrato:"+key, &preliquidacion)
 
 				if err != nil {
 					fila += formatoDato(completarSecuencia(0, 9), 9)
 				} else {
 					for i := 0; i < len(preliquidacion); i++ {
 						tempMap := preliquidacion[i].(map[string]interface{})
-						fmt.Println(tempMap)
+						//fmt.Println(tempMap["Concepto"].(map[string]interface{})["NombreConcepto"])
+						switch tempMap["Concepto"].(map[string]interface{})["NombreConcepto"] {
+						case "nombreRegla2176":
+							fila += formatoDato(strconv.FormatFloat(tempMap["ValorCalculado"].(float64), 'E', -1, 64), 9)
+						case "nombreRegla2178":
+							fila += formatoDato(strconv.FormatFloat(tempMap["ValorCalculado"].(float64), 'E', -1, 64), 9)
+						case "nombreRegla2173":
+							fila += formatoDato(strconv.FormatFloat(tempMap["ValorCalculado"].(float64), 'E', -1, 64), 9)
+						}
 					}
 
 					/*for _, liquidado := range preliquidacion {
@@ -505,19 +519,16 @@ func establecerNovedades(idPersona string) {
 }
 
 func obtenerPago(idPeriodoPago, idDetalleLiqidacion, idTipoPago string) (valorPago string) {
-	var pago []models.Pago
+	var pago models.Pago
 	/* Se obtiene un pago especefico con el periodo de pago, el detalle de la
 	   liquidacion y el tipo de pago */
-	errPagosSalud := getJson("http://"+beego.AppConfig.String("segSocialService")+
-		"/pago?limit=1&query=PeriodoPago.Id:"+idPeriodoPago+",DetallePreliquidacion:"+idDetalleLiqidacion+
+	err := getJson("http://"+beego.AppConfig.String("segSocialService")+
+		"/pago?limit=1&query=PeriodoPago.Id:"+idPeriodoPago+",DetalleLiquidacion:"+idDetalleLiqidacion+
 		",TipoPago:"+idTipoPago, &pago)
-	if errPagosSalud != nil {
-		fmt.Println("http://" + beego.AppConfig.String("segSocialService") +
-			"/pago?limit=1&query=PeriodoPago.Id:" + idPeriodoPago + ",DetallePreliquidacion:" + idDetalleLiqidacion +
-			",TipoPago:" + idTipoPago)
-		fmt.Println("errPagosSalud: ", errPagosSalud)
+	if err != nil {
+		fmt.Println("errPagosSalud: ", err.Error())
 	} else {
-		valorPago = strconv.FormatFloat(pago[0].Valor, 'G', -1, 64)
+		valorPago = strconv.FormatFloat(pago.Valor, 'G', -1, 64)
 	}
 	return
 }
