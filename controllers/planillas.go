@@ -215,20 +215,14 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					idPago := tempMap["Id"]
 					switch tempMap["NombreConcepto"] {
 					case "pension_ud":
-						fmt.Println(tempMap["NombreConcepto"])
 						pagoPension = obtenerPago(strconv.Itoa(periodoPago.Id), strconv.Itoa(periodoPago.Liquidacion), strconv.Itoa(int(idPago.(float64))))
 					case "salud_ud":
-						fmt.Println(tempMap["NombreConcepto"])
 						pagoSalud = obtenerPago(strconv.Itoa(periodoPago.Id), strconv.Itoa(periodoPago.Liquidacion), strconv.Itoa(int(idPago.(float64))))
-						fmt.Println("pago: ", periodoPago.Id, periodoPago.Liquidacion, int(idPago.(float64)))
 					case "icbf":
-						fmt.Println(tempMap["NombreConcepto"])
 						pagoIcbf = obtenerPago(strconv.Itoa(periodoPago.Id), strconv.Itoa(periodoPago.Liquidacion), strconv.Itoa(int(idPago.(float64))))
 					case "caja_compensacion":
-						fmt.Println(tempMap["NombreConcepto"])
 						pagoCaja = obtenerPago(strconv.Itoa(periodoPago.Id), strconv.Itoa(periodoPago.Liquidacion), strconv.Itoa(int(idPago.(float64))))
 					case "arl":
-						fmt.Println(tempMap["NombreConcepto"])
 						pagoArl = obtenerPago(strconv.Itoa(periodoPago.Id), strconv.Itoa(periodoPago.Liquidacion), strconv.Itoa(int(idPago.(float64))))
 					}
 				}

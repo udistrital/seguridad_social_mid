@@ -15,12 +15,6 @@ import (
 func init() {
 	ns := beego.NewNamespace("/v1",
 
-		beego.NSNamespace("/tipo_pago",
-			beego.NSInclude(
-				&controllers.TipoPagoController{},
-			),
-		),
-
 		beego.NSNamespace("/periodo_pago",
 			beego.NSInclude(
 				&controllers.PeriodoPagoController{},
@@ -30,30 +24,6 @@ func init() {
 		beego.NSNamespace("/pago",
 			beego.NSInclude(
 				&controllers.PagoController{},
-			),
-		),
-
-		beego.NSNamespace("/upc_adicional",
-			beego.NSInclude(
-				&controllers.UpcAdicionalController{},
-			),
-		),
-
-		beego.NSNamespace("/zona_upc",
-			beego.NSInclude(
-				&controllers.ZonaUpcController{},
-			),
-		),
-
-		beego.NSNamespace("/rango_edad_upc",
-			beego.NSInclude(
-				&controllers.RangoEdadUpcController{},
-			),
-		),
-
-		beego.NSNamespace("/tipo_upc",
-			beego.NSInclude(
-				&controllers.TipoUpcController{},
 			),
 		),
 
