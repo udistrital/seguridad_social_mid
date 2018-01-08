@@ -140,7 +140,7 @@ func (c *PagoController) CalcularSegSocial() {
 	} else {
 
 		err := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
-			"?limit=0&query=Preliquidacion.Id:"+idStr+",Concepto.NombreConcepto:salarioBase", &detallePreliquidacion)
+			"?limit=0&query=Preliquidacion.Id:"+idStr+",Concepto.NombreConcepto:ibc_liquidado", &detallePreliquidacion)
 
 		if err != nil {
 			alertas = append(alertas, "error al traer detalle liquidacion")
