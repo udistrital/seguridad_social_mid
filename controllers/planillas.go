@@ -231,13 +231,11 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					}
 				}
 
-				fmt.Println("ibc: "+ibcLiquidado, "salud: "+pagoSalud, "arl: "+pagoArl, "icbf: "+pagoIcbf, "caja: "+pagoCaja, "pension: "+pagoPension)
-
 				fila += formatoDato(completarSecuenciaString(pagoPension, 9), 9) // Cotización obligatoria a pensiones
 
 				fila += formatoDato(completarSecuencia(0, 9), 9) //Aporte voluntario del afiliado al fondo de pensiones obligatorias
 
-				//Aporte voluntario del aportante al fondo de pensiones obligatoria
+				//Aporte voluntario del afiliado al fondo de pensiones obligatoria
 				err = getJson("http://"+beego.AppConfig.String("titanServicio")+
 					"/detalle_preliquidacion"+
 					"?fields=Concepto,Id"+
@@ -248,7 +246,6 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				} else {
 					for i := 0; i < len(preliquidacion); i++ {
 						tempMap := preliquidacion[i].(map[string]interface{})
-						//fmt.Println(tempMap["Concepto"].(map[string]interface{})["NombreConcepto"])
 						switch tempMap["Concepto"].(map[string]interface{})["NombreConcepto"] {
 						case "nombreRegla2176":
 							fila += formatoDato(strconv.FormatFloat(tempMap["ValorCalculado"].(float64), 'E', -1, 64), 9)
@@ -259,17 +256,73 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 						}
 					}
 
-					/*for _, liquidado := range preliquidacion {
-						if liquidado.Concepto.NombreConcepto == "nombreRegla2176" {
-							fila += formatoDato(strconv.FormatFloat(liquidado.ValorCalculado, 'E', -1, 64), 9)
-						} else if liquidado.Concepto.NombreConcepto == "nombreRegla2178" {
-							fila += formatoDato(strconv.FormatFloat(liquidado.ValorCalculado, 'E', -1, 64), 9)
-						} else if liquidado.Concepto.NombreConcepto == "nombreRegla2173" {
-							fila += formatoDato(strconv.FormatFloat(liquidado.ValorCalculado, 'E', -1, 64), 9)
-						} else {
-							break
+					fila += formatoDato(completarSecuencia(0, 9), 9)               // Total cotización Sistema General de Pensiones
+					fila += formatoDato(completarSecuencia(0, 9), 9)               // Aportes a fondo de solidaridad pensional subcuenta de solidaridad
+					fila += formatoDato(completarSecuencia(0, 9), 9)               // Aportes a fondo de solidaridad pensional subcuenta de subsistencia
+					fila += formatoDato(completarSecuencia(0, 9), 9)               // Valor no retenido por aportes voluntarios
+					fila += formatoDato("12.5", 7)                                 // Tarifa de aportes salud
+					fila += formatoDato(completarSecuenciaString(pagoSalud, 9), 9) // Cotización obligatoria a salud
+
+					fila += formatoDato(completarSecuencia(0, 9), 9) //Valor UPC Adicional
+					fila += formatoDato("", 15)                      //Nº de autorización de la incapacidad por enfermedad general
+					fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de la incapacidad por enfermedad general
+					fila += formatoDato("", 15)                      //Nº de autorización de la licencia de maternidad o paternidad
+					fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de la licencia de maternidad
+
+					fila += formatoDato(completarSecuenciaString("0.000522", 9), 9) //Tarifa de aportes a Riegos Laborales
+
+					fila += formatoDato(completarSecuenciaString("0", 9), 9)     //Centro de trabajo CT
+					fila += formatoDato(completarSecuenciaString(pagoArl, 9), 9) // Cotización obligatoria a salud
+
+					fila += formatoDato(completarSecuenciaString("4", 7), 7)      //Tarifa de aportes CCF
+					fila += formatoDato(completarSecuenciaString(pagoCaja, 9), 9) // Cotización obligatoria a salud
+
+					fila += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes SENA
+					fila += formatoDato(completarSecuencia(0, 9), 9) //Valor Aportes SENA
+
+					fila += formatoDato(completarSecuencia(3, 7), 7)              //Tarifa de aportes ICBF
+					fila += formatoDato(completarSecuenciaString(pagoIcbf, 9), 9) // Cotización obligatoria a salud
+
+					fila += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes ESAP
+					fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de aporte ESAP
+					fila += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes MEN
+					fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de aporte MEN
+
+					//Para los registros de las UPC
+					/*for _, upcAdicional := range upc {
+						if upcAdicional.PersonaAsociada == detallePreliquidacion[i].Persona {
+							fila += formatoDato(texto, longitud)
 						}
 					}*/
+
+					// Estos campos están vacios porque solo aplican a los registros que son upc
+					fila += formatoDato(" ", 2)  // Tipo de documento del cotizante principal
+					fila += formatoDato(" ", 16) // Número de identificación del cotizante principal
+
+					fila += formatoDato("N", 1)     // Cotizante exonerado de pago de aporte salud, SENA e ICBF - Ley 1607 de 2012
+					fila += formatoDato("14-23", 6) // Código de la administradora de Riesgos Laborales a la cual pertenece el afiliado
+					fila += formatoDato("1", 1)     // Clase de Riesgo en la que se encuentra el afiliado
+					fila += formatoDato("", 1)      // Indicador tarifa especial pensiones (Actividades de alto riesgo, Senadores, CTI y Aviadores aplican)
+
+					//Fechas de novedades (AAAA-MM-DD)
+					fila += formatoDato(fechaIngreso, 10)          //Fecha ingreso
+					fila += formatoDato(fechaRetiro, 10)           //Fecha retiro
+					fila += formatoDato(fechaInicioVsp, 10)        //Fecha inicio VSP
+					fila += formatoDato(fechaInicioSuspencion, 10) //Fecha inicio SLN
+					fila += formatoDato(fechaFinSuspencion, 10)    //Fecha fin SLN
+					fila += formatoDato(fechaInicioIge, 10)        //Fecha inicio IGE
+					fila += formatoDato(fechaFinIge, 10)           //Fecha fin IGE
+					fila += formatoDato(fechaInicioLma, 10)        //Fecha inicio LMA
+					fila += formatoDato(fechaFinLma, 10)           //Fecha fin LMA
+					fila += formatoDato(fechaInicioVac, 10)        //Fecha inicio VAC-LR
+					fila += formatoDato(fechaFinVac, 10)           //Fecha fin VAC-LR
+					fila += formatoDato(fechaInicioVct, 10)        //Fecha inicio VCT
+					fila += formatoDato(fechaFinVct, 10)           //Fecha fin VCT
+					fila += formatoDato(fechaInicioIrl, 10)        //Fecha inicio IRL
+					fila += formatoDato(fechaFinIrl, 10)           //Fecha fin IRL
+
+					fila += formatoDato(completarSecuenciaString(ibcLiquidado, 9), 9) //IBC otros parafiscales difenrentes a CCF
+					fila += formatoDato("240", 3)
 
 					fila += "\n" // siguiente persona...
 					secuencia++
