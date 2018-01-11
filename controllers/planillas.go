@@ -84,6 +84,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 	)
 	tipoRegistro := "02"
 	secuencia := 1
+	fila = ""
 
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &periodoPago); err == nil {
 		if err = getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion?"+
