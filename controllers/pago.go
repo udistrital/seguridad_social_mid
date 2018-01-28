@@ -285,6 +285,38 @@ func CargarNovedades(id string) (novedades string) {
 	return
 }
 
+// Devuelve true si hay un periodo ya registrado, de lo contrario devuelve false
+func validarPeriodo(PeriodoPago models.TrPeriodoPago) (bool, *models.PeriodoPago) {
+	var (
+		periodoAntiguo    []*models.PeriodoPago
+		periodoModificado *models.PeriodoPago
+		estadoSegSocial   []*models.EstadoSeguridadSocial
+	)
+
+	if err := getJson("http://"+beego.AppConfig.String("segSocialService")+"/periodo_pago?"+
+		"query=Mes:"+strconv.Itoa(int(PeriodoPago.PeriodoPago.Mes))+
+		",Anio:"+strconv.Itoa(int(PeriodoPago.PeriodoPago.Anio))+
+		",TipoLiquidacion:"+PeriodoPago.PeriodoPago.TipoLiquidacion+
+		"&EstadoSeguridadSocial.Nombre:Abierta", &periodoAntiguo); err == nil {
+
+		if err := getJson("http://"+beego.AppConfig.String("segSocialService")+"/estado_seguridad_social?query=Nombre:reemplazada", &estadoSegSocial); err != nil {
+			return false, nil
+		}
+
+		if len(periodoAntiguo) < 1 || periodoAntiguo[0].Id == 0 {
+			return false, nil
+		}
+
+		periodoModificado = periodoAntiguo[0]
+		periodoModificado.EstadoSeguridadSocial = estadoSegSocial[0]
+
+	} else {
+		return false, nil
+	}
+
+	return true, periodoModificado
+}
+
 // RegistrarPagos ...
 // @Title Registrar pagos de seguridad social
 // @Description Recibe los pagos para registrar seguridad social, les agrega un estado,
@@ -300,6 +332,13 @@ func (c *PagoController) RegistrarPagos() {
 	)
 
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &PeriodoPago); err == nil {
+
+		if validar, periodoModificado := validarPeriodo(PeriodoPago); validar {
+			if err = sendJson("http://"+beego.AppConfig.String("segSocialService")+"/periodo_pago/"+strconv.Itoa(periodoModificado.Id), "PUT", &alerta, periodoModificado); err != nil {
+				c.Data["json"] = err.Error()
+			}
+		}
+
 		mapProveedores, err := GetInfoProveedor(PeriodoPago.Contratos)
 		if err != nil {
 			c.Data["json"] = err.Error()
