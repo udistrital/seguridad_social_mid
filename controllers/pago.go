@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-
+	"log"
 	"github.com/astaxie/beego"
 	"github.com/udistrital/ss_mid_api/golog"
 	"github.com/udistrital/ss_mid_api/models"
@@ -140,7 +140,7 @@ func (c *PagoController) CalcularSegSocial() {
 	} else {
 
 		err := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
-			"?limit=0&query=Preliquidacion.Id:"+idStr+",Concepto.NombreConcepto:ibc_liquidado", &detallePreliquidacion)
+			"?limit=-1&query=Preliquidacion.Id:"+idStr+",Concepto.NombreConcepto:ibc_liquidado", &detallePreliquidacion)
 
 		if err != nil {
 			alertas = append(alertas, "error al traer detalle liquidacion")
