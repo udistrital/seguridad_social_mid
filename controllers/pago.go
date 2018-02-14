@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"log"
+
 	"github.com/astaxie/beego"
 	"github.com/udistrital/ss_mid_api/golog"
 	"github.com/udistrital/ss_mid_api/models"
@@ -350,7 +350,8 @@ func (c *PagoController) RegistrarPagos() {
 		}
 
 		pagosSeg, _ := getPagosSeg()
-		contContratista := 0
+		contPagos, contContratista := 0, 0 // conPagos sirve para que cuente los 5 pagos de seguridad social, contContratista es para que recorrer los contratistas
+		fmt.Println(PeriodoPago)
 		for i := range PeriodoPago.Pagos {
 			nombrePago := pagosSeg[PeriodoPago.Pagos[i].TipoPago]
 			switch nombrePago {
@@ -361,13 +362,17 @@ func (c *PagoController) RegistrarPagos() {
 			case "salud_ud":
 				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[PeriodoPago.Contratos[contContratista]].IdEps
 			case "caja_compensacion":
+				fmt.Println("Aqui es el error......")
+				fmt.Println(PeriodoPago.Pagos[i])
 				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[PeriodoPago.Contratos[contContratista]].IdCajaCompensacion
 			default: // ICBF
 				PeriodoPago.Pagos[i].EntidadPago = 0
 			}
-			contContratista++
-			if contContratista == 5 {
-				contContratista = 0
+			contPagos++
+			// Como se tienen 5 pagos, cada vez que se asigne uno nuevo, el contratista debe pasar al siguiente
+			if contPagos == 5 {
+				contPagos = 0
+				contContratista++
 			}
 		}
 
