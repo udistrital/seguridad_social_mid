@@ -174,17 +174,15 @@ func (c *PagoController) CalcularSegSocial() {
 
 			if detallePreliquidacion[0].Preliquidacion.Nomina.Descripcion != "Contratistas" {
 				reglas = CargarReglasBase() + FormatoReglas(predicado) + CargarNovedades(idStr) + valorSaludEmpleado(idStr) + ValorPensionEmpleado(idStr)
-				numContrato = golog.GetString(reglas, "v_salud_ud(I,Y,C).", "I")
 				vigContrato = golog.GetString(reglas, "v_salud_ud(I,Y,C).", "C")
 				saludUd = golog.GetFloat(reglas, "v_salud_ud(I,Y,C).", "Y")
 				saludTotal = golog.GetInt64(reglas, "v_total_salud(X,T).", "T")
-				pensionUd = golog.GetFloat(reglas, "v_pen_ud(I,Y,C).", "Y")
+				pensionUd = golog.GetFloat(reglas, "v_pen_ud(I,Y).", "Y")
 				pensionTotal = golog.GetInt64(reglas, "v_total_pen(X,T).", "T")
 				arl = golog.GetInt64(reglas, "v_arl(I,Y).", "Y")
 				caja = golog.GetInt64(reglas, "v_caja(I,Y).", "Y")
 				icbf = golog.GetInt64(reglas, "v_icbf(I,Y).", "Y")
 			}
-
 			// Acá se debe cambiar como se arma el modelo
 			for index := 0; index < len(numContrato); index++ {
 				contratos = append(contratos, numContrato[index])
