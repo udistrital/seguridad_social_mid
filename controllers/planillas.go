@@ -80,7 +80,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 		periodoPago                               *models.PeriodoPago
 		detallePreliquidacion, conceptosSegSocial []interface{}
 
-		contratos []string
+		contratos, vigContratos []string
 	)
 	tipoRegistro := "02"
 	secuencia := 1
@@ -98,6 +98,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 			for i := range detallePreliquidacion {
 				tempMap := detallePreliquidacion[i].(map[string]interface{})
 				contratos = append(contratos, tempMap["NumeroContrato"].(string))
+				vigContratos = append(vigContratos, tempMap["VigenciaContrato"].(string))
 			}
 
 			//contratos = []string{"DVE2", "DVE3", "DVE4", "DVE5", "DVE6", "DVE7", "DVE13", "DVE14", "DVE15", "DVE16", "DVE17"}

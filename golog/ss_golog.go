@@ -7,6 +7,17 @@ import (
 	. "github.com/udistrital/golog"
 )
 
+func GetInt(reglas string, regla_inyectada string, variable_a_obtener string) []int {
+	m := NewMachine().Consult(reglas)
+	resultados := m.ProveAll(regla_inyectada)
+	var res []int
+	for _, solution := range resultados {
+		aux, _ := strconv.Atoi(fmt.Sprintf("%s", solution.ByName_(variable_a_obtener)))
+		res = append(res, aux)
+	}
+	return res
+}
+
 func GetInt64(reglas string, regla_inyectada string, variable_a_obtener string) []int64 {
 	m := NewMachine().Consult(reglas)
 	resultados := m.ProveAll(regla_inyectada)

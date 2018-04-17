@@ -9,13 +9,12 @@ package routers
 
 import (
 	"github.com/astaxie/beego"
-	"github.com/udistrital/auditoria"
 	"github.com/udistrital/ss_mid_api/controllers"
 )
 
 func init() {
 
-	auditoria.InitMiddleware()
+	// auditoria.InitMiddleware()
 
 	ns := beego.NewNamespace("/v1",
 

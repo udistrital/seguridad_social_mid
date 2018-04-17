@@ -128,8 +128,8 @@ func (c *PagoController) CalcularSegSocial() {
 	idStr := c.Ctx.Input.Param(":id")
 	_, err := strconv.Atoi(idStr)
 	var (
-		alertas, contratos []string
-		predicado          []models.Predicado
+		alertas, contratos, vigContratos []string
+		predicado                        []models.Predicado
 		//buffer                bytes.Buffer //objeto para concatenar strings a la variable errores
 		detallePreliquidacion []models.DetallePreliquidacion
 		pagosSeguridadSocial  []*models.PagosSeguridadSocial
@@ -149,29 +149,50 @@ func (c *PagoController) CalcularSegSocial() {
 			idDetallePreliquidacion := detallePreliquidacion[0].Preliquidacion.Id
 
 			for index := 0; index < len(detallePreliquidacion); index++ {
-				predicado = append(predicado, models.Predicado{Nombre: "ibc(" + detallePreliquidacion[index].NumeroContrato + "," + strconv.Itoa(int(detallePreliquidacion[index].ValorCalculado)) + ", salud)."})
-				predicado = append(predicado, models.Predicado{Nombre: "ibc(" + detallePreliquidacion[index].NumeroContrato + "," + strconv.Itoa(int(detallePreliquidacion[index].ValorCalculado)) + ", riesgos)."})
+				predicado = append(predicado, models.Predicado{Nombre: "ibc(" + detallePreliquidacion[index].NumeroContrato + "," + strconv.Itoa(int(detallePreliquidacion[index].ValorCalculado)) + "," + strconv.Itoa(detallePreliquidacion[index].VigenciaContrato) + ", salud)."})
+				predicado = append(predicado, models.Predicado{Nombre: "ibc(" + detallePreliquidacion[index].NumeroContrato + "," + strconv.Itoa(int(detallePreliquidacion[index].ValorCalculado)) + "," + strconv.Itoa(detallePreliquidacion[index].VigenciaContrato) + ", riesgos)."})
 				predicado = append(predicado, models.Predicado{Nombre: "ibc(" + detallePreliquidacion[index].NumeroContrato + "," + strconv.Itoa(int(detallePreliquidacion[index].ValorCalculado)) + ", apf)."})
 			}
 
-			reglas := CargarReglasBase() + FormatoReglas(predicado) + CargarNovedades(idStr) +
-				valorSaludEmpleado(idStr) + ValorPensionEmpleado(idStr)
-
-			numContrato := golog.GetString(reglas, "v_salud_ud(I,Y).", "I")
-			saludUd := golog.GetFloat(reglas, "v_salud_ud(I,Y).", "Y")
-			saludTotal := golog.GetInt64(reglas, "v_total_salud(X,T).", "T")
-			pensionUd := golog.GetFloat(reglas, "v_pen_ud(I,Y).", "Y")
-			pensionTotal := golog.GetInt64(reglas, "v_total_pen(X,T).", "T")
+			reglas := CargarReglasBase() + FormatoReglas(predicado) + CargarNovedades(idStr)
+			numContrato := golog.GetString(reglas, "v_salud_contratista(I,Y,C).", "I")
+			vigContrato := golog.GetString(reglas, "v_salud_contratista(I,Y,C).", "C")
+			saludTotal := golog.GetInt64(reglas, "v_salud_contratista(I,Y,C).", "Y")
+			pensionTotal := golog.GetInt64(reglas, "v_pen_contratista(I,Y,C).", "Y")
 			arl := golog.GetInt64(reglas, "v_arl(I,Y).", "Y")
 			caja := golog.GetInt64(reglas, "v_caja(I,Y).", "Y")
 			icbf := golog.GetInt64(reglas, "v_icbf(I,Y).", "Y")
+			var (
+				saludUd   []float64
+				pensionUd []float64
+			)
+
+			for i := 0; i < len(numContrato); i++ {
+				saludUd = append(saludUd, 0.0)
+				pensionUd = append(pensionUd, 0.0)
+			}
+
+			if detallePreliquidacion[0].Preliquidacion.Nomina.Descripcion != "Contratistas" {
+				reglas = CargarReglasBase() + FormatoReglas(predicado) + CargarNovedades(idStr) + valorSaludEmpleado(idStr) + ValorPensionEmpleado(idStr)
+				numContrato = golog.GetString(reglas, "v_salud_ud(I,Y,C).", "I")
+				vigContrato = golog.GetString(reglas, "v_salud_ud(I,Y,C).", "C")
+				saludUd = golog.GetFloat(reglas, "v_salud_ud(I,Y,C).", "Y")
+				saludTotal = golog.GetInt64(reglas, "v_total_salud(X,T).", "T")
+				pensionUd = golog.GetFloat(reglas, "v_pen_ud(I,Y,C).", "Y")
+				pensionTotal = golog.GetInt64(reglas, "v_total_pen(X,T).", "T")
+				arl = golog.GetInt64(reglas, "v_arl(I,Y).", "Y")
+				caja = golog.GetInt64(reglas, "v_caja(I,Y).", "Y")
+				icbf = golog.GetInt64(reglas, "v_icbf(I,Y).", "Y")
+			}
 
 			// Acá se debe cambiar como se arma el modelo
 			for index := 0; index < len(numContrato); index++ {
 				contratos = append(contratos, numContrato[index])
+				vigContratos = append(vigContratos, vigContrato[index])
 				aux := &models.PagosSeguridadSocial{
 					NombrePersona:           "",
 					NumeroContrato:          numContrato[index],
+					VigenciaContrato:        vigContrato[index],
 					SaludUd:                 saludUd[index],
 					SaludTotal:              saludTotal[index],
 					PensionUd:               pensionUd[index],
@@ -185,10 +206,16 @@ func (c *PagoController) CalcularSegSocial() {
 				pagosSeguridadSocial = append(pagosSeguridadSocial, aux)
 			}
 
-			mapProveedores, _ := GetInfoProveedor(contratos)
-
-			for i, _ := range pagosSeguridadSocial {
-				pagosSeguridadSocial[i].NombrePersona = mapProveedores[pagosSeguridadSocial[i].NumeroContrato].NomProveedor
+			if detallePreliquidacion[0].Preliquidacion.Nomina.Descripcion != "Contratistas" {
+				mapProveedores, _ := GetInfoProveedor(contratos)
+				for i, _ := range pagosSeguridadSocial {
+					pagosSeguridadSocial[i].NombrePersona = mapProveedores[pagosSeguridadSocial[i].NumeroContrato].NomProveedor
+				}
+			} else {
+				mapProveedores := GetInfoContratista(contratos, vigContratos)
+				for i, _ := range pagosSeguridadSocial {
+					pagosSeguridadSocial[i].NombrePersona = mapProveedores[pagosSeguridadSocial[i].NumeroContrato]
+				}
 			}
 
 			c.Data["json"] = pagosSeguridadSocial
@@ -387,6 +414,20 @@ func (c *PagoController) RegistrarPagos() {
 	c.ServeJSON()
 }
 
+// GetInfoContratista Recibe dos arreglos de tipo string, uno los números de contrato y otos con la vigencia, devuelve un arreglo de strings con el nombre del contratista
+func GetInfoContratista(contratos, vigenciaContratos []string) map[string]string {
+	nombres := make(map[string]string)
+	var contrato map[string]interface{}
+	for i := range contratos {
+		if err := getJsonWSO2("http://jbpm.udistritaloas.edu.co:8280/services/administrativaProxy/informacion_contrato_contratista/"+contratos[i]+"/"+vigenciaContratos[i], &contrato); err == nil {
+			nombres[contratos[i]] = contrato["informacion_contratista"].(map[string]interface{})["nombre_completo"].(string)
+		} else {
+			beego.Info(err)
+		}
+	}
+	return nombres
+}
+
 // getInfoProveedor Recibe un arreglo de strings con los contratos y devuelve un map con la información del proveedor
 func GetInfoProveedor(contratos []string) (map[string]models.InformacionProveedor, error) {
 	personas := make(map[string]models.InformacionProveedor)
@@ -394,6 +435,7 @@ func GetInfoProveedor(contratos []string) (map[string]models.InformacionProveedo
 		proveedor models.InformacionProveedor
 		contrato  models.ContratoGeneral
 	)
+
 	for i := range contratos {
 		if err := getJson("http://"+beego.AppConfig.String("argoServicio")+"/contrato_general/"+contratos[i], &contrato); err == nil {
 			if err = getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_proveedor/"+strconv.Itoa(contrato.Contratista), &proveedor); err == nil {
