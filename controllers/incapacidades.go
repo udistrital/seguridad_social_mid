@@ -1,9 +1,8 @@
 package controllers
 
 import (
-	"strconv"
-
 	"github.com/astaxie/beego"
+	"github.com/manucorporat/try"
 )
 
 // IncapacidadesController operations for Incapacidades
@@ -19,30 +18,25 @@ func (c *IncapacidadesController) URLMapping() {
 // GetPersonas ...
 // @Title GetPersonas
 // @Description obtiene todas las personas que pueden aplicar a cualquier nómina
+// @Param	documento		query	string false		"documento de la persona"
 // @Success 200 {object} interface{}
 // @Failure 403
 // @router / [get]
 func (c *IncapacidadesController) GetPersonas() {
-	var (
-		nominasResult interface{}
-		alerta        interface{}
-	)
-	funcionariosResult := make(map[string]interface{})
-	if err := getJson("http://"+beego.AppConfig.String("titanServicio")+"/nomina", &nominasResult); err == nil {
-		nominas := nominasResult.([]interface{})
-		for i := range nominas {
-			idNomina := strconv.Itoa(int(nominas[i].(map[string]interface{})["Id"].(float64)))
-			if err = sendJson("http://"+beego.AppConfig.String("titanServicio")+"/funcionario_proveedor", "POST", &alerta, nominas[i]); err == nil {
-				funcionariosResult[idNomina] = alerta
-				c.Ctx.Output.SetStatus(200)
-			} else {
-				c.Ctx.Output.SetStatus(403)
-				c.Data["json"] = alerta
-			}
+	var personasNaturales []map[string]interface{}
+	documento := c.GetString("documento")
+	try.This(func() {
+		beego.Info(documento)
+		if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"/informacion_proveedor?"+
+			"limit=10&query=NumDocumento__icontains:"+documento+",TipoPersona:NATURAL", &personasNaturales); err == nil {
+			// beego.Info("personas: ", personasNaturales)
+			c.Data["json"] = personasNaturales
+		} else {
+			panic(err)
 		}
-		c.Data["json"] = funcionariosResult
-	} else {
-		c.Data["json"] = err.Error()
-	}
+	}).Catch(func(e try.E) {
+		beego.Error("Error en GetPersonas() ", e)
+		c.Data["json"] = e
+	})
 	c.ServeJSON()
 }

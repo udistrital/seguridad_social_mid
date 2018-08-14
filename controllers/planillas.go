@@ -212,23 +212,28 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				//Cotización obligatoria a pensiones
 				for i := 0; i < len(conceptosSegSocial); i++ {
 					tempMap := conceptosSegSocial[i].(map[string]interface{})
-					idPago := tempMap["Id"]
-					idDetallePreliquidacion := strconv.Itoa(int(preliquidacion[0].(map[string]interface{})["Id"].(float64)))
+					// idPago := tempMap["Id"]
+					// idDetallePreliquidacion := strconv.Itoa(int(preliquidacion[0].(map[string]interface{})["Id"].(float64)))
 					switch tempMap["NombreConcepto"] {
 					case "pension_ud":
-						pensionUd := obtenerPago(strconv.Itoa(periodoPago.Id), idDetallePreliquidacion, strconv.Itoa(int(idPago.(float64))))
-						f, _ := strconv.ParseFloat(pensionUd, 64)
-						pagoPension = sumarPagos(f, "pension", strconv.Itoa(periodoPago.Liquidacion), key)
+						// pensionUd := obtenerPago(strconv.Itoa(periodoPago.Id), idDetallePreliquidacion, strconv.Itoa(int(idPago.(float64))))
+						// f, _ := strconv.ParseFloat(pensionUd, 64)
+						// pagoPension = sumarPagos(f, "pension", strconv.Itoa(periodoPago.Liquidacion), key)
+						pagoPension = "250000"
 					case "salud_ud":
-						saludUd := obtenerPago(strconv.Itoa(periodoPago.Id), idDetallePreliquidacion, strconv.Itoa(int(idPago.(float64))))
-						f, _ := strconv.ParseFloat(saludUd, 64)
-						pagoSalud = sumarPagos(f, "salud", strconv.Itoa(periodoPago.Liquidacion), key)
+						// saludUd := obtenerPago(strconv.Itoa(periodoPago.Id), idDetallePreliquidacion, strconv.Itoa(int(idPago.(float64))))
+						// f, _ := strconv.ParseFloat(saludUd, 64)
+						// pagoSalud = sumarPagos(f, "salud", strconv.Itoa(periodoPago.Liquidacion), key)
+						pagoSalud = "380000"
 					case "icbf":
-						pagoIcbf = obtenerPago(strconv.Itoa(periodoPago.Id), idDetallePreliquidacion, strconv.Itoa(int(idPago.(float64))))
+						// pagoIcbf = obtenerPago(strconv.Itoa(periodoPago.Id), idDetallePreliquidacion, strconv.Itoa(int(idPago.(float64))))
+						pagoIcbf = "0"
 					case "caja_compensacion":
-						pagoCaja = obtenerPago(strconv.Itoa(periodoPago.Id), idDetallePreliquidacion, strconv.Itoa(int(idPago.(float64))))
+						// pagoCaja = obtenerPago(strconv.Itoa(periodoPago.Id), idDetallePreliquidacion, strconv.Itoa(int(idPago.(float64))))
+						pagoCaja = "0"
 					case "arl":
-						pagoArl = obtenerPago(strconv.Itoa(periodoPago.Id), idDetallePreliquidacion, strconv.Itoa(int(idPago.(float64))))
+						// pagoArl = obtenerPago(strconv.Itoa(periodoPago.Id), idDetallePreliquidacion, strconv.Itoa(int(idPago.(float64))))
+						pagoArl = "4500"
 					}
 				}
 
