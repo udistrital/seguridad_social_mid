@@ -23,17 +23,33 @@ func (c *IncapacidadesController) URLMapping() {
 // @Failure 403
 // @router / [get]
 func (c *IncapacidadesController) GetPersonas() {
-	var personasNaturales []map[string]interface{}
+	var proveedores, personaNatural, respuesta []map[string]interface{}
 	documento := c.GetString("documento")
 	try.This(func() {
-		beego.Info(documento)
 		if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"/informacion_proveedor?"+
-			"limit=10&query=NumDocumento__icontains:"+documento+",TipoPersona:NATURAL", &personasNaturales); err == nil {
-			// beego.Info("personas: ", personasNaturales)
-			c.Data["json"] = personasNaturales
-		} else {
+			"limit=6&query=NumDocumento__icontains:"+documento+",TipoPersona:NATURAL", &proveedores); err != nil {
 			panic(err)
 		}
+
+		for index, proveedor := range proveedores {
+			if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"/informacion_persona_natural?"+
+				"limit=1&query=Id:"+proveedor["NumDocumento"].(string), &personaNatural); err != nil {
+				panic(err)
+			} else {
+				resp := map[string]interface{}{
+					"display":       proveedor["NomProveedor"],
+					"value":         proveedor["NumDocumento"],
+					"documento":     proveedor["NumDocumento"],
+					"id":            proveedor["Id"],
+					"nominas":       index,
+					"tipoDocumento": personaNatural[0]["TipoDocumento"].(map[string]interface{})["Abreviatura"],
+				}
+
+				respuesta = append(respuesta, resp)
+			}
+		}
+		c.Data["json"] = respuesta
+
 	}).Catch(func(e try.E) {
 		beego.Error("Error en GetPersonas() ", e)
 		c.Data["json"] = e
