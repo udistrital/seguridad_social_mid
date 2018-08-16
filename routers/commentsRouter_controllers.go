@@ -79,4 +79,12 @@ func init() {
 			MethodParams: param.Make(),
 			Params: nil})
 
+	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:UtilsController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:UtilsController"],
+		beego.ControllerComments{
+			Method: "GetActualDate",
+			Router: `/GetActualDate`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams: param.Make(),
+			Params: nil})
+
 }

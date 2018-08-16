@@ -20,7 +20,7 @@ type UpcAdicional struct {
 	SegundoNombre     string    `orm:"column(segundo_nombre);null"`
 	PrimerApellido    string    `orm:"column(primer_apellido)"`
 	SegundoApellido   string    `orm:"column(segundo_apellido);null"`
-	FechaDeNacimiento time.Time `orm:"column(fecha_de_nacimiento);type(date)"`
+	FechaNacimiento   time.Time `orm:"column(fecha_de_nacimiento);type(date)"`
 	Activo            bool      `orm:"column(activo);null"`
 }
 

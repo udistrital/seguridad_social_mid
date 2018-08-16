@@ -46,6 +46,11 @@ func init() {
 				&controllers.IncapacidadesController{},
 			),
 		),
+		beego.NSNamespace("/utils",
+			beego.NSInclude(
+				&controllers.UtilsController{},
+			),
+		),
 	)
 	beego.AddNamespace(ns)
 }
