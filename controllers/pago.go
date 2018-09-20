@@ -140,9 +140,10 @@ func (c *PagoController) CalcularSegSocial() {
 	} else {
 
 		err := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
-			"?limit=-1&query=Preliquidacion.Id:"+idStr+",Concepto.NombreConcepto:ibc_liquidado", &detallePreliquidacion)
+			"?limit=-1&query=Preliquidacion.Id:"+idStr+",Concepto.NombreConcepto:salarioBase", &detallePreliquidacion)
 
 		if err != nil {
+			beego.Error(err)
 			alertas = append(alertas, "error al traer detalle liquidacion")
 			c.Data["json"] = alertas
 		} else {
@@ -204,16 +205,10 @@ func (c *PagoController) CalcularSegSocial() {
 				pagosSeguridadSocial = append(pagosSeguridadSocial, aux)
 			}
 
-			if detallePreliquidacion[0].Preliquidacion.Nomina.Descripcion != "Contratistas" {
-				mapProveedores, _ := GetInfoProveedor(contratos)
-				for i, _ := range pagosSeguridadSocial {
-					pagosSeguridadSocial[i].NombrePersona = mapProveedores[pagosSeguridadSocial[i].NumeroContrato].NomProveedor
-				}
-			} else {
-				mapProveedores := GetInfoContratista(contratos, vigContratos)
-				for i, _ := range pagosSeguridadSocial {
-					pagosSeguridadSocial[i].NombrePersona = mapProveedores[pagosSeguridadSocial[i].NumeroContrato]
-				}
+			mapProveedores, _ := GetInfoProveedor(contratos)
+			beego.Info(mapProveedores)
+			for i, _ := range pagosSeguridadSocial {
+				pagosSeguridadSocial[i].NombrePersona = mapProveedores[pagosSeguridadSocial[i].NumeroContrato].NomProveedor
 			}
 
 			c.Data["json"] = pagosSeguridadSocial
@@ -433,9 +428,11 @@ func GetInfoProveedor(contratos []string) (map[string]models.InformacionProveedo
 		proveedor models.InformacionProveedor
 		contrato  models.ContratoGeneral
 	)
-
+	beego.Info("contratos: ", contratos)
 	for i := range contratos {
+		beego.Info("http://" + beego.AppConfig.String("argoServicio") + "/contrato_general/" + contratos[i])
 		if err := getJson("http://"+beego.AppConfig.String("argoServicio")+"/contrato_general/"+contratos[i], &contrato); err == nil {
+			beego.Info(contrato.Contratista)
 			if err = getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_proveedor/"+strconv.Itoa(contrato.Contratista), &proveedor); err == nil {
 				personas[contratos[i]] = proveedor
 			} else {
