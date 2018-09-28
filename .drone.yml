@@ -63,3 +63,4 @@ pipeline:
     when:
       status: [success, failure]
       branch: [master, develop]
+      
