@@ -36,6 +36,29 @@ paths:
       - incapacidades
       description: obtiene todas las personas que pueden aplicar a cualquier nómina
       operationId: IncapacidadesController.GetPersonas
+      parameters:
+      - in: query
+        name: documento
+        description: documento de la persona
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/.interface{}'
+        "403":
+          description: ""
+  /incapacidades/incapacidadesPersona/{contrato}/{vigencia}:
+    get:
+      tags:
+      - incapacidades
+      description: obtiene todas las incapacidades activdas de una persona
+      operationId: IncapacidadesController.IncapacidadesPorPersona
+      parameters:
+      - in: query
+        name: documento
+        description: documento de la persona
+        type: string
       responses:
         "200":
           description: ""
@@ -111,8 +134,8 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/models.PeriodoPago'
-        "403":
-          description: ""
+        "404":
+          description: not found resource
     post:
       tags:
       - periodo_pago
@@ -128,8 +151,8 @@ paths:
       responses:
         "201":
           description: '{int} models.PeriodoPago'
-        "403":
-          description: body is empty
+        "400":
+          description: the request contains incorrect syntax
   /periodo_pago/{id}:
     get:
       tags:
@@ -147,8 +170,8 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/models.PeriodoPago'
-        "403":
-          description: :id is empty
+        "404":
+          description: not found resource
     put:
       tags:
       - periodo_pago
@@ -171,8 +194,8 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/models.PeriodoPago'
-        "403":
-          description: :id is not int
+        "400":
+          description: the request contains incorrect syntax
     delete:
       tags:
       - periodo_pago
@@ -187,8 +210,8 @@ paths:
       responses:
         "200":
           description: '{string} delete success!'
-        "403":
-          description: id is empty
+        "404":
+          description: not found resource
   /planillas/GenerarPlanillaActivos:
     post:
       tags:
@@ -208,7 +231,27 @@ paths:
           description: '{string} string'
         "403":
           description: body is empty
+  /utils/GetActualDate:
+    get:
+      tags:
+      - utils
+      description: obtiene la fecha actual del servidor
+      operationId: UtilsController.GetActualTime
+      parameters:
+      - in: body
+        name: body
+        description: body for Beneficiarios content
+        required: true
+        schema:
+          $ref: '#/definitions/.Beneficiarios'
+      responses:
+        "201":
+          description: '{string} fecha_actual'
+        "403":
+          description: body is empty
 definitions:
+  .Beneficiarios:
+    type: object
   .PeriodoPago:
     type: object
   .del:
@@ -304,3 +347,6 @@ tags:
 - name: incapacidades
   description: |
     IncapacidadesController operations for Incapacidades
+- name: utils
+  description: |
+    UtilsController operations for Beneficiarios

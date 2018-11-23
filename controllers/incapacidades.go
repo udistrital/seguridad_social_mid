@@ -70,11 +70,14 @@ func (c *IncapacidadesController) GetPersonas() {
 
 			respuesta = append(respuesta, resp)
 		}
+		if respuesta == nil {
+			respuesta = append(respuesta, map[string]interface{}{})
+		}
 		c.Data["json"] = respuesta
 
 	}).Catch(func(e try.E) {
 		beego.Error("Error en GetPersonas() ", e)
-		c.Data["json"] = e
+		c.Data["json"] = []map[string]interface{}{}
 	})
 	c.ServeJSON()
 }
@@ -119,11 +122,9 @@ func traerIncapacidades(tipoIncapacidad, contrato, vigencia string) (incapacidad
 		",NumeroContrato:"+contrato+",VigenciaContrato:"+vigencia+",Activo:true", &incapacidades)
 
 	for i, v := range incapacidades {
-		beego.Info(v["Id"])
 		conceptoNominaPorPesona := strconv.Itoa(int(v["Id"].(float64)))
 		err = getJson("http://"+beego.AppConfig.String("segSocialService")+"/detalle_novedad_seguridad_social?"+
 			"query=ConceptoNominaPorPersona:"+conceptoNominaPorPesona+"&limit=1", &detalleNovedad)
-		beego.Info(detalleNovedad)
 		incapacidades[i]["Codigo"] = detalleNovedad[0]["Descripcion"]
 	}
 	return

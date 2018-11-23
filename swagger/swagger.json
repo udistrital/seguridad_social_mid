@@ -50,6 +50,42 @@
                 ],
                 "description": "obtiene todas las personas que pueden aplicar a cualquier nómina",
                 "operationId": "IncapacidadesController.GetPersonas",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "documento",
+                        "description": "documento de la persona",
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/.interface{}"
+                        }
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/incapacidades/incapacidadesPersona/{contrato}/{vigencia}": {
+            "get": {
+                "tags": [
+                    "incapacidades"
+                ],
+                "description": "obtiene todas las incapacidades activdas de una persona",
+                "operationId": "IncapacidadesController.IncapacidadesPorPersona",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "documento",
+                        "description": "documento de la persona",
+                        "type": "string"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "",
@@ -162,8 +198,8 @@
                             "$ref": "#/definitions/models.PeriodoPago"
                         }
                     },
-                    "403": {
-                        "description": ""
+                    "404": {
+                        "description": "not found resource"
                     }
                 }
             },
@@ -188,8 +224,8 @@
                     "201": {
                         "description": "{int} models.PeriodoPago"
                     },
-                    "403": {
-                        "description": "body is empty"
+                    "400": {
+                        "description": "the request contains incorrect syntax"
                     }
                 }
             }
@@ -217,8 +253,8 @@
                             "$ref": "#/definitions/models.PeriodoPago"
                         }
                     },
-                    "403": {
-                        "description": ":id is empty"
+                    "404": {
+                        "description": "not found resource"
                     }
                 }
             },
@@ -253,8 +289,8 @@
                             "$ref": "#/definitions/models.PeriodoPago"
                         }
                     },
-                    "403": {
-                        "description": ":id is not int"
+                    "400": {
+                        "description": "the request contains incorrect syntax"
                     }
                 }
             },
@@ -277,8 +313,8 @@
                     "200": {
                         "description": "{string} delete success!"
                     },
-                    "403": {
-                        "description": "id is empty"
+                    "404": {
+                        "description": "not found resource"
                     }
                 }
             }
@@ -310,9 +346,40 @@
                     }
                 }
             }
+        },
+        "/utils/GetActualDate": {
+            "get": {
+                "tags": [
+                    "utils"
+                ],
+                "description": "obtiene la fecha actual del servidor",
+                "operationId": "UtilsController.GetActualTime",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Beneficiarios content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/.Beneficiarios"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "{string} fecha_actual"
+                    },
+                    "403": {
+                        "description": "body is empty"
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        ".Beneficiarios": {
+            "type": "object"
+        },
         ".PeriodoPago": {
             "type": "object"
         },
@@ -447,6 +514,10 @@
         {
             "name": "incapacidades",
             "description": "IncapacidadesController operations for Incapacidades\n"
+        },
+        {
+            "name": "utils",
+            "description": "UtilsController operations for Beneficiarios\n"
         }
     ]
 }
