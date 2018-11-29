@@ -1,3 +1,4 @@
+// Package routers paquete con la ruta de los controladores y servicios
 // @APIVersion 1.0.0
 // @Title beego Test API
 // @Description beego has a very cool tools to autogenerate documents for your API
@@ -49,6 +50,11 @@ func init() {
 		beego.NSNamespace("/utils",
 			beego.NSInclude(
 				&controllers.UtilsController{},
+			),
+		),
+		beego.NSNamespace("/conceptos_ibc",
+			beego.NSInclude(
+				&controllers.ConceptosIbcController{},
 			),
 		),
 	)

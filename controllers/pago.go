@@ -53,20 +53,27 @@ func (c *PagoController) ConceptosIbc() {
 	var conceptos []models.Concepto
 	var conceptosIbc []models.ConceptosIbc
 	err := getJson("http://"+beego.AppConfig.String("rulerServicio")+
-		"/predicado?limit=-1&query=Nombre__startswith:conceptos_ibc,Dominio.Id:4", &predicados)
+		"/predicado?limit=-1&query=Nombre__startswith:concepto_ibc,Dominio.Id:4", &predicados)
 	errConceptoTitan := getJson("http://"+beego.AppConfig.String("titanServicio")+
 		"/concepto_nomina?limit=-1", &conceptos)
 	if err != nil && errConceptoTitan != nil {
 		c.Data["json"] = err.Error() + errConceptoTitan.Error()
 	} else {
-		nombres := golog.GetString(FormatoReglas(predicados), "conceptos_ibc(X).", "X")
+		nombres := golog.GetString(FormatoReglas(predicados), "concepto_ibc(X,Y).", "X")
+		estados := golog.GetString(FormatoReglas(predicados), "concepto_ibc(X,Y).", "Y")
+		beego.Info("formato reglas:", nombres)
 		for i := 0; i < len(predicados); i++ {
 			for j := 0; j < len(conceptos); j++ {
 				if nombres[i] == conceptos[j].NombreConcepto {
 					aux := models.ConceptosIbc{
 						Id:          predicados[i].Id,
 						Nombre:      nombres[i],
-						Descripcion: conceptos[j].AliasConcepto}
+						Descripcion: conceptos[j].AliasConcepto,
+						Estado:      true,
+					}
+					if estados[i] == "inactivo" {
+						aux.Estado = false
+					}
 					conceptosIbc = append(conceptosIbc, aux)
 					break
 				}

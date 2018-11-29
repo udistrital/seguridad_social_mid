@@ -4,4 +4,5 @@ type ConceptosIbc struct {
 	Id          int
 	Nombre      string
 	Descripcion string
+	Estado      bool
 }
