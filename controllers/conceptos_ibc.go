@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"strconv"
 
 	"github.com/udistrital/ss_mid_api/models"
 
@@ -39,15 +40,17 @@ func (c *ConceptosIbcController) ActualizarConceptos() {
 			alerta.Body = err.Error()
 			panic(alerta)
 		}
-		beego.Info("v: ", v)
+
 		alerta.Type = "success"
 		alerta.Code = "1"
 
-		//beego.Info("nombreConceptos: ", nombreConceptos)
-		hechos := construirHechos(v)
-		beego.Info("hechos construidos: ", hechos)
+		construirHechos(v)
+		err = registrarHechos(v)
+		if err != nil {
+			alerta.Body = err.Error()
+			panic(alerta)
+		}
 		c.Data["json"] = alerta
-		//c.Data["json"] = ":D"
 
 	}).Catch(func(e try.E) {
 		beego.Error("Error en conceptos_ibc.ActualizarConceptos(): ", e.(models.Alert).Body)
@@ -57,16 +60,29 @@ func (c *ConceptosIbcController) ActualizarConceptos() {
 	c.ServeJSON()
 }
 
-// construirHechos contruye hechos para conceptos_ibc()
-func construirHechos(nombreConceptos []models.Predicado) (hechosContruidos []string) {
+// registrarHechos hace llamados recursivos para actualizar los hechos
+func registrarHechos(nombreConceptos []models.Predicado) (err error) {
+	var apiResponse interface{}
 	for _, value := range nombreConceptos {
+		err = sendJson("http://"+beego.AppConfig.String("rulerServicio")+"/predicado/"+strconv.Itoa(value.Id), "PUT", &apiResponse, value)
+		if err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+// construirHechos recorre el arreglo de predicados, se crea un hecho y luego modifica el nombre del objeto con ese hecho
+func construirHechos(nombreConceptos []models.Predicado) {
+	for i, value := range nombreConceptos {
 		hecho := "concepto_ibc(" + value.Nombre + ","
 		if value.Estado {
 			hecho += " activo)."
 		} else {
 			hecho += " inactivo)."
 		}
-		hechosContruidos = append(hechosContruidos, hecho)
+		nombreConceptos[i].Nombre = hecho
+		nombreConceptos[i].Descripcion = nombreConceptos[i].DescripcionHecho
 	}
-	return
 }
