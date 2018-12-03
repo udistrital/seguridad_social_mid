@@ -10,7 +10,7 @@ import (
 	"github.com/manucorporat/try"
 )
 
-//  ConceptosIbcController ...controlador de tipo beego.Controller
+// ConceptosIbcController ...controlador de tipo beego.Controller
 type ConceptosIbcController struct {
 	beego.Controller
 }
