@@ -354,7 +354,7 @@ func imprimir(valor string) {
 	fmt.Println("**************************")
 }
 
-func codigoEntiad(idEntidad string, tipoEntidad string) string {
+func codigoEntiad(idEntidad string, tipoEntidad string) (resultado string) {
 	var v interface{}
 	var err error
 
@@ -370,12 +370,12 @@ func codigoEntiad(idEntidad string, tipoEntidad string) string {
 	}
 
 	if err == nil {
-		return "BIEN"
-	} else {
-		return ""
+		resultado = "BIEN"
 	}
+	return
 }
 
+// AgregarUpc ...
 func AgregarUpc(idPersonaAsociada string) {
 	/*var upcAdicional []models.TipoUpc
 

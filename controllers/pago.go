@@ -93,6 +93,11 @@ func (c *PagoController) ConceptosIbc() {
 	c.ServeJSON()
 }
 
+// NovedadesPorPersona ...
+// @Title NovedadesPorPersona
+// @Description Obtiene todos los conceptos IBC del ruler y los cruza con los conceptos de nómina
+// @Success 200 {object} []models.NovedadesPersonaSS
+// @router NovedadesPorPersona/:persona [get]
 func (c *PagoController) NovedadesPorPersona() {
 	personaStr := c.Ctx.Input.Param(":persona")
 	_, err := strconv.Atoi(personaStr)
@@ -139,6 +144,12 @@ func (c *PagoController) NovedadesPorPersona() {
 	}
 }
 
+// CalcularSegSocial ...
+// @Title CalcularSegSocial
+// @Description Cálcula la seguridad social para una preliquidación correspondiente
+// @Param	id		id de la preliquidación
+// @Success 200 {object} []models.NovedadesPersonaSS
+// @router CalcularSegSocial/:id [get]
 func (c *PagoController) CalcularSegSocial() {
 	idStr := c.Ctx.Input.Param(":id")
 	_, err := strconv.Atoi(idStr)
@@ -234,7 +245,7 @@ func valorSaludEmpleado(idLiquidacion, persona string) (predicado models.Predica
 	return
 }
 
-// SaludHCHonorarios
+// SaludHCHonorarios ...
 //@Title Valor correspondiente a salud de hora catedra honorarios
 //@Description consulta una preliqudacion correspondiente a hora catedra
 //@Param idLiquidacion id de la preliquidacion correspondiente
