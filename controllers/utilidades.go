@@ -55,6 +55,25 @@ func sendJson(url string, trequest string, target interface{}, datajson interfac
 	return json.NewDecoder(r.Body).Decode(target)
 }
 
+// getJsonWSO2 ...
+func getJsonWSO2(urlp string, target interface{}) error {
+	b := new(bytes.Buffer)
+	//proxyUrl, err := url.Parse("http://10.20.4.15:3128")
+	//http.DefaultTransport = &http.Transport{Proxy: http.ProxyURL(proxyUrl)}
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", urlp, b)
+	req.Header.Set("Accept", "application/json")
+	r, err := client.Do(req)
+	//r, err := http.Post(url, "application/json; charset=utf-8", b)
+	if err != nil {
+		beego.Error("error", err)
+		return err
+	}
+	defer r.Body.Close()
+
+	return json.NewDecoder(r.Body).Decode(target)
+}
+
 // getJson obtiene un json de una URL
 //@Param url ruta del servicio del que se recibe el json
 //@Param target json que se recibe del servicio
@@ -134,6 +153,12 @@ func CargarReglasBase() (reglas string) {
 			concepto(descuento, porcentaje, pension, X, 0.12, 2017).	%%descuento pension ud
 			concepto(descuento, porcentaje, arl, X, 0.00522, 2017). %%descuento de ARL
 
+			%% HECHOS PARA CONTRATISTAS
+			%%(ud, conceptoDeDescuento, porcentaje, concepto, nominaCorrespondiente, valorPorcentaje, vigencia).
+			concepto(descuento, porcentaje, salud, contratistas, 0.125,	2017). 	%%descuento salud contratista
+			concepto(descuento, porcentaje, pension, contratistas, 0.16, 2017).	%%descuento pension contratista
+			concepto(descuento, porcentaje, arl, contratistas, 0.00522, 2017). %%descuento de ARL contratista
+
 			%%		HECHOS PARA PENSIONADOS
 			concepto(X, devengo, porcentaje, salud, pensionado, 0.12, 2017).	%%descuento de salud pensionado
 
@@ -157,9 +182,10 @@ func CargarReglasBase() (reglas string) {
 			%%		PENSION
 			v_pen_ud(I,Y) :- concepto(Z,T,pension,X,V,2017), ibc(I,W, salud), Y is (V * W) approach 100.
 			v_total_pen(X,T) :- v_pen_func(X,Y), v_pen_ud(X,U), T is (Y + U) approach 100.
+			v_pen_contratista(I,Y,C) :- concepto(Z,T,pension,contratista,V,2017), ibc(I,W,C,salud), Y is (V * W) approach 100.
 
 			%%		ARL
-			v_arl(I,Y) :- concepto(Z,T,arl,X,V,2017), ibc(I,W,riesgos), Y is (V * W) approach 100.
+			v_arl(I,Y) :- concepto(Z,T,arl,X,V,2017), ibc(I,W,C,riesgos), Y is (V * W) approach 100.
 
 			%%		FONDO DE SOLIDARIDAD
 			v_fondo1(X,S,D,Y) :- ibc(X,W,apf), smlmv(M,2017),
@@ -174,7 +200,7 @@ func CargarReglasBase() (reglas string) {
 				v_upc(I,Y,Z) :- ibc(I,W,salud,D), upc(Z,V,I), Y is W - V.
 
 				%%		CAJA DE COMPENSACION FAMILIAR
-				v_caja(I,Y) :- concepto(Z,T,caja,5,V,2017), ibc(I,W,apf), Y is (V * W) approach 100.
+				v_caja(I,Y) :- concepto(Z,T,caja,X,V,2017), ibc(I,W,apf), Y is (V * W) approach 100.
 
 				%%		ICBF
 				v_icbf(I,Y) :- concepto(Z,T,icbf,X,V,2017), ibc(I,W,apf), Y is (V * W) approach 100.
