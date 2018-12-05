@@ -57,6 +57,11 @@ func init() {
 				&controllers.ConceptosIbcController{},
 			),
 		),
+		beego.NSNamespace("/pago_honorarios",
+			beego.NSInclude(
+				&controllers.PagoHonorariosController{},
+			),
+		),
 	)
 	beego.AddNamespace(ns)
 }

@@ -49,6 +49,14 @@ func init() {
 
 	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
 		beego.ControllerComments{
+			Method: "CalcularSegSocialHonorarios",
+			Router: `CalcularSegSocialHonorarios/:idPreliquidacion`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams: param.Make(),
+			Params: nil})
+
+	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
+		beego.ControllerComments{
 			Method: "ConceptosIbc",
 			Router: `ConceptosIbc/`,
 			AllowHTTPMethods: []string{"get"},

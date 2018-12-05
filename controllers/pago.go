@@ -148,7 +148,7 @@ func (c *PagoController) NovedadesPorPersona() {
 // @Title CalcularSegSocial
 // @Description Cálcula la seguridad social para una preliquidación correspondiente
 // @Param	id		id de la preliquidación
-// @Success 200 {object} []models.NovedadesPersonaSS
+// @Success 200 {object} []*models.PagoSeguridadSocial
 // @router CalcularSegSocial/:id [get]
 func (c *PagoController) CalcularSegSocial() {
 	idStr := c.Ctx.Input.Param(":id")
