@@ -98,10 +98,12 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 			for i := range detallePreliquidacion {
 				tempMap := detallePreliquidacion[i].(map[string]interface{})
 				contratos = append(contratos, tempMap["NumeroContrato"].(string))
+				// vigContratos = append(vigContratos, strconv.Itoa(int(tempMap["VigenciaContrato"].(float64))))
+				// beego.Info(contratos)
+				// beego.Info(vigContratos)
 			}
 
 			//contratos = []string{"DVE2", "DVE3", "DVE4", "DVE5", "DVE6", "DVE7", "DVE13", "DVE14", "DVE15", "DVE16", "DVE17"}
-
 			mapProveedores, _ := GetInfoProveedor(contratos)
 			mapPersonas, _ := GetInfoPersona(mapProveedores)
 			for key, value := range mapPersonas {
