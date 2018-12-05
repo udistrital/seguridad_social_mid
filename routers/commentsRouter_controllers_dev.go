@@ -18,13 +18,6 @@ func init() {
 			AllowHTTPMethods: []string{"get"},
 			Params:           nil})
 
-	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
-		beego.ControllerComments{
-			Method:           "ConceptosIbc",
-			Router:           `ConceptosIbc`,
-			AllowHTTPMethods: []string{"get"},
-			Params:           nil})
-
 	/*beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
 	beego.ControllerComments{
 		Method:           "SumarPagosSalud",

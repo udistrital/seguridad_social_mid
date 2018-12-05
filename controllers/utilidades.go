@@ -139,12 +139,12 @@ func CargarReglasBase() (reglas string) {
 			smlmv(737717, 2017).
 
 			%%		SALUD
-			v_salud_ud(I,Y) :- concepto(Z,T,salud,X,V,2017), ibc(I,W,salud), (novedad_persona(N,I), novedad(N,U) -> Y is ((V * W) * U) approach 100; Y is (V * W) approach 100).
+			v_salud_ud(I,Y) :- concepto(Z,T,salud,X,V,2017), ibc(I,W, salud), (novedad_persona(N,I), novedad(N,U) -> Y is ((V * W) * U) approach 100; Y is (V * W) approach 100).
 			v_total_salud(X,T) :- v_salud_func(X,Y), v_salud_ud(X,U), T is (Y + U) approach 100.
 
 
 			%%		PENSION
-			v_pen_ud(I,Y) :- concepto(Z,T,pension,X,V,2017), ibc(I,W,salud), Y is (V * W) approach 100.
+			v_pen_ud(I,Y) :- concepto(Z,T,pension,X,V,2017), ibc(I,W, salud), Y is (V * W) approach 100.
 			v_total_pen(X,T) :- v_pen_func(X,Y), v_pen_ud(X,U), T is (Y + U) approach 100.
 
 			%%		ARL
@@ -168,7 +168,6 @@ func CargarReglasBase() (reglas string) {
 				%%		ICBF
 				v_icbf(I,Y) :- concepto(Z,T,icbf,X,V,2017), ibc(I,W,apf), Y is (V * W) approach 100.
 	`
-	//fmt.Println(reglas)
 	return
 }
 
