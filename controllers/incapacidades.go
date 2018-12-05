@@ -70,11 +70,62 @@ func (c *IncapacidadesController) GetPersonas() {
 
 			respuesta = append(respuesta, resp)
 		}
+		if respuesta == nil {
+			respuesta = append(respuesta, map[string]interface{}{})
+		}
 		c.Data["json"] = respuesta
 
 	}).Catch(func(e try.E) {
 		beego.Error("Error en GetPersonas() ", e)
-		c.Data["json"] = e
+		c.Data["json"] = []map[string]interface{}{}
 	})
 	c.ServeJSON()
+}
+
+// IncapacidadesPorPersona ...
+// @Title IncapacidadesPorPersona
+// @Description obtiene todas las incapacidades activdas de una persona
+// @Param	documento		query	string false		"documento de la persona"
+// @Success 200 {object} interface{}
+// @Failure 403
+// @router /incapacidadesPersona/:contrato/:vigencia [get]
+func (c *IncapacidadesController) IncapacidadesPorPersona() {
+	contrato := c.Ctx.Input.Param(":contrato")
+	vigencia := c.Ctx.Input.Param(":vigencia")
+
+	var incapacidades []map[string]interface{}
+	try.This(func() {
+		incapacidadesLaborales, err := traerIncapacidades("incapacidad_laboral", contrato, vigencia)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		incapacidaGenerales, err := traerIncapacidades("incapacidad_general", contrato, vigencia)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		incapacidades = append(incapacidades, incapacidadesLaborales...)
+		incapacidades = append(incapacidades, incapacidaGenerales...)
+		c.Data["json"] = incapacidades
+	}).Catch(func(e try.E) {
+		beego.Error("Error en IncapacidadesPorPersona() ", e)
+		c.Data["json"] = e
+	})
+
+	c.ServeJSON()
+}
+
+func traerIncapacidades(tipoIncapacidad, contrato, vigencia string) (incapacidades []map[string]interface{}, err error) {
+	var detalleNovedad []map[string]interface{}
+	err = getJson("http://"+beego.AppConfig.String("titanServicio")+"/concepto_nomina_por_persona?query=Concepto.Nombreconcepto:"+tipoIncapacidad+
+		",NumeroContrato:"+contrato+",VigenciaContrato:"+vigencia+",Activo:true", &incapacidades)
+
+	for i, v := range incapacidades {
+		conceptoNominaPorPesona := strconv.Itoa(int(v["Id"].(float64)))
+		err = getJson("http://"+beego.AppConfig.String("segSocialService")+"/detalle_novedad_seguridad_social?"+
+			"query=ConceptoNominaPorPersona:"+conceptoNominaPorPesona+"&limit=1", &detalleNovedad)
+		incapacidades[i]["Codigo"] = detalleNovedad[0]["Descripcion"]
+	}
+	return
 }

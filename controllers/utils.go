@@ -16,8 +16,8 @@ func (c *UtilsController) URLMapping() {
 	c.Mapping("GetActualDate", c.GetActualDate)
 }
 
-// GetActualTime ...
-// @Title GetActualTime
+// GetActualDate ...
+// @Title GetActualDate
 // @Description obtiene la fecha actual del servidor
 // @Param	body		body 	models.Beneficiarios	true		"body for Beneficiarios content"
 // @Success 201 {string} fecha_actual

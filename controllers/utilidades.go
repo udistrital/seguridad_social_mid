@@ -32,6 +32,11 @@ func convertirMapa(arr []interface{}) map[string][]interface{} {
 	return returnedMap
 }
 
+// sendJson envía un json
+//@Param url ruta del servicio a la que se le envía el json
+//@Param trequest el tipo de petición (GET, POST, PUT, DELETE, etc)
+//@Param target la respuesta de la peticón REST
+//@Param json que se envia al serivico
 func sendJson(url string, trequest string, target interface{}, datajson interface{}) error {
 	b := new(bytes.Buffer)
 	if datajson != nil {
@@ -50,6 +55,7 @@ func sendJson(url string, trequest string, target interface{}, datajson interfac
 	return json.NewDecoder(r.Body).Decode(target)
 }
 
+// getJsonWSO2 ...
 func getJsonWSO2(urlp string, target interface{}) error {
 	b := new(bytes.Buffer)
 	//proxyUrl, err := url.Parse("http://10.20.4.15:3128")
@@ -68,6 +74,9 @@ func getJsonWSO2(urlp string, target interface{}) error {
 	return json.NewDecoder(r.Body).Decode(target)
 }
 
+// getJson obtiene un json de una URL
+//@Param url ruta del servicio del que se recibe el json
+//@Param target json que se recibe del servicio
 func getJson(url string, target interface{}) error {
 	r, err := http.Get(url)
 	if err != nil {
@@ -120,7 +129,9 @@ func describe(i interface{}) {
 	fmt.Printf("(%v, %T)\n", i, i)
 }
 
-/*func CargarReglasBase(dominio string) (reglas string) {
+/*
+// CargarReglasBase ...
+func CargarReglasBase(dominio string) (reglas string) {
 	var reglasbase string = ``
 	var v []models.Predicado
 
@@ -133,6 +144,7 @@ func describe(i interface{}) {
 	return reglasbase
 }*/
 
+// CargarReglasBase carga las reglas base del ruler
 func CargarReglasBase() (reglas string) {
 	reglas = `
 			%% 		HECHOS PARA ACTIVOS
@@ -163,12 +175,12 @@ func CargarReglasBase() (reglas string) {
 			smlmv(737717, 2017).
 
 			%%		SALUD
-			v_salud_ud(I,Y,C) :- concepto(Z,T,salud,X,V,2017), ibc(I,W,C,salud), (novedad_persona(N,I), novedad(N,U) -> Y is ((V * W) * U) approach 100; Y is (V * W) approach 100).
-			v_total_salud(X,T) :- v_salud_func(X,Y), v_salud_ud(X,U,C), T is (Y + U) approach 100.
-			v_salud_contratista(I,Y,C) :- concepto(Z,T,salud,contratista,V,2017), ibc(I,W,C,salud), Y is (V * W) approach 100.
+			v_salud_ud(I,Y) :- concepto(Z,T,salud,X,V,2017), ibc(I,W, salud), (novedad_persona(N,I), novedad(N,U) -> Y is ((V * W) * U) approach 100; Y is (V * W) approach 100).
+			v_total_salud(X,T) :- v_salud_func(X,Y), v_salud_ud(X,U), T is (Y + U) approach 100.
+
 
 			%%		PENSION
-			v_pen_ud(I,Y) :- concepto(Z,T,pension,X,V,2017), ibc(I,W,C,salud), Y is (V * W) approach 100.
+			v_pen_ud(I,Y) :- concepto(Z,T,pension,X,V,2017), ibc(I,W, salud), Y is (V * W) approach 100.
 			v_total_pen(X,T) :- v_pen_func(X,Y), v_pen_ud(X,U), T is (Y + U) approach 100.
 			v_pen_contratista(I,Y,C) :- concepto(Z,T,pension,contratista,V,2017), ibc(I,W,C,salud), Y is (V * W) approach 100.
 
@@ -193,10 +205,10 @@ func CargarReglasBase() (reglas string) {
 				%%		ICBF
 				v_icbf(I,Y) :- concepto(Z,T,icbf,X,V,2017), ibc(I,W,apf), Y is (V * W) approach 100.
 	`
-	//fmt.Println(reglas)
 	return
 }
 
+// FormatoReglas crea el formato necesario de las reglas y hechos para golog a partir de un arreglo de predicados
 func FormatoReglas(v []models.Predicado) (reglas string) {
 	var arregloReglas = make([]string, len(v))
 	reglas = ""
