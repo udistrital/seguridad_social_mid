@@ -27,13 +27,6 @@ func init() {
 
 	/*beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"],
 	beego.ControllerComments{
-		Method:           "GenerarPlanillaActivos",
-		Router:           `GenerarPlanillaActivos/:id`,
-		AllowHTTPMethods: []string{"get"},
-		Params:           nil})*/
-
-	/*beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"],
-	beego.ControllerComments{
 		Method:           "GenerarPlanillaPensionados",
 		Router:           `GenerarPlanillaPensionados/:id`,
 		AllowHTTPMethods: []string{"get"},
