@@ -66,6 +66,7 @@ func (c *IncapacidadesController) GetPersonas() {
 				"documento":     proveedor["NumDocumento"],
 				"contratos":     contratosPropios,
 				"tipoDocumento": personaNatural[0]["TipoDocumento"].(map[string]interface{})["Abreviatura"],
+				"idProveedor":   id,
 			}
 
 			respuesta = append(respuesta, resp)
