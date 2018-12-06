@@ -9,97 +9,90 @@ func init() {
 
 	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:ConceptosIbcController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:ConceptosIbcController"],
 		beego.ControllerComments{
-			Method:           "ActualizarConceptos",
-			Router:           `/ActualizarConceptos/`,
+			Method: "ActualizarConceptos",
+			Router: `/ActualizarConceptos/`,
 			AllowHTTPMethods: []string{"post"},
-			MethodParams:     param.Make(),
-			Params:           nil})
+			MethodParams: param.Make(),
+			Params: nil})
 
 	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:IncapacidadesController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:IncapacidadesController"],
 		beego.ControllerComments{
-			Method:           "GetPersonas",
-			Router:           `/`,
+			Method: "GetPersonas",
+			Router: `/`,
 			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Params:           nil})
+			MethodParams: param.Make(),
+			Params: nil})
 
 	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:IncapacidadesController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:IncapacidadesController"],
 		beego.ControllerComments{
-			Method:           "IncapacidadesPorPersona",
-			Router:           `/incapacidadesPersona/:contrato/:vigencia`,
+			Method: "IncapacidadesPorPersona",
+			Router: `/incapacidadesPersona/:contrato/:vigencia`,
 			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Params:           nil})
+			MethodParams: param.Make(),
+			Params: nil})
 
 	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
 		beego.ControllerComments{
-			Method:           "RegistrarPagos",
-			Router:           `/RegistrarPagos`,
+			Method: "RegistrarPagos",
+			Router: `/RegistrarPagos`,
 			AllowHTTPMethods: []string{"post"},
-			MethodParams:     param.Make(),
-			Params:           nil})
+			MethodParams: param.Make(),
+			Params: nil})
 
 	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
 		beego.ControllerComments{
-			Method:           "CalcularSegSocial",
-			Router:           `CalcularSegSocial/:id`,
+			Method: "CalcularSegSocial",
+			Router: `CalcularSegSocial/:id`,
 			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Params:           nil})
+			MethodParams: param.Make(),
+			Params: nil})
 
 	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
 		beego.ControllerComments{
-			Method:           "CalcularSegSocialHonorarios",
-			Router:           `CalcularSegSocialHonorarios/:idPreliquidacion`,
+			Method: "CalcularSegSocialHonorarios",
+			Router: `CalcularSegSocialHonorarios/:idPreliquidacion`,
 			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Params:           nil})
+			MethodParams: param.Make(),
+			Params: nil})
 
 	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
 		beego.ControllerComments{
-			Method:           "ConceptosIbc",
-			Router:           `ConceptosIbc/`,
+			Method: "ConceptosIbc",
+			Router: `ConceptosIbc/`,
 			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Params:           nil})
+			MethodParams: param.Make(),
+			Params: nil})
 
 	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
 		beego.ControllerComments{
-			Method:           "NovedadesPorPersona",
-			Router:           `NovedadesPorPersona/:persona`,
+			Method: "NovedadesPorPersona",
+			Router: `NovedadesPorPersona/:persona`,
 			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Params:           nil})
+			MethodParams: param.Make(),
+			Params: nil})
 
 	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
 		beego.ControllerComments{
-			Method:           "SumarPagosSalud",
-			Router:           `SumarPagosSalud/:idPeriodoPago`,
+			Method: "SumarPagosSalud",
+			Router: `SumarPagosSalud/:idPeriodoPago`,
 			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Params:           nil})
+			MethodParams: param.Make(),
+			Params: nil})
 
 	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"],
 		beego.ControllerComments{
-			Method:           "GenerarPlanillaActivos",
-			Router:           `/GenerarPlanillaActivos`,
+			Method: "GenerarPlanillaActivos",
+			Router: `/GenerarPlanillaActivos`,
 			AllowHTTPMethods: []string{"post"},
-			MethodParams:     param.Make(),
-			Params:           nil})
+			MethodParams: param.Make(),
+			Params: nil})
 
 	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:UtilsController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:UtilsController"],
 		beego.ControllerComments{
-			Method:           "GetActualDate",
-			Router:           `/GetActualDate`,
+			Method: "GetActualDate",
+			Router: `/GetActualDate`,
 			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Params:           nil})
-
-	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PlanillasController"],
-		beego.ControllerComments{
-			Method:           "GenerarPlanillaActivos",
-			Router:           `GenerarPlanillaActivos/:id`,
-			AllowHTTPMethods: []string{"get"},
-			Params:           nil})
+			MethodParams: param.Make(),
+			Params: nil})
 
 }

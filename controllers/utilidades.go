@@ -149,9 +149,14 @@ func CargarReglasBase() (reglas string) {
 	reglas = `
 			%% 		HECHOS PARA ACTIVOS
 			%%(ud, conceptoDeDescuento, porcentaje, concepto, nominaCorrespondiente, valorPorcentaje, vigencia).
-			concepto(descuento, porcentaje, salud, X, 0.085,	2017). 	%%descuento salud ud
-			concepto(descuento, porcentaje, pension, X, 0.12, 2017).	%%descuento pension ud
-			concepto(descuento, porcentaje, arl, X, 0.00522, 2017). %%descuento de ARL
+			concepto(descuento, porcentaje, salud, planta, 0.085,	2017). 	%%descuento salud ud
+			concepto(descuento, porcentaje, pension, planta, 0.12, 2017).	%%descuento pension ud
+			concepto(descuento, porcentaje, arl, planta, 0.00522, 2017). %%descuento de ARL
+
+			%% HECHOS PARA HCS
+			concepto(descuento, porcentaje, salud, salarios, 0.085,	2017). 	%%descuento salud ud
+			concepto(descuento, porcentaje, pension, salarios, 0.12, 2017).	%%descuento pension ud
+			concepto(descuento, porcentaje, arl, salarios, 0.00522, 2017). %%descuento de ARL
 
 			%% HECHOS PARA CONTRATISTAS
 			%%(ud, conceptoDeDescuento, porcentaje, concepto, nominaCorrespondiente, valorPorcentaje, vigencia).
@@ -168,24 +173,37 @@ func CargarReglasBase() (reglas string) {
 
 			%%		NOVEDADES
 			%%(descripcion, persona)
-			novedad(exterior_familia, 0).
+			novedad(licencia_maternidad, salud, 0).
+
+			novedad(licencia_maternidad, pension, 0).
+
+			novedad(exterior_familia, arl, 0).
+			novedad(vacaciones, arl, 0).
+			novedad(licencia_norem, arl, 0).
+			novedad(comision_norem, arl, 0).
+			novedad(incapacidad_laboral, arl, 0).
+			novedad(incapacidad_general, arl, 0).
+			novedad(prorroga_incapacidad, arl, 0).
+			novedad(licencia_maternidad, arl, 0).
+			novedad(licencia_paternidad, arl, 0).
+
 			novedad_persona(-1,-1).
 
 			%%salario minimo legal mensual vigente
 			smlmv(737717, 2017).
 
 			%%		SALUD
-			v_salud_ud(I,Y) :- concepto(Z,T,salud,X,V,2017), ibc(I,W, salud), (novedad_persona(N,I), novedad(N,U) -> Y is ((V * W) * U) approach 100; Y is (V * W) approach 100).
+			v_salud_ud(I,Y) :- concepto(Z,T,salud,planta,V,2017), ibc(I,W, salud), (novedad_persona(N,I), novedad(N,salud,U) -> Y is ((V * W) * U) approach 100; Y is (V * W) approach 100).
 			v_total_salud(X,T) :- v_salud_func(X,Y), v_salud_ud(X,U), T is (Y + U) approach 100.
 
 
 			%%		PENSION
-			v_pen_ud(I,Y) :- concepto(Z,T,pension,X,V,2017), ibc(I,W, salud), Y is (V * W) approach 100.
+			v_pen_ud(I,Y) :- concepto(Z,T,pension,planta,V,2017), ibc(I,W, salud), (novedad_persona(N,I), novedad(N,pension,U) -> Y is ((V * W) * U) approach 100; Y is (V * W) approach 100).
 			v_total_pen(X,T) :- v_pen_func(X,Y), v_pen_ud(X,U), T is (Y + U) approach 100.
 			v_pen_contratista(I,Y,C) :- concepto(Z,T,pension,contratista,V,2017), ibc(I,W,C,salud), Y is (V * W) approach 100.
 
 			%%		ARL
-			v_arl(I,Y) :- concepto(Z,T,arl,X,V,2017), ibc(I,W,C,riesgos), Y is (V * W) approach 100.
+			v_arl(I,Y) :- concepto(Z,T,arl,planta,V,2017), ibc(I,W,riesgos), (novedad_persona(N,I), novedad(N,arl,U) -> Y is ((V * W) * U) approach 100; Y is (V * W) approach 100).
 
 			%%		FONDO DE SOLIDARIDAD
 			v_fondo1(X,S,D,Y) :- ibc(X,W,apf), smlmv(M,2017),

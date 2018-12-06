@@ -80,7 +80,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 		periodoPago                               *models.PeriodoPago
 		detallePreliquidacion, conceptosSegSocial []interface{}
 
-		contratos []string
+		personas []string
 	)
 	tipoRegistro := "02"
 	secuencia := 1
@@ -97,14 +97,14 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 
 			for i := range detallePreliquidacion {
 				tempMap := detallePreliquidacion[i].(map[string]interface{})
-				contratos = append(contratos, tempMap["NumeroContrato"].(string))
+				personas = append(personas, fmt.Sprint(tempMap["Persona"].(float64)))
 				// vigContratos = append(vigContratos, strconv.Itoa(int(tempMap["VigenciaContrato"].(float64))))
 				// beego.Info(contratos)
 				// beego.Info(vigContratos)
 			}
 
 			//contratos = []string{"DVE2", "DVE3", "DVE4", "DVE5", "DVE6", "DVE7", "DVE13", "DVE14", "DVE15", "DVE16", "DVE17"}
-			mapProveedores, _ := GetInfoProveedor(contratos)
+			mapProveedores, _ := GetInfoProveedor(personas)
 			mapPersonas, _ := GetInfoPersona(mapProveedores)
 			for key, value := range mapPersonas {
 				var (
@@ -189,7 +189,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				err = getJson("http://"+beego.AppConfig.String("titanServicio")+
 					"/detalle_preliquidacion?limit=1"+
 					"&fields=ValorCalculado"+
-					"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",Concepto.NombreConcepto:salarioBase,NumeroContrato:"+key, &preliquidacion)
+					"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",Concepto.NombreConcepto:salarioBase,Persona:"+key, &preliquidacion)
 				if err == nil {
 					salarioBase := strconv.Itoa(int(preliquidacion[0].(map[string]interface{})["ValorCalculado"].(float64)))
 					fila += formatoDato(salarioBase, 9) //Salario básico
@@ -200,7 +200,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				err = getJson("http://"+beego.AppConfig.String("titanServicio")+
 					"/detalle_preliquidacion?limit=1"+
 					"&fields=ValorCalculado,Id"+
-					"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",Concepto.NombreConcepto:ibc_liquidado,NumeroContrato:"+key, &preliquidacion)
+					"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",Concepto.NombreConcepto:ibc_liquidado,Persona:"+key, &preliquidacion)
 				if err == nil {
 					ibcLiquidado := int(preliquidacion[0].(map[string]interface{})["ValorCalculado"].(float64))
 					fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC pensión
@@ -247,7 +247,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				err = getJson("http://"+beego.AppConfig.String("titanServicio")+
 					"/detalle_preliquidacion"+
 					"?fields=Concepto,Id"+
-					"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",NumeroContrato:"+key, &preliquidacion)
+					"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",Persona:"+key, &preliquidacion)
 
 				if err != nil {
 					fila += formatoDato(completarSecuencia(0, 9), 9)

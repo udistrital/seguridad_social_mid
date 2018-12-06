@@ -174,7 +174,7 @@ func (c *PagoController) CalcularSegSocial() {
 			c.Data["json"] = alertas
 		} else {
 			idDetallePreliquidacion := detallePreliquidacion[0].Preliquidacion.Id
-
+			// beego.Info("detallePreliquidacion: ", len(detallePreliquidacion))
 			for index := 0; index < len(detallePreliquidacion); index++ {
 				persona := strconv.Itoa(detallePreliquidacion[index].Persona)
 				valorCalculado := strconv.Itoa(int(detallePreliquidacion[index].ValorCalculado))
@@ -184,7 +184,8 @@ func (c *PagoController) CalcularSegSocial() {
 				predicado = append(predicado, valorSaludEmpleado(idStr, persona), ValorPensionEmpleado(idStr, persona))
 			}
 
-			reglas := CargarReglasBase() + FormatoReglas(predicado) + cargarNovedades(idStr)
+			reglas := CargarReglasBase() + FormatoReglas(predicado) + cargarNovedades()
+
 
 			idProveedores := golog.GetInt64(reglas, "v_salud_ud(I,Y).", "I")
 			saludUd := golog.GetFloat(reglas, "v_salud_ud(I,Y).", "Y")
@@ -290,20 +291,18 @@ func ValorPensionEmpleado(idLiquidacion, persona string) (predicado models.Predi
 // cargarNovedades ...
 // @Title cargarNovedades
 // @Description obtiene todas los conceptos con naturaleza seguridad_social desde detalle_preliquidacion por el id
-// @Param	id		path 	string	true		"The key for staticblock"
-func cargarNovedades(id string) (novedades string) {
-	var conceptosPreliquidacion []models.DetallePreliquidacion
-	var predicado []models.Predicado
+func cargarNovedades() (novedades string) {
+	var conceptoNominaPorPersona []models.ConceptoNominaPorPersona
+	var predicado models.Predicado
 
-	errLincNo := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
-		"?limit=0&query=Preliquidacion:"+id+",Concepto.NaturalezaConcepto.Nombre:seguridad_social&fields=Concepto,NumeroContrato", &conceptosPreliquidacion)
-
+	errLincNo := getJson("http://"+beego.AppConfig.String("titanServicio")+"/concepto_nomina_por_persona?"+
+		"limit=0&query=Concepto.EstadoConceptoNomina.Nombre:activo", &conceptoNominaPorPersona)
 	if errLincNo != nil {
-		fmt.Println("error en cargarNovedades()", errLincNo)
+		beego.Error("error en cargarNovedades()", errLincNo)
 	} else {
-		for index := 0; index < len(conceptosPreliquidacion); index++ {
-			predicado = append(predicado, models.Predicado{Nombre: "novedad_persona(" + conceptosPreliquidacion[index].Concepto.NombreConcepto + ", " + strconv.Itoa(conceptosPreliquidacion[index].Persona) + ")."})
-			novedades += predicado[index].Nombre + "\n"
+		for index := 0; index < len(conceptoNominaPorPersona); index++ {
+			predicado = models.Predicado{Nombre: "novedad_persona(" + conceptoNominaPorPersona[index].Concepto.NombreConcepto + ", " + strconv.Itoa(conceptoNominaPorPersona[index].Persona) + ")."}
+			novedades += predicado.Nombre + "\n"
 		}
 	}
 	return
