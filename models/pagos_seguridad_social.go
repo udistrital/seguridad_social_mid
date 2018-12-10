@@ -7,6 +7,7 @@ type PagoSeguridadSocial struct {
 	SaludTotal              int64
 	PensionUd               float64
 	PensionTotal            int64
+	FondoSolidaridad        float64
 	Arl                     int64
 	Caja                    int64 //Caja de compensación
 	Icbf                    int64 //Instituto Colombiano de Bienestar Familiar

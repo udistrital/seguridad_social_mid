@@ -174,7 +174,9 @@ func (c *PagoController) CalcularSegSocial() {
 			c.Data["json"] = alertas
 		} else {
 			idDetallePreliquidacion := detallePreliquidacion[0].Preliquidacion.Id
-			// beego.Info("detallePreliquidacion: ", len(detallePreliquidacion))
+
+			idNommina := detallePreliquidacion[0].Preliquidacion.Nomina.Id
+
 			for index := 0; index < len(detallePreliquidacion); index++ {
 				persona := strconv.Itoa(detallePreliquidacion[index].Persona)
 				valorCalculado := strconv.Itoa(int(detallePreliquidacion[index].ValorCalculado))
@@ -185,7 +187,6 @@ func (c *PagoController) CalcularSegSocial() {
 			}
 
 			reglas := CargarReglasBase() + FormatoReglas(predicado) + cargarNovedades()
-
 
 			idProveedores := golog.GetInt64(reglas, "v_salud_ud(I,Y).", "I")
 			saludUd := golog.GetFloat(reglas, "v_salud_ud(I,Y).", "Y")
@@ -198,7 +199,8 @@ func (c *PagoController) CalcularSegSocial() {
 
 			// Acá se debe cambiar como se arma el modelo
 			for index := 0; index < len(idProveedores); index++ {
-				proveedores = append(proveedores, fmt.Sprint(idProveedores[index]))
+				idProveedor := fmt.Sprint(idProveedores[index])
+				proveedores = append(proveedores, idProveedor)
 				aux := &models.PagoSeguridadSocial{
 					NombrePersona:           "",
 					IdProveedor:             idProveedores[index],
@@ -206,6 +208,7 @@ func (c *PagoController) CalcularSegSocial() {
 					SaludTotal:              saludTotal[index],
 					PensionUd:               pensionUd[index],
 					PensionTotal:            pensionTotal[index],
+					FondoSolidaridad:        valorPagoFondoSolidaridad(idProveedor, fmt.Sprint(idNommina)),
 					Caja:                    caja[index],
 					Icbf:                    icbf[index],
 					IdPreliquidacion:        idDetallePreliquidacion,
@@ -225,6 +228,26 @@ func (c *PagoController) CalcularSegSocial() {
 		}
 		c.ServeJSON()
 	}
+}
+
+func valorPagoFondoSolidaridad(persona, idNomina string) float64 {
+	var conceptoNominaPorPersona []models.ConceptoNominaPorPersona
+
+	var valorFondo float64
+
+	err := getJson("http://"+beego.AppConfig.String("titanServicio")+"/concepto_nomina_por_persona"+
+		"?limit=0&query=Concepto.NombreConcepto:fondoSolidaridad,Persona:"+persona+",Activo:true,Nomina.Id:"+idNomina,
+		&conceptoNominaPorPersona)
+
+	if err != nil {
+		beego.Error("error en valorPagoFondoSolidaridad ", err.Error())
+		return valorFondo
+	}
+	if len(conceptoNominaPorPersona) > 0 {
+		valorFondo = conceptoNominaPorPersona[0].ValorNovedad
+	}
+
+	return valorFondo
 }
 
 // valorSaludEmpleado ...
