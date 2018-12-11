@@ -15,6 +15,22 @@ func init() {
 			MethodParams: param.Make(),
 			Params: nil})
 
+	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:GeneradorRelgasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:GeneradorRelgasController"],
+		beego.ControllerComments{
+			Method: "ObtenerHechosCalculo",
+			Router: `/ObtenerHechosCalculo`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams: param.Make(),
+			Params: nil})
+
+	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:GeneradorRelgasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:GeneradorRelgasController"],
+		beego.ControllerComments{
+			Method: "RegistrarNuevosHechos",
+			Router: `/RegistrarNuevosHechos`,
+			AllowHTTPMethods: []string{"post"},
+			MethodParams: param.Make(),
+			Params: nil})
+
 	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:IncapacidadesController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:IncapacidadesController"],
 		beego.ControllerComments{
 			Method: "GetPersonas",

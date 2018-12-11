@@ -45,7 +45,7 @@ func (c *ConceptosIbcController) ActualizarConceptos() {
 		alerta.Code = "1"
 
 		construirHechos(v)
-		err = registrarHechos(v)
+		err = RegistrarHechos(v)
 		if err != nil {
 			alerta.Body = err.Error()
 			panic(alerta)
@@ -60,8 +60,8 @@ func (c *ConceptosIbcController) ActualizarConceptos() {
 	c.ServeJSON()
 }
 
-// registrarHechos hace llamados recursivos para actualizar los hechos
-func registrarHechos(nombreConceptos []models.Predicado) (err error) {
+// RegistrarHechos hace llamados recursivos para actualizar los hechos
+func RegistrarHechos(nombreConceptos []models.Predicado) (err error) {
 	var apiResponse interface{}
 	for _, value := range nombreConceptos {
 		err = sendJson("http://"+beego.AppConfig.String("rulerServicio")+"/predicado/"+strconv.Itoa(value.Id), "PUT", &apiResponse, value)

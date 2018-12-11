@@ -28,3 +28,8 @@ func (c *UtilsController) GetActualDate() {
 	c.Data["json"] = t.Format("2006-01-02")
 	c.ServeJSON()
 }
+
+// ImprimirError estándar para imprimir errores
+func ImprimirError(mensaje string, err error) {
+	beego.Error(mensaje, " => Error:", err.Error())
+}

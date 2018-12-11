@@ -62,6 +62,11 @@ func init() {
 				&controllers.PagoHonorariosController{},
 			),
 		),
+		beego.NSNamespace("/generador_reglas",
+			beego.NSInclude(
+				&controllers.GeneradorRelgasController{},
+			),
+		),
 	)
 	beego.AddNamespace(ns)
 }
