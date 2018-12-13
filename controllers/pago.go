@@ -201,6 +201,7 @@ func (c *PagoController) CalcularSegSocial() {
 			for index := 0; index < len(idProveedores); index++ {
 				idProveedor := fmt.Sprint(idProveedores[index])
 				proveedores = append(proveedores, idProveedor)
+
 				aux := &models.PagoSeguridadSocial{
 					NombrePersona:           "",
 					IdProveedor:             idProveedores[index],
@@ -221,7 +222,12 @@ func (c *PagoController) CalcularSegSocial() {
 			mapProveedores, _ := GetInfoProveedor(proveedores)
 
 			for i := range pagosSeguridadSocial {
-				pagosSeguridadSocial[i].NombrePersona = mapProveedores[fmt.Sprint(pagosSeguridadSocial[i].IdProveedor)].NomProveedor
+				proveedor := mapProveedores[fmt.Sprint(pagosSeguridadSocial[i].IdProveedor)]
+				pagosSeguridadSocial[i].NombrePersona = proveedor.NomProveedor
+				caja, _ := ComporarCajaProveedor(proveedor.NumDocumento)
+				if !caja {
+					pagosSeguridadSocial[i].Caja = 0
+				}
 			}
 
 			c.Data["json"] = pagosSeguridadSocial
@@ -385,7 +391,7 @@ func (c *PagoController) RegistrarPagos() {
 			}
 		}
 
-		mapProveedores, err := GetInfoProveedor(PeriodoPago.Contratos)
+		mapProveedores, err := GetInfoProveedor(PeriodoPago.Personas)
 		if err != nil {
 			c.Data["json"] = err.Error()
 		}
@@ -395,22 +401,20 @@ func (c *PagoController) RegistrarPagos() {
 			c.Data["json"] = err.Error()
 		}
 
-		pagosSeg, _ := getPagosSeg()
+		pagosSeg, _ := GetPagosSeguridadSocial()
 		contPagos, contContratista := 0, 0 // conPagos sirve para que cuente los 5 pagos de seguridad social, contContratista es para que recorrer los contratistas
-		fmt.Println(PeriodoPago)
 		for i := range PeriodoPago.Pagos {
 			nombrePago := pagosSeg[PeriodoPago.Pagos[i].TipoPago]
+			aux := PeriodoPago.Personas[contContratista]
 			switch nombrePago {
 			case "arl":
-				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[PeriodoPago.Contratos[contContratista]].IdArl
+				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[aux].IdArl
 			case "pension_ud":
-				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[PeriodoPago.Contratos[contContratista]].IdFondoPension
+				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[aux].IdFondoPension
 			case "salud_ud":
-				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[PeriodoPago.Contratos[contContratista]].IdEps
+				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[aux].IdEps
 			case "caja_compensacion":
-				fmt.Println("Aqui es el error......")
-				fmt.Println(PeriodoPago.Pagos[i])
-				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[PeriodoPago.Contratos[contContratista]].IdCajaCompensacion
+				PeriodoPago.Pagos[i].EntidadPago = mapPersonas[aux].IdCajaCompensacion
 			default: // ICBF
 				PeriodoPago.Pagos[i].EntidadPago = 0
 			}
@@ -463,18 +467,34 @@ func GetInfoPersona(proveedores map[string]models.InformacionProveedor) (map[str
 	return personas, nil
 }
 
-/* getPagosSeg busca todos los pagos correspondientes a seguridad social en los
+// GetInfoCaja revisa si el proveedor tiene una caja de compensación asociada
+func ComporarCajaProveedor(cedulaProveedor string) (tieneCaja bool, err error) {
+	var persona models.InformacionPersonaNatural
+	err = getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_persona_natural/"+cedulaProveedor, &persona)
+	if err != nil {
+		return
+	}
+
+	if persona.IdCajaCompensacion != 0 {
+		tieneCaja = true
+	}
+	return
+}
+
+/* GetPagosSeguridadSocial busca todos los pagos correspondientes a seguridad social en los
 conceptos de titan y devuelve un mapa cuya llave es el nombre del pago y el valor es el id del pago */
-func getPagosSeg() (map[int]string, error) {
+func GetPagosSeguridadSocial() (map[int]string, error) {
 	var f interface{}
 	pagos := make(map[int]string)
 
 	if err := getJson("http://"+beego.AppConfig.String("titanServicio")+"/concepto_nomina"+
 		"?limit=0&"+
 		"fields=Id,NombreConcepto&"+
-		"query=NaturalezaConcepto.Nombre:seguridad_social", &f); err != nil {
+		"query=NaturalezaConcepto.Nombre:seguridad_social"+
+		",TipoConcepto.Nombre:pago_seguridad_social", &f); err != nil {
 		return nil, err
 	}
+
 	interfaceArr := f.([]interface{})
 	for i := range interfaceArr {
 		pagos[int(interfaceArr[i].(map[string]interface{})["Id"].(float64))] = interfaceArr[i].(map[string]interface{})["NombreConcepto"].(string)

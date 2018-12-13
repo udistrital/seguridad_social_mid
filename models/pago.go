@@ -38,7 +38,7 @@ type TotalPagos struct {
 }
 
 type TrPeriodoPago struct {
-	Contratos   []string
+	Personas    []string
 	PeriodoPago *PeriodoPago
 	Pagos       []*Pago
 }
