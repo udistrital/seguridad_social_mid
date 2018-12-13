@@ -95,7 +95,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 	)
 
 	tipoRegistro := "02"
-	secuencia := 2
+	secuencia := 1
 	fila = ""
 
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &periodoPago); err == nil {
@@ -122,7 +122,8 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					pagoPension,
 					pagoArl,
 					pagoCaja,
-					pagoIcbf string
+					pagoIcbf,
+					horasLaboradas string
 					totalPagoPension int
 				)
 				idPersona := key
@@ -170,6 +171,8 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				}
 
 				fila += traerCodigoEntidadSalud(strconv.Itoa(value.IdCajaCompensacion)) //Código CCF a la cual pertenece el afiliado
+				diasLaborados, _ := strconv.Atoi(traerDiasCotizados(idPersona, idPreliquidacion, "salud"))
+				horasLaboradas = strconv.Itoa(diasLaborados * 8)
 
 				fila += traerDiasCotizados(idPersona, idPreliquidacion, "pension") // Número de días coitzados a pensión
 				fila += traerDiasCotizados(idPersona, idPreliquidacion, "salud")   // Número de días cotizados a salud
@@ -194,11 +197,12 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+
 					",Concepto.NombreConcepto:ibc_liquidado,Persona:"+idPersona, &preliquidacion)
 				if err == nil {
-					ibcLiquidado := int(preliquidacion[0].ValorCalculado)
-					fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC pensión
-					fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC salud
-					fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC ARL
-					fila += formatoDato(completarSecuencia(ibcLiquidado, 9), 9) //IBC CCF
+					ibcLiquidadoTemp := int(preliquidacion[0].ValorCalculado)
+					fila += formatoDato(completarSecuencia(ibcLiquidadoTemp, 9), 9) //IBC pensión
+					fila += formatoDato(completarSecuencia(ibcLiquidadoTemp, 9), 9) //IBC salud
+					fila += formatoDato(completarSecuencia(ibcLiquidadoTemp, 9), 9) //IBC ARL
+					fila += formatoDato(completarSecuencia(ibcLiquidadoTemp, 9), 9) //IBC CCF
+					ibcLiquidado = fmt.Sprint(ibcLiquidadoTemp)
 				}
 
 				fila += formatoDato("0.16000", 7) //Tarifa de aportes pensiones
@@ -305,7 +309,8 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					fila += formatoDato(fechaFinIrl, 10)           //Fecha fin IRL
 
 					fila += formatoDato(completarSecuenciaString(ibcLiquidado, 9), 9) //IBC otros parafiscales difenrentes a CCF
-					fila += formatoDato("240", 3)
+					fila += formatoDato(horasLaboradas, 3)
+					fila += formatoDato("", 26)
 
 					fila += "\n" // siguiente persona...
 					secuencia++
@@ -391,7 +396,7 @@ func traerValorConceptoEmpleado(idPersona, idPreliquidacion, tipoPago string) st
 	if detallePreliquidacion != nil {
 		valorTipoPago = detallePreliquidacion[0].ValorCalculado
 	}
-	valorPagoAproximado := aproximarPesoSuperior(valorTipoPago, 100)
+	valorPagoAproximado := AproximarPesoSuperior(valorTipoPago, 100)
 	return formatoDato(completarSecuencia(valorPagoAproximado, 9), 9)
 }
 
@@ -775,7 +780,7 @@ func GetPagoEmpleado(idPersona, idPreliquidacion, tipoPago string) (valorPago in
 		if err != nil {
 			ImprimirError("error en traerDiasCotizadosEmpleador()", err)
 		}
-		valorPago = aproximarPesoSuperior(detallePreliquidacion[0].ValorCalculado, 100)
+		valorPago = AproximarPesoSuperior(detallePreliquidacion[0].ValorCalculado, 100)
 	case "pension_ud":
 		err := getJson("http://"+beego.AppConfig.String("titanServicio")+
 			"/detalle_preliquidacion"+
@@ -786,18 +791,18 @@ func GetPagoEmpleado(idPersona, idPreliquidacion, tipoPago string) (valorPago in
 		if err != nil {
 			ImprimirError("error en traerDiasCotizadosEmpleador()", err)
 		}
-		valorPago = aproximarPesoSuperior(detallePreliquidacion[0].ValorCalculado, 100)
+		valorPago = AproximarPesoSuperior(detallePreliquidacion[0].ValorCalculado, 100)
 	}
 	return
 }
 
-func aproximarPesoSuperior(valor float64, valorAaproximar int) int {
+func AproximarPesoSuperior(valor float64, valorAaproximar int) int {
 	x := valor / float64(valorAaproximar)
 	y := math.Trunc(x)
 
 	var numero int
 	if (x - y) > 0 {
-		numero = aproximarPesoSuperior(float64(math.Trunc(valor)+1), valorAaproximar)
+		numero = AproximarPesoSuperior(float64(math.Trunc(valor)+1), valorAaproximar)
 
 	} else {
 		numero = int(valor)
