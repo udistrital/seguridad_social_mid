@@ -98,6 +98,8 @@ var (
 
 	valorUpc       string
 	salarioBase    int
+	mesPeriodo     int
+	anioPeriodo    int
 	novedadPersona = false
 	diasIrl        = 0
 
@@ -122,6 +124,8 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &periodoPago); err == nil {
 
 		tipoPreliquidacion = periodoPago.TipoLiquidacion
+		mesPeriodo = int(periodoPago.Mes)
+		anioPeriodo = int(periodoPago.Anio)
 
 		if err = getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion?"+
 			"limit=-1"+
@@ -321,22 +325,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					fila += formatoDato("1", 1)     // Clase de Riesgo en la que se encuentra el afiliado
 					fila += formatoDato("", 1)      // Indicador tarifa especial pensiones (Actividades de alto riesgo, Senadores, CTI y Aviadores aplican)
 
-					//Fechas de novedades (AAAA-MM-DD)
-					fila += formatoDato(fechaIngreso, 10)          //Fecha ingreso
-					fila += formatoDato(fechaRetiro, 10)           //Fecha retiro
-					fila += formatoDato(fechaInicioVsp, 10)        //Fecha inicio VSP
-					fila += formatoDato(fechaInicioSuspencion, 10) //Fecha inicio SLN
-					fila += formatoDato(fechaFinSuspencion, 10)    //Fecha fin SLN
-					fila += formatoDato(fechaInicioIge, 10)        //Fecha inicio IGE
-					fila += formatoDato(fechaFinIge, 10)           //Fecha fin IGE
-					fila += formatoDato(fechaInicioLma, 10)        //Fecha inicio LMA
-					fila += formatoDato(fechaFinLma, 10)           //Fecha fin LMA
-					fila += formatoDato(fechaInicioVac, 10)        //Fecha inicio VAC-LR
-					fila += formatoDato(fechaFinVac, 10)           //Fecha fin VAC-LR
-					fila += formatoDato(fechaInicioVct, 10)        //Fecha inicio VCT
-					fila += formatoDato(fechaFinVct, 10)           //Fecha fin VCT
-					fila += formatoDato(fechaInicioIrl, 10)        //Fecha inicio IRL
-					fila += formatoDato(fechaFinIrl, 10)           //Fecha fin IRL
+					fila += formatoDato("", 150) // Columnas que corresponden a las fechas de las novedades
 
 					fila += formatoDato(completarSecuenciaString(ibcLiquidado, 9), 9) //IBC otros parafiscales difenrentes a CCF
 					fila += formatoDato(horasLaboradas, 3)
@@ -376,6 +365,8 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 
 // crearFilaNovedad crea las filas de acuerdo a las novedades de una persona
 func crearFilaNovedad(idPersona, idPreliquidacion string, persona models.InformacionPersonaNatural) {
+	var horasLaboradasNovedad = "0"
+	filaAux = ""
 	filaAux += formatoDato(tipoRegistro, 2)                     //Tipo Registro
 	filaAux += formatoDato(completarSecuencia(secuencia, 5), 5) //Secuencia
 
@@ -511,6 +502,27 @@ func crearFilaNovedad(idPersona, idPreliquidacion string, persona models.Informa
 	filaAux += formatoDato("14-23", 6) // Código de la administradora de Riesgos Laborales a la cual pertenece el afiliado
 	filaAux += formatoDato("1", 1)     // Clase de Riesgo en la que se encuentra el afiliado
 	filaAux += formatoDato("", 1)      // Indicador tarifa especial pensiones (Actividades de alto riesgo, Senadores, CTI y Aviadores aplican)
+
+	//Fechas de novedades (AAAA-MM-DD)
+	filaAux += formatoDato(fechaIngreso, 10)          //Fecha ingreso
+	filaAux += formatoDato(fechaRetiro, 10)           //Fecha retiro
+	filaAux += formatoDato(fechaInicioVsp, 10)        //Fecha inicio VSP
+	filaAux += formatoDato(fechaInicioSuspencion, 10) //Fecha inicio SLN
+	filaAux += formatoDato(fechaFinSuspencion, 10)    //Fecha fin SLN
+	filaAux += formatoDato(fechaInicioIge, 10)        //Fecha inicio IGE
+	filaAux += formatoDato(fechaFinIge, 10)           //Fecha fin IGE
+	filaAux += formatoDato(fechaInicioLma, 10)        //Fecha inicio LMA
+	filaAux += formatoDato(fechaFinLma, 10)           //Fecha fin LMA
+	filaAux += formatoDato(fechaInicioVac, 10)        //Fecha inicio VAC-LR
+	filaAux += formatoDato(fechaFinVac, 10)           //Fecha fin VAC-LR
+	filaAux += formatoDato(fechaInicioVct, 10)        //Fecha inicio VCT
+	filaAux += formatoDato(fechaFinVct, 10)           //Fecha fin VCT
+	filaAux += formatoDato(fechaInicioIrl, 10)        //Fecha inicio IRL
+	filaAux += formatoDato(fechaFinIrl, 10)           //Fecha fin IRL
+
+	filaAux += formatoDato(completarSecuencia(0, 9), 9) //IBC otros parafiscales difenrentes a CCF
+	filaAux += formatoDato(completarSecuenciaString(horasLaboradasNovedad, 3), 3)
+	filaAux += formatoDato("", 26)
 
 	filaAux += "\n"
 	filas += filaAux
@@ -717,8 +729,20 @@ func establecerNovedades(idPersona, idPreliquidacion, cedulaPersona string) {
 			ImprimirError("error en establecerNovedades()", err)
 		}
 		if conceptoNominaPersona != nil {
-			fechaInicioTemp = conceptoNominaPersona[0].FechaDesde.Format(formatoFecha)
-			fechaFinTemp = conceptoNominaPersona[0].FechaHasta.Format(formatoFecha)
+
+			auxFechaInicio := conceptoNominaPersona[0].FechaDesde
+			if int(auxFechaInicio.Month()) < mesPeriodo {
+				fechaInicioTemp = time.Date(auxFechaInicio.Year(), time.Month(mesPeriodo), 1, 0, 0, 0, 0, time.UTC).Format(formatoFecha)
+			} else {
+				fechaInicioTemp = conceptoNominaPersona[0].FechaDesde.Format(formatoFecha)
+			}
+
+			auxFechaFin := conceptoNominaPersona[0].FechaHasta
+			if int(auxFechaFin.Month()) > mesPeriodo {
+				fechaFinTemp = time.Date(auxFechaFin.Year(), time.Month(mesPeriodo), 30, 0, 0, 0, 0, time.UTC).Format(formatoFecha)
+			} else {
+				fechaFinTemp = conceptoNominaPersona[0].FechaHasta.Format(formatoFecha)
+			}
 		}
 
 		switch value.Concepto.NombreConcepto {
