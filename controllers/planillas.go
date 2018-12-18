@@ -26,6 +26,7 @@ func (c *PlanillasController) URLMapping() {
 var (
 	formatoFecha = "2006-01-02"
 	fila         string
+	filaAux      string
 	filas        string
 
 	//Variables para cada una de las novedades y sus días validos
@@ -83,7 +84,20 @@ var (
 	tarifaSalud   = "0.12500"
 
 	tipoPreliquidacion string
+	codigoFondoPension string
+	codigoEps          string
+	codigoCaja         string
 
+	diasSuspencionContrato int
+	diasLicenciaNoRem      int
+	diasComisionServicios  int
+	diasLicenciaRem        int
+	diasLicenciaMaternidad int
+	diasVacaciones         int
+	diasIncapacidad        int
+
+	valorUpc       string
+	salarioBase    int
 	novedadPersona = false
 	diasIrl        = 0
 
@@ -138,6 +152,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				idPreliquidacion := strconv.Itoa(detallePreliquidacion[0].Preliquidacion.Id)
 				cedulaPersona := fmt.Sprint(value.Id)
 				fila = ""
+				filaAux = ""
 				fila += formatoDato(tipoRegistro, 2)                     //Tipo Registro
 				fila += formatoDato(completarSecuencia(secuencia, 5), 5) //Secuencia
 
@@ -157,7 +172,8 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				establecerNovedades(idPersona, idPreliquidacion, cedulaPersona)
 
 				//Código de la administradora de fondo de pensiones a la cual pertenece el afiliado
-				fila += traerCodigoEntidadSalud(strconv.Itoa(value.IdFondoPension))
+				codigoFondoPension = traerCodigoEntidadSalud(strconv.Itoa(value.IdFondoPension))
+				fila += codigoFondoPension
 
 				//Código de la admnistradora de pensiones a la cual se traslada el afiliado
 				// Si hay un translado, debe aparecer el nuevo código, de lo contrario será un campo vació
@@ -168,7 +184,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				}
 
 				//Código EPS o EOC a la cual pertenece el afiliado
-				if codigoEps := traerCodigoEntidadSalud(strconv.Itoa(value.IdEps)); codigoEps == "      " {
+				if codigoEps = traerCodigoEntidadSalud(strconv.Itoa(value.IdEps)); codigoEps == "      " {
 					fila += formatoDato("MIN001", 6)
 				} else {
 					fila += codigoEps
@@ -198,7 +214,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					"&fields=ValorCalculado"+
 					"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",Concepto.NombreConcepto:salarioBase,Persona:"+key, &preliquidacion)
 				if err == nil {
-					salarioBase := int(preliquidacion[0].ValorCalculado)
+					salarioBase = int(preliquidacion[0].ValorCalculado)
 					fila += formatoDato(completarSecuencia(salarioBase, 9), 9) //Salario básico
 				}
 
@@ -218,7 +234,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					ibcLiquidado = fmt.Sprint(ibcLiquidadoTemp)
 				}
 
-				fila += formatoDato(tarifaPension, 7) //Tarifa de aportes pensiones
+				fila += formatoDato("0.16000", 7) //Tarifa de aportes pensiones
 
 				// Aquí se traen todos los valores totales a pagar correspondientes a seguridad social
 				// (revisar comentarios de la función traerDiasCotizadosEmpleador(idPersona, idPreliquidacion, idPeriodoPago, tipo_pago) )
@@ -267,27 +283,28 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					fila += traerValorConceptoEmpleado(idPersona, idPreliquidacion, "fondoSolidaridad") // Aportes a fondo de solidaridad pensional subcuenta de solidaridad
 					fila += traerValorConceptoEmpleado(idPersona, idPreliquidacion, "fondoSolidaridad") // Aportes a fondo de solidaridad pensional subcuenta de subsistencia
 					fila += formatoDato(completarSecuencia(0, 9), 9)                                    // Valor no retenido por aportes voluntarios
-					fila += formatoDato(tarifaSalud, 7)                                                 // Tarifa de aportes salud
+					fila += formatoDato("0.12500", 7)                                                   // Tarifa de aportes salud
 					fila += formatoDato(completarSecuenciaString(pagoSalud, 9), 9)                      // Cotización obligatoria a salud
 
-					fila += buscarUpcAsociada(idPersona)             //Valor UPC Adicional
+					valorUpc = buscarUpcAsociada(idPersona)
+					fila += valorUpc                                 //Valor UPC Adicional
 					fila += formatoDato("", 15)                      //Nº de autorización de la incapacidad por enfermedad general
 					fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de la incapacidad por enfermedad general
 					fila += formatoDato("", 15)                      //Nº de autorización de la licencia de maternidad o paternidad
 					fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de la licencia de maternidad
 
-					fila += formatoDato(tarifaArl, 9) //Tarifa de aportes a Riegos Laborales
+					fila += formatoDato("0.0052200", 9) //Tarifa de aportes a Riegos Laborales
 
 					fila += formatoDato("        1", 9)                          // Centro de trabajo CT
 					fila += formatoDato(completarSecuenciaString(pagoArl, 9), 9) // Cotización obligatoria a sistema de riesgos laborales
 
-					fila += formatoDato(tarifaCaja, 7)                            // Tarifa de aportes CCF
+					fila += formatoDato("0.04000", 7)                             // Tarifa de aportes CCF
 					fila += formatoDato(completarSecuenciaString(pagoCaja, 9), 9) // Cotización obligatoria a salud
 
 					fila += formatoDato(completarSecuencia(0, 7), 7) // Tarifa de aportes SENA
 					fila += formatoDato(completarSecuencia(0, 9), 9) // Valor Aportes SENA
 
-					fila += formatoDato(tarifaIcbf, 7)                            //Tarifa de aportes ICBF
+					fila += formatoDato("0.03000", 7)                             //Tarifa de aportes ICBF
 					fila += formatoDato(completarSecuenciaString(pagoIcbf, 9), 9) // Cotización obligatoria a salud
 
 					fila += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes ESAP
@@ -327,14 +344,22 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 
 					fila += "\n" // siguiente persona...
 					filas += fila
-					if novedadPersona {
-						// filaAuxilar := fila
-						secuencia++
-						crearFilaNovedad(idPersona, idPreliquidacion, value)
-						// filas += filaNueva
-					}
-
 					secuencia++
+					if suspencionTemporalContrato {
+						crearFilaNovedad(idPersona, idPreliquidacion, value)
+					} else if licenciaNoRemunerada {
+						crearFilaNovedad(idPersona, idPreliquidacion, value)
+					} else if comisionServicios {
+						crearFilaNovedad(idPersona, idPreliquidacion, value)
+					} else if incapacidadGeneral {
+						crearFilaNovedad(idPersona, idPreliquidacion, value)
+					} else if licenciaMaternidad {
+						crearFilaNovedad(idPersona, idPreliquidacion, value)
+					} else if vacaciones {
+						crearFilaNovedad(idPersona, idPreliquidacion, value)
+					} else if licenciaRemunerada {
+						crearFilaNovedad(idPersona, idPreliquidacion, value)
+					}
 				}
 			}
 
@@ -349,31 +374,30 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 	c.ServeJSON()
 }
 
+// crearFilaNovedad crea las filas de acuerdo a las novedades de una persona
 func crearFilaNovedad(idPersona, idPreliquidacion string, persona models.InformacionPersonaNatural) {
+	filaAux += formatoDato(tipoRegistro, 2)                     //Tipo Registro
+	filaAux += formatoDato(completarSecuencia(secuencia, 5), 5) //Secuencia
 
-	// arr := strings.Fields(filaAux)
-	// beego.Info(arr[15])
+	filaAux += formatoDato("CC", 2)                     //Tip de documento del cotizante
+	filaAux += formatoDato(persona.Id, 16)              //Número de identificación del cotizante
+	filaAux += formatoDato(completarSecuencia(1, 2), 2) //Tipo Cotizante
+	filaAux += formatoDato(completarSecuencia(0, 2), 2) //Subtipo de Cotizante
+	filaAux += formatoDato("", 1)                       //Extranjero no obligado a cotizar pensión
 
-	fila += formatoDato(tipoRegistro, 2)                     //Tipo Registro
-	fila += formatoDato(completarSecuencia(secuencia, 5), 5) //Secuencia
+	marcarNovedadConOpciones(exterior, "X") //Colombiano en el exterior
+	filaAux += formatoDato("11", 2)         //Código del departamento de la ubicación laboral
+	filaAux += formatoDato("001", 3)        //Código del municipio de ubicación laboral
 
-	fila += formatoDato("CC", 2)                     //Tip de documento del cotizante
-	fila += formatoDato(persona.Id, 16)              //Número de identificación del cotizante
-	fila += formatoDato(completarSecuencia(1, 2), 2) //Tipo Cotizante
-	fila += formatoDato(completarSecuencia(0, 2), 2) //Subtipo de Cotizante
-	fila += formatoDato("", 1)                       //Extranjero no obligado a cotizar pensión
-
-	establecerNovedadesExterior(idPersona, idPreliquidacion)
-
-	fila += formatoDato(persona.PrimerApellido, 20)  //Primer apellido
-	fila += formatoDato(persona.SegundoApellido, 30) //Segundo apellido
-	fila += formatoDato(persona.PrimerNombre, 20)    //Primer nombre
-	fila += formatoDato(persona.SegundoNombre, 30)   //Segundo nombre
+	filaAux += formatoDato(persona.PrimerApellido, 20)  //Primer apellido
+	filaAux += formatoDato(persona.SegundoApellido, 30) //Segundo apellido
+	filaAux += formatoDato(persona.PrimerNombre, 20)    //Primer nombre
+	filaAux += formatoDato(persona.SegundoNombre, 30)   //Segundo nombre
 
 	marcarNovedadConOpciones(ingreso, "X")     //ING: Ingreso
 	marcarNovedadConOpciones(retiro, "X")      //RET: Retiro
 	marcarNovedad(trasladoDesdeEps)            //TDE: Traslado desde otra EPS o EOC
-	marcarNovedad(trasladoAEps)                // TAE: Traslado a otra EPS o EOC
+	marcarNovedad(trasladoAEps)                //TAE: Traslado a otra EPS o EOC
 	marcarNovedad(trasladoDesdePensiones)      //TDP: Traslado desde otra administradora de pensiones
 	marcarNovedad(trasladoAPensiones)          //TAP: Traslado a otra administradora de pensiones
 	marcarNovedad(variacionPermanteSalario)    //VSP: Variación permanente de salario
@@ -381,11 +405,11 @@ func crearFilaNovedad(idPersona, idPreliquidacion string, persona models.Informa
 	marcarNovedad(variacionTransitoriaSalario) //VST: Variación transitoria del salario
 	//SLN: Suspención temporal del contrato o licencia no remunerada o comisión de servicios
 	if suspencionTemporalContrato || (licenciaNoRemunerada) {
-		fila += formatoDato("X", 1)
+		filaAux += formatoDato("X", 1)
 	} else if comisionServicios {
-		fila += formatoDato("C", 1)
+		filaAux += formatoDato("C", 1)
 	} else {
-		fila += formatoDato("", 1)
+		filaAux += formatoDato("", 1)
 	}
 
 	marcarNovedad(incapacidadGeneral) //IGE: Incapacidad temporal por enfermadad general
@@ -393,18 +417,112 @@ func crearFilaNovedad(idPersona, idPreliquidacion string, persona models.Informa
 
 	//VAC - LR: Vacaciones, licencia remunerada
 	if vacaciones {
-		fila += formatoDato("X", 1)
+		filaAux += formatoDato("X", 1)
 	} else if licenciaRemunerada {
-		fila += formatoDato("L", 1)
+		filaAux += formatoDato("L", 1)
 	} else {
-		fila += formatoDato("", 1)
+		filaAux += formatoDato("", 1)
 	}
-	marcarNovedad(aporteVoluntario)                        //APV: Aporte voluntario
-	marcarNovedad(variacionCentroTrabajo)                  //VCT: Variación centros de trabajo
-	fila += formatoDato(completarSecuencia(diasIrl, 2), 2) // IRL
+	marcarNovedad(aporteVoluntario)                           //APV: Aporte voluntario
+	marcarNovedad(variacionCentroTrabajo)                     //VCT: Variación centros de trabajo
+	filaAux += formatoDato(completarSecuencia(diasIrl, 2), 2) // IRL
 
-	fila += "\n"
-	filas += fila
+	filaAux += codigoFondoPension
+
+	//Código de la admnistradora de pensiones a la cual se traslada el afiliado
+	// Si hay un translado, debe aparecer el nuevo código, de lo contrario será un campo vació
+	if trasladoAPensiones {
+		filaAux += formatoDato("230301", 6)
+	} else {
+		filaAux += formatoDato("", 6)
+	}
+
+	//Código EPS o EOC a la cual pertenece el afiliado
+	if codigoEps == "      " {
+		filaAux += formatoDato("MIN001", 6)
+	} else {
+		filaAux += codigoEps
+	}
+
+	//Código EPS o EOC a la cual se traslada el afiliado
+	// Si hay un translado, debe aparecer el nuevo código, de lo contrario será un campo vació
+	if trasladoAEps {
+		filaAux += formatoDato("EPS012", 6)
+	} else {
+		filaAux += formatoDato("", 6)
+	}
+
+	filaAux += formatoDato("CCF24", 6) //Código CCF a la cual pertenece el afiliado
+
+	if suspencionTemporalContrato {
+		escribirDiasCotizadosAux(diasSuspencionContrato)
+	} else if licenciaNoRemunerada {
+		escribirDiasCotizadosAux(diasLicenciaNoRem)
+	} else if comisionServicios {
+		escribirDiasCotizadosAux(diasComisionServicios)
+	} else if licenciaMaternidad {
+		escribirDiasCotizadosAux(diasLicenciaMaternidad)
+	} else if vacaciones {
+		escribirDiasCotizadosAux(diasVacaciones)
+	} else if licenciaRemunerada {
+		escribirDiasCotizadosAux(diasLicenciaRem)
+	}
+
+	filaAux += formatoDato(completarSecuencia(salarioBase, 9), 9) //Salario básico
+	filaAux += formatoDato("", 1)                                 //Salario integral
+
+	filaAux += formatoDato(completarSecuencia(0, 36), 36) // Espacios para llegar a la tarifa de pensión
+	filaAux += formatoDato(tarifaPension, 7)              //Tarifa de aportes pensiones
+
+	filaAux += formatoDato(completarSecuencia(0, 63), 63) // Espacios para llegar a la tarifa de pensión
+	filaAux += formatoDato(tarifaSalud, 7)                // Tarifa de aportes salud
+	filaAux += formatoDato(completarSecuencia(0, 9), 9)   // Cotización obligatoria a salud
+
+	filaAux += valorUpc                                 //Valor UPC Adicional
+	filaAux += formatoDato("", 15)                      //Nº de autorización de la incapacidad por enfermedad general
+	filaAux += formatoDato(completarSecuencia(0, 9), 9) //Valor de la incapacidad por enfermedad general
+	filaAux += formatoDato("", 15)                      //Nº de autorización de la licencia de maternidad o paternidad
+	filaAux += formatoDato(completarSecuencia(0, 9), 9) //Valor de la licencia de maternidad
+
+	filaAux += formatoDato(tarifaArl, 9) //Tarifa de aportes a Riegos Laborales
+
+	filaAux += formatoDato("        1", 9)              // Centro de trabajo CT
+	filaAux += formatoDato(completarSecuencia(0, 9), 9) // Cotización obligatoria a sistema de riesgos laborales
+
+	filaAux += formatoDato(tarifaCaja, 7)               // Tarifa de aportes CCF
+	filaAux += formatoDato(completarSecuencia(0, 9), 9) // Cotización obligatoria a salud
+
+	filaAux += formatoDato(completarSecuencia(0, 7), 7) // Tarifa de aportes SENA
+	filaAux += formatoDato(completarSecuencia(0, 9), 9) // Valor Aportes SENA
+
+	filaAux += formatoDato(tarifaIcbf, 7)               //Tarifa de aportes ICBF
+	filaAux += formatoDato(completarSecuencia(0, 9), 9) // Cotización obligatoria a salud
+
+	filaAux += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes ESAP
+	filaAux += formatoDato(completarSecuencia(0, 9), 9) //Valor de aporte ESAP
+	filaAux += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes MEN
+	filaAux += formatoDato(completarSecuencia(0, 9), 9) //Valor de aporte MEN
+
+	// Estos campos están vacios porque solo aplican a los registros que son upc
+	filaAux += formatoDato("", 2)  // Tipo de documento del cotizante principal
+	filaAux += formatoDato("", 16) // Número de identificación del cotizante principal
+
+	filaAux += formatoDato("N", 1)     // Cotizante exonerado de pago de aporte salud, SENA e ICBF - Ley 1607 de 2012
+	filaAux += formatoDato("14-23", 6) // Código de la administradora de Riesgos Laborales a la cual pertenece el afiliado
+	filaAux += formatoDato("1", 1)     // Clase de Riesgo en la que se encuentra el afiliado
+	filaAux += formatoDato("", 1)      // Indicador tarifa especial pensiones (Actividades de alto riesgo, Senadores, CTI y Aviadores aplican)
+
+	filaAux += "\n"
+	filas += filaAux
+	secuencia++
+}
+
+// escribirDiasCotizadosAux escribe los días a cotizar para la fila auxiliar de novedades
+func escribirDiasCotizadosAux(diasCotizados int) {
+	filaAux += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a pensión
+	filaAux += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a salud
+	filaAux += formatoDato("00", 2)                                 //Número de días cotizados a ARL
+	filaAux += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a Caja de Compensación Familiar
 }
 
 // buscarUpcAsociada busca todas las upc asociadas a esa persona
@@ -546,6 +664,7 @@ func establecerNovedadesExterior(idPersona, idPreliquidacion string) {
 	if len(conceptoNominaPorPersona) > 0 {
 		fila += formatoDato("X", 1) //Colombiano en el exterior
 		novedadPersona = true
+		exterior = true
 	} else {
 		fila += formatoDato("", 1) //Colombiano en el exterior
 	}
@@ -603,25 +722,20 @@ func establecerNovedades(idPersona, idPreliquidacion, cedulaPersona string) {
 		}
 
 		switch value.Concepto.NombreConcepto {
-		// case "ibc_liquidado":
-		// 	diasIbc = int(value.DiasLiquidados)
-		// 	beego.Info(diasIbc, diasIbcNovedad)
-		// case "ibc_novedad":
-		// 	diasIbcNovedad = int(value.DiasLiquidados)
 		case "licencia_rem":
 			licenciaRemunerada = true
+			diasLicenciaRem = int(value.DiasLiquidados)
 			fechaInicioVac = fechaInicioTemp
 			fechaFinVac = fechaFinTemp
 			novedadPersona = true
-			// diasIbcNovedad = int(value.DiasLiquidados)
 		case "vacaciones":
 			vacaciones = true
 			diasArl = int(value.DiasLiquidados)
 			fechaInicioVac = fechaInicioTemp
 			fechaFinVac = fechaFinTemp
 			novedadPersona = true
-			// diasIbcNovedad = int(value.DiasLiquidados)
 		case "incapacidad_general":
+			diasIncapacidad = int(value.DiasLiquidados)
 		case "incapacidad_laboral":
 			incapacidadGeneral = true
 			diasIrl = int(value.DiasLiquidados)
@@ -629,23 +743,24 @@ func establecerNovedades(idPersona, idPreliquidacion, cedulaPersona string) {
 			fechaInicioIge = fechaInicioTemp
 			fechaFinIge = fechaFinTemp
 			novedadPersona = true
-			// diasIbcNovedad = int(value.DiasLiquidados)
 		case "licencia_maternidad":
 		case "licencia_paternidad":
 			licenciaMaternidad = true
+			diasLicenciaMaternidad = int(value.DiasLiquidados)
 			diasArl = int(value.DiasLiquidados)
 			fechaInicioLma = fechaInicioTemp
 			fechaFinLma = fechaFinTemp
 			novedadPersona = true
-			// diasIbcNovedad = int(value.DiasLiquidados)
 		case "comision_estudio":
 		case "comision_norem":
 		case "licencia_norem":
 			switch value.Concepto.NombreConcepto {
 			case "comision_estudio":
 			case "comision_norem":
+				diasComisionServicios = int(value.DiasLiquidados)
 				comisionServicios = true
 			case "licencia_norem":
+				diasLicenciaNoRem = int(value.DiasLiquidados)
 				licenciaNoRemunerada = true
 			}
 			fechaInicioSuspencion = fechaInicioTemp
@@ -655,48 +770,14 @@ func establecerNovedades(idPersona, idPreliquidacion, cedulaPersona string) {
 			tarifaCaja = completarSecuencia(0, 7)
 			tarifaSalud = "0.08500"
 			tarifaPension = "0.12000"
-			// diasIbcNovedad = int(value.DiasLiquidados)
 			novedadPersona = true
 		}
 	}
 
-	// if novedadPersona {
-	// 	beego.Info("una persona con novedad... ", cedulaPersona)
-	// 	fila += "->"
-	// }
-
-	// marcarNovedadConOpciones(ingreso, "X")     //ING: Ingreso
-	// marcarNovedadConOpciones(retiro, "X")      //RET: Retiro
-	// marcarNovedad(trasladoDesdeEps)            //TDE: Traslado desde otra EPS o EOC
-	// marcarNovedad(trasladoAEps)                // TAE: Traslado a otra EPS o EOC
-	// marcarNovedad(trasladoDesdePensiones)      //TDP: Traslado desde otra administradora de pensiones
-	// marcarNovedad(trasladoAPensiones)          //TAP: Traslado a otra administradora de pensiones
-	// marcarNovedad(variacionPermanteSalario)    //VSP: Variación permanente de salario
-	// marcarNovedadConOpciones(corecciones, "A") //Corecciones
-	// marcarNovedad(variacionTransitoriaSalario) //VST: Variación transitoria del salario
-	// //SLN: Suspención temporal del contrato o licencia no remunerada o comisión de servicios
-	// if suspencionTemporalContrato || (licenciaNoRemunerada) {
-	// 	fila += formatoDato("X", 1)
-	// } else if comisionServicios {
-	// 	fila += formatoDato("C", 1)
-	// } else {
-	// 	fila += formatoDato("", 1)
-	// }
-
-	// marcarNovedad(incapacidadGeneral) //IGE: Incapacidad temporal por enfermadad general
-	// marcarNovedad(licenciaMaternidad) //LMA: Licencia de maternidad o de paternidad
-
-	// //VAC - LR: Vacaciones, licencia remunerada
-	// if vacaciones {
-	// 	fila += formatoDato("X", 1)
-	// } else if licenciaRemunerada {
-	// 	fila += formatoDato("L", 1)
-	// } else {
-	// 	fila += formatoDato("", 1)
-	// }
-	// marcarNovedad(aporteVoluntario)                        //APV: Aporte voluntario
-	// marcarNovedad(variacionCentroTrabajo)                  //VCT: Variación centros de trabajo
-	// fila += formatoDato(completarSecuencia(diasIrl, 2), 2) // IRL
+	fila += formatoDato("", 8)                             // son espacios del archivo plano hasta la novedad de VST
+	fila += formatoDato("X", 1)                            // VST: Variación transitoria de salario
+	fila += formatoDato("", 6)                             //son espacios del archivo plano hasta el código de la adminitradora de fondo de pensiones
+	fila += formatoDato(completarSecuencia(diasIrl, 2), 2) // IRL
 }
 
 func revisarIngreso(idPreliquidacion, cedulaPersona string) (fechaMenor time.Time) {
@@ -774,18 +855,18 @@ func revisarIngreso(idPreliquidacion, cedulaPersona string) (fechaMenor time.Tim
 // marcarNovedad marca el valor para la novedad o la deja vacia
 func marcarNovedadConOpciones(novedad bool, valor string) {
 	if novedad {
-		fila += formatoDato(valor, 1)
+		filaAux += formatoDato(valor, 1)
 	} else {
-		fila += formatoDato("", 1)
+		filaAux += formatoDato("", 1)
 	}
 }
 
 // marcarNovedad marca el X para la novedad o la deja vacia
 func marcarNovedad(novedad bool) {
 	if novedad {
-		fila += formatoDato("X", 1)
+		filaAux += formatoDato("X", 1)
 	} else {
-		fila += formatoDato("", 1)
+		filaAux += formatoDato("", 1)
 	}
 }
 
