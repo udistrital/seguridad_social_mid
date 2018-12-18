@@ -81,8 +81,8 @@ func init() {
 
 	beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
 		beego.ControllerComments{
-			Method: "GetTotalIbc",
-			Router: `GetTotalIbc/:idPreliquidacion`,
+			Method: "GetInfoCabecera",
+			Router: `GetInfoCabecera/:idPreliquidacion`,
 			AllowHTTPMethods: []string{"get"},
 			MethodParams: param.Make(),
 			Params: nil})

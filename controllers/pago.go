@@ -22,24 +22,20 @@ func (c *PagoController) URLMapping() {
 	c.Mapping("GetNovedadesPorPersona", c.NovedadesPorPersona)
 	c.Mapping("SumarPagosSalud", c.SumarPagosSalud)
 	c.Mapping("RegistrarPagos", c.RegistrarPagos)
-	c.Mapping("GetTotalIbc", c.GetTotalIbc)
+	c.Mapping("GetInfoCabecera", c.GetInfoCabecera)
 }
 
-// GetTotalIbc ...
-// @Title GetTotalIbc
-// @Description Suma el total de los pagos de salud y pensión de ud
+// GetInfoCabecera ...
+// @Title GetInfoCabecera
+// @Description Obtiene información adicional para la cabecera
 // con el total de pagos de salud y pensión del empleado
 // @Param	idPeriodoPago		id del periodo pago de seguridad social
-// @router GetTotalIbc/:idPreliquidacion [get]
-func (c *PagoController) GetTotalIbc() {
+// @router GetInfoCabecera/:idPreliquidacion [get]
+func (c *PagoController) GetInfoCabecera() {
 	idStr := c.Ctx.Input.Param(":idPreliquidacion")
 	var detallesPreliquidacion []models.DetallePreliquidacion
 
-	beego.Info("http://" + beego.AppConfig.String("titanServicio") +
-		"/detalle_preliquidacion" +
-		"?limit=-1" +
-		"&query=Concepto.NombreConcepto:ibc_liquidado" +
-		",Preliquidacion.Id:" + idStr)
+	informacionCabecera := make(map[string]interface{})
 
 	err := getJson("http://"+beego.AppConfig.String("titanServicio")+
 		"/detalle_preliquidacion"+
@@ -55,8 +51,13 @@ func (c *PagoController) GetTotalIbc() {
 	for _, value := range detallesPreliquidacion {
 		acumuladorPreliquidacion += value.ValorCalculado
 	}
+
 	totalPreliquidacion := AproximarPesoSuperior(acumuladorPreliquidacion, 100)
-	c.Data["json"] = totalPreliquidacion
+	informacionCabecera["TotalPersonas"] = len(detallesPreliquidacion)
+	informacionCabecera["TotalNomina"] = totalPreliquidacion
+	informacionCabecera["CodigoUD"] = "01"
+	informacionCabecera["CodigoOperador"] = "83"
+	c.Data["json"] = informacionCabecera
 	c.ServeJSON()
 }
 
