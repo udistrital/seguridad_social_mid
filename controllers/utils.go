@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"time"
-
+	"fmt"
 	"github.com/astaxie/beego"
 )
 
@@ -31,5 +31,6 @@ func (c *UtilsController) GetActualDate() {
 
 // ImprimirError estándar para imprimir errores
 func ImprimirError(mensaje string, err error) {
-	beego.Error(mensaje, " => Error:", err.Error())
+	fmt.Println(mensaje, " => Error:", err.Error())
+	//beego.Error(mensaje, " => Error:", err.Error())
 }
