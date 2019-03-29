@@ -483,7 +483,6 @@ func (c *PagoController) RegistrarPagos() {
 func GetInfoProveedor(idProveedores []string) (map[string]models.InformacionProveedor, error) {
 	proveedores := make(map[string]models.InformacionProveedor)
 	var proveedor models.InformacionProveedor
-
 	for i := range idProveedores {
 		if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_proveedor/"+idProveedores[i], &proveedor); err == nil {
 			proveedores[idProveedores[i]] = proveedor
