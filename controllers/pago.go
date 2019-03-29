@@ -488,7 +488,8 @@ func GetInfoProveedor(idProveedores []string) (map[string]models.InformacionProv
 		if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_proveedor/"+idProveedores[i], &proveedor); err == nil {
 			proveedores[idProveedores[i]] = proveedor
 		} else {
-			beego.Error("error en GetInfoProveedor: ", err.Error())
+			fmt.Println("Error en GetInfoProveedor: ", err.Error())
+			//beego.Error("error en GetInfoProveedor: ", err.Error())
 			return nil, err
 		}
 	}
