@@ -3,7 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"strconv"
-
+    "fmt"
 	"github.com/udistrital/ss_mid_api/models"
 
 	"github.com/astaxie/beego"
@@ -53,7 +53,8 @@ func (c *ConceptosIbcController) ActualizarConceptos() {
 		c.Data["json"] = alerta
 
 	}).Catch(func(e try.E) {
-		beego.Error("Error en conceptos_ibc.ActualizarConceptos(): ", e.(models.Alert).Body)
+		fmt.Println("Error en conceptos_ibc.ActualizarConceptos(): ", e.(models.Alert).Body)
+		//beego.Error("Error en conceptos_ibc.ActualizarConceptos(): ", e.(models.Alert).Body)
 		c.Data["json"] = e
 	})
 

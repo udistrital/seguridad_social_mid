@@ -206,7 +206,8 @@ func (c *PagoController) CalcularSegSocial() {
 			"?limit=-1&query=Preliquidacion.Id:"+idStr+",Concepto.NombreConcepto:ibc_liquidado", &detallePreliquidacion)
 
 		if err != nil {
-			beego.Error(err)
+			fmt.Println(err)
+			//beego.Error(err)
 			alertas = append(alertas, "error al traer detalle liquidacion")
 			c.Data["json"] = alertas
 		} else {
@@ -283,7 +284,8 @@ func valorPagoFondoSolidaridad(persona, idNomina string) float64 {
 		&conceptoNominaPorPersona)
 
 	if err != nil {
-		beego.Error("error en valorPagoFondoSolidaridad ", err.Error())
+		fmt.Println("error en valorPagoFondoSolidaridad ", err.Error())
+		//beego.Error("error en valorPagoFondoSolidaridad ", err.Error())
 		return valorFondo
 	}
 	if len(conceptoNominaPorPersona) > 0 {
@@ -324,7 +326,8 @@ func SaludHCHonorarios(idLiquidacion string) (valorSaludEmpleado string) {
 		"?limit=0&query=Preliquidacion:"+idLiquidacion+",Concepto.NombreConcepto:salud", &detalleLiquSalud)
 
 	if errSalud != nil {
-		beego.Error("Error en ValorSaludEmpleado:", errSalud)
+		fmt.Println("Error en ValorSaludEmpleado:", errSalud)
+		//beego.Error("Error en ValorSaludEmpleado:", errSalud)
 	} else {
 		for index := 0; index < len(detalleLiquSalud); index++ {
 			predicado = append(predicado, models.Predicado{Nombre: "v_salud_func(" + detalleLiquSalud[index].NumeroContrato + ", " + strconv.Itoa(int(detalleLiquSalud[index].ValorCalculado)) + ")."})
@@ -345,7 +348,8 @@ func ValorPensionEmpleado(idLiquidacion, persona string) (predicado models.Predi
 		"?limit=0&query=Preliquidacion:"+idLiquidacion+",Concepto.NombreConcepto:pension,Persona:"+persona, &detalleLiquPension)
 
 	if errPension != nil {
-		beego.Error("Error en ValorPensionEmpleado:", errPension)
+		fmt.Println("Error en ValorPensionEmpleado:", errPension)
+		//beego.Error("Error en ValorPensionEmpleado:", errPension)
 	} else {
 		for index := 0; index < len(detalleLiquPension); index++ {
 			predicado = models.Predicado{Nombre: "v_pen_func(" + strconv.Itoa(detalleLiquPension[index].Persona) + ", " + strconv.Itoa(int(detalleLiquPension[index].ValorCalculado)) + ")."}
@@ -364,7 +368,8 @@ func cargarNovedades() (novedades string) {
 	errLincNo := getJson("http://"+beego.AppConfig.String("titanServicio")+"/concepto_nomina_por_persona?"+
 		"limit=0&query=Concepto.EstadoConceptoNomina.Nombre:activo", &conceptoNominaPorPersona)
 	if errLincNo != nil {
-		beego.Error("error en cargarNovedades()", errLincNo)
+		fmt.Println("error en cargarNovedades()", errLincNo)
+		//beego.Error("error en cargarNovedades()", errLincNo)
 	} else {
 		for index := 0; index < len(conceptoNominaPorPersona); index++ {
 			predicado = models.Predicado{Nombre: "novedad_persona(" + conceptoNominaPorPersona[index].Concepto.NombreConcepto + ", " + strconv.Itoa(conceptoNominaPorPersona[index].Persona) + ")."}
@@ -483,7 +488,8 @@ func GetInfoProveedor(idProveedores []string) (map[string]models.InformacionProv
 		if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_proveedor/"+idProveedores[i], &proveedor); err == nil {
 			proveedores[idProveedores[i]] = proveedor
 		} else {
-			beego.Error("error en GetInfoProveedor: ", err.Error())
+			fmt.Println("error en GetInfoProveedor: ", err.Error())
+			￼//beego.Error("error en GetInfoProveedor: ", err.Error())
 			return nil, err
 		}
 	}
