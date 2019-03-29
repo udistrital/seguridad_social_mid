@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"time"
-
+	"fmt"
 	"github.com/astaxie/beego"
 )
 

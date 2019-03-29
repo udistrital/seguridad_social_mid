@@ -9,7 +9,7 @@ import (
 
 	"github.com/udistrital/ss_mid_api/models"
 
-	"github.com/astaxie/beego"
+	//"github.com/astaxie/beego"
 )
 
 func convertirMapa(arr []interface{}) map[string][]interface{} {
