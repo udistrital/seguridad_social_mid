@@ -9,7 +9,7 @@ import (
 
 	"github.com/udistrital/ss_mid_api/models"
 
-	"github.com/astaxie/beego"
+	//"github.com/astaxie/beego"
 )
 
 func convertirMapa(arr []interface{}) map[string][]interface{} {
@@ -47,7 +47,8 @@ func sendJson(url string, trequest string, target interface{}, datajson interfac
 	r, err := client.Do(req)
 	//r, err := http.Post(url, "application/json; charset=utf-8", b)
 	if err != nil {
-		beego.Error("error", err)
+		fmt.Println("error", err)
+		//beego.Error("error", err)
 		return err
 	}
 	defer r.Body.Close()
@@ -66,7 +67,8 @@ func getJsonWSO2(urlp string, target interface{}) error {
 	r, err := client.Do(req)
 	//r, err := http.Post(url, "application/json; charset=utf-8", b)
 	if err != nil {
-		beego.Error("error", err)
+		fmt.Println("error", err)
+		//beego.Error("error", err)
 		return err
 	}
 	defer r.Body.Close()
