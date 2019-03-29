@@ -489,7 +489,6 @@ func GetInfoProveedor(idProveedores []string) (map[string]models.InformacionProv
 			proveedores[idProveedores[i]] = proveedor
 		} else {
 			fmt.Println("error en GetInfoProveedor: ", err.Error())
-			￼//beego.Error("error en GetInfoProveedor: ", err.Error()) 
 			return nil, err
 		}
 	}
