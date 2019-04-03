@@ -3,7 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"strings"
-
+	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/manucorporat/try"
 	"github.com/udistrital/ss_mid_api/models"
@@ -40,7 +40,8 @@ func (c *GeneradorRelgasController) RegistrarNuevosHechos() {
 		if err != nil {
 			panic(err)
 		}
-		beego.Info("predicados: ", predicados)
+		fmt.Println("predicados: ", predicados)
+		//beego.Info("predicados: ", predicados)
 		c.Data["json"] = models.Alert{Type: "success", Code: "1", Body: nil}
 	}).Catch(func(e try.E) {
 		ImprimirError("error en ObtenerHechosCalculo()", e.(error))
