@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/astaxie/beego"
+	"github.com/udistrital/ss_mid_api/golog"
 	"github.com/udistrital/ss_mid_api/models"
 )
 
@@ -57,6 +58,7 @@ var (
 	fechaFinIge          = ""
 
 	licenciaMaternidad = false
+	licenciaPaternidad = false
 	fechaInicioLma     = ""
 	fechaFinLma        = ""
 
@@ -100,8 +102,12 @@ var (
 	salarioBase    int
 	mesPeriodo     int
 	anioPeriodo    int
+	diasNovedad    int
 	novedadPersona = false
 	diasIrl        = 0
+
+	fechaInicioNovedad,
+	fechaFinNovedad time.Time
 
 	tipoRegistro = "02"
 	secuencia    = 1
@@ -335,19 +341,29 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					filas += fila
 					secuencia++
 					if suspencionTemporalContrato {
-						crearFilaNovedad(idPersona, idPreliquidacion, value)
+						diasNovedad = diasSuspencionContrato
+						crearFilaNovedad(idPersona, idPreliquidacion, "licencia_norem", value)
 					} else if licenciaNoRemunerada {
-						crearFilaNovedad(idPersona, idPreliquidacion, value)
+						diasNovedad = diasLicenciaNoRem
+						crearFilaNovedad(idPersona, idPreliquidacion, "licencia_norem", value)
 					} else if comisionServicios {
-						crearFilaNovedad(idPersona, idPreliquidacion, value)
+						diasNovedad = diasComisionServicios
+						crearFilaNovedad(idPersona, idPreliquidacion, "comision_norem", value)
 					} else if incapacidadGeneral {
-						crearFilaNovedad(idPersona, idPreliquidacion, value)
+						diasNovedad = diasIncapacidad
+						crearFilaNovedad(idPersona, idPreliquidacion, "incapacidad_general", value)
 					} else if licenciaMaternidad {
-						crearFilaNovedad(idPersona, idPreliquidacion, value)
+						diasNovedad = diasLicenciaMaternidad
+						crearFilaNovedad(idPersona, idPreliquidacion, "licencia_maternidad", value)
+					} else if licenciaPaternidad {
+						diasNovedad = diasLicenciaMaternidad
+						crearFilaNovedad(idPersona, idPreliquidacion, "licencia_paternidad", value)
 					} else if vacaciones {
-						crearFilaNovedad(idPersona, idPreliquidacion, value)
+						diasNovedad = diasVacaciones
+						crearFilaNovedad(idPersona, idPreliquidacion, "vacaciones", value)
 					} else if licenciaRemunerada {
-						crearFilaNovedad(idPersona, idPreliquidacion, value)
+						diasNovedad = diasLicenciaRem
+						crearFilaNovedad(idPersona, idPreliquidacion, "licencia_rem", value)
 					}
 				}
 			}
@@ -364,8 +380,10 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 }
 
 // crearFilaNovedad crea las filas de acuerdo a las novedades de una persona
-func crearFilaNovedad(idPersona, idPreliquidacion string, persona models.InformacionPersonaNatural) {
+func crearFilaNovedad(idPersona, idPreliquidacion, novedad string, persona models.InformacionPersonaNatural) {
 	var horasLaboradasNovedad = "0"
+	var pagoSeguridadSocial models.PagoSeguridadSocial
+
 	filaAux = ""
 	filaAux += formatoDato(tipoRegistro, 2)                     //Tipo Registro
 	filaAux += formatoDato(completarSecuencia(secuencia, 5), 5) //Secuencia
@@ -462,12 +480,33 @@ func crearFilaNovedad(idPersona, idPreliquidacion string, persona models.Informa
 	filaAux += formatoDato(completarSecuencia(salarioBase, 9), 9) //Salario básico
 	filaAux += formatoDato("", 1)                                 //Salario integral
 
-	filaAux += formatoDato(completarSecuencia(0, 36), 36) // Espacios para llegar a la tarifa de pensión
-	filaAux += formatoDato(tarifaPension, 7)              //Tarifa de aportes pensiones
+	ibcNovedad := calcularIbc(idPersona, persona.Id, novedad, idPreliquidacion)
+	beego.Info("ibcNovedad:", completarSecuencia(ibcNovedad, 9), 9)
+	filaAux += formatoDato(completarSecuencia(ibcNovedad, 9), 9) //IBC pensión
+	filaAux += formatoDato(completarSecuencia(ibcNovedad, 9), 9) //IBC salud
+	filaAux += formatoDato(completarSecuencia(ibcNovedad, 9), 9) //IBC ARL
+	filaAux += formatoDato(completarSecuencia(ibcNovedad, 9), 9) //IBC CCF
 
-	filaAux += formatoDato(completarSecuencia(0, 63), 63) // Espacios para llegar a la tarifa de pensión
-	filaAux += formatoDato(tarifaSalud, 7)                // Tarifa de aportes salud
-	filaAux += formatoDato(completarSecuencia(0, 9), 9)   // Cotización obligatoria a salud
+	if novedad == "licencia_norem" || (novedad == "comision_norem") {
+		pagoSeguridadSocial = *calcularValoresAux(false, idPersona, ibcNovedad)
+	} else {
+		pagoSeguridadSocial = *calcularValoresAux(true, idPersona, ibcNovedad)
+	}
+	beego.Info("pagoSeguirdadSocial:", pagoSeguridadSocial)
+
+	filaAux += formatoDato(tarifaPension, 7) //Tarifa de aportes pensiones
+
+	filaAux += formatoDato(completarSecuencia(int(pagoSeguridadSocial.PensionTotal), 9), 9) // Cotización obligatoria de pensión
+	filaAux += formatoDato(completarSecuencia(0, 9), 9)                                     // Aporte voluntario del afiliado al fondo de pensiones obligatorias
+	filaAux += formatoDato(completarSecuencia(0, 9), 9)                                     // Aporte voluntario del aportante al fondo de pensiones obligatorias
+	filaAux += formatoDato(completarSecuencia(int(pagoSeguridadSocial.PensionTotal), 9), 9) // Total cotizaicón sistema general de pensiones
+
+	filaAux += formatoDato(completarSecuencia(0, 9), 9) // Aportes a fondo de solidaridad pensional subcuenta de solidaridad
+	filaAux += formatoDato(completarSecuencia(0, 9), 9) // Aportes al fondo de solidaridad pensional subcuenta de subsistencia
+	filaAux += formatoDato(completarSecuencia(0, 9), 9) // Valor no retenido por aportes voluntarios
+
+	filaAux += formatoDato(tarifaSalud, 7)                                                // Tarifa de aportes salud
+	filaAux += formatoDato(completarSecuencia(int(pagoSeguridadSocial.SaludTotal), 9), 9) // Cotización obligatoria a salud
 
 	filaAux += valorUpc                                 //Valor UPC Adicional
 	filaAux += formatoDato("", 15)                      //Nº de autorización de la incapacidad por enfermedad general
@@ -477,17 +516,17 @@ func crearFilaNovedad(idPersona, idPreliquidacion string, persona models.Informa
 
 	filaAux += formatoDato(tarifaArl, 9) //Tarifa de aportes a Riegos Laborales
 
-	filaAux += formatoDato("        1", 9)              // Centro de trabajo CT
-	filaAux += formatoDato(completarSecuencia(0, 9), 9) // Cotización obligatoria a sistema de riesgos laborales
+	filaAux += formatoDato("        1", 9)                                         // Centro de trabajo CT
+	filaAux += formatoDato(completarSecuencia(int(pagoSeguridadSocial.Arl), 9), 9) // Cotización obligatoria a sistema de riesgos laborales
 
-	filaAux += formatoDato(tarifaCaja, 7)               // Tarifa de aportes CCF
-	filaAux += formatoDato(completarSecuencia(0, 9), 9) // Cotización obligatoria a salud
+	filaAux += formatoDato(tarifaCaja, 7)                                           // Tarifa de aportes CCF
+	filaAux += formatoDato(completarSecuencia(int(pagoSeguridadSocial.Caja), 9), 9) // Valor aporte CCF
 
 	filaAux += formatoDato(completarSecuencia(0, 7), 7) // Tarifa de aportes SENA
 	filaAux += formatoDato(completarSecuencia(0, 9), 9) // Valor Aportes SENA
 
-	filaAux += formatoDato(tarifaIcbf, 7)               //Tarifa de aportes ICBF
-	filaAux += formatoDato(completarSecuencia(0, 9), 9) // Cotización obligatoria a salud
+	filaAux += formatoDato(tarifaIcbf, 7)                                           //Tarifa de aportes ICBF
+	filaAux += formatoDato(completarSecuencia(0, int(pagoSeguridadSocial.Icbf)), 9) // Valor aporte ICBF
 
 	filaAux += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes ESAP
 	filaAux += formatoDato(completarSecuencia(0, 9), 9) //Valor de aporte ESAP
@@ -535,6 +574,90 @@ func escribirDiasCotizadosAux(diasCotizados int) {
 	filaAux += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a salud
 	filaAux += formatoDato("00", 2)                                 //Número de días cotizados a ARL
 	filaAux += formatoDato(completarSecuencia(diasCotizados, 2), 2) //Número de días cotizados a Caja de Compensación Familiar
+}
+
+// calcularValoresAux cálcula los valores de la fila auxiliar
+func calcularValoresAux(pagoCompleto bool, idPersona string, ibc int) *models.PagoSeguridadSocial {
+
+	var predicados []models.Predicado
+	var pago *models.PagoSeguridadSocial
+	ibcAux := strconv.Itoa(ibc)
+	predicados = append(predicados, models.Predicado{Nombre: "ibc(" + idPersona + "," + ibcAux + ", salud)."})
+	predicados = append(predicados, models.Predicado{Nombre: "ibc(" + idPersona + "," + ibcAux + ", riesgos)."})
+	predicados = append(predicados, models.Predicado{Nombre: "ibc(" + idPersona + "," + ibcAux + ", apf)."})
+
+	reglas := CrearReglas(pagoCompleto) + FormatoReglas(predicados)
+
+	beego.Info("reglas: ", reglas)
+
+	idProveedor := golog.GetInt64(reglas, "v_total_salud(X,T).", "X")
+	saludTotal := golog.GetInt64(reglas, "v_total_salud(X,T).", "T")
+	pensionTotal := golog.GetInt64(reglas, "v_total_pen(X,T).", "T")
+	arl := golog.GetInt64(reglas, "v_arl(I,Y).", "Y")
+	caja := golog.GetInt64(reglas, "v_caja(I,Y).", "Y")
+	icbf := golog.GetInt64(reglas, "v_icbf(I,Y).", "Y")
+
+	for index := 0; index < len(idProveedor); index++ {
+
+		pago = &models.PagoSeguridadSocial{
+			NombrePersona:           "",
+			IdProveedor:             idProveedor[index],
+			SaludUd:                 0,
+			SaludTotal:              saludTotal[index],
+			PensionUd:               0,
+			PensionTotal:            pensionTotal[index],
+			FondoSolidaridad:        0,
+			Caja:                    caja[index],
+			Icbf:                    icbf[index],
+			IdPreliquidacion:        0,
+			IdDetallePreliquidacion: 0,
+			Arl: arl[index]}
+	}
+	return pago
+}
+
+func calcularIbc(idPersona, documentoPersona, novedad, idPreliquidacion string) int {
+	idInt, err := strconv.Atoi(idPersona)
+	if err != nil {
+		ImprimirError("error en calcularIbc()", err)
+	}
+
+	documentoInt, err := strconv.Atoi(documentoPersona)
+	if err != nil {
+		ImprimirError("error en calcularIbc()", err)
+	}
+
+	var respuestaAPI interface{}
+
+	// "seg_social(exterior_familia,2018,3,7,2018,4,7). concepto(420,seguridad_social, seguridad_social, exterior_familia, 0, 2018)."
+
+	// seg_social(nombre de regla, año inicio, mes inicio, dia inicio, año fin, mes fin, dia fin).
+	novedadSeguridadSocial := "seg_social(" + novedad + ", " + strconv.Itoa(fechaInicioNovedad.Year()) + ", " +
+		strconv.Itoa(int(fechaInicioNovedad.Month())) + ", " + strconv.Itoa(fechaInicioNovedad.Day()) + ", " +
+		strconv.Itoa(fechaFinNovedad.Year()) + ", " + strconv.Itoa(int(fechaFinNovedad.Month())) + ", " +
+		strconv.Itoa(fechaInicioNovedad.Day()) + ")."
+	// concepto(id proveedor, seguridad_social, seguridad_social, nombre de regla, 0, vigencia)
+	concepto := "concepto(" + idPersona + ", seguridad_social, seguridad_social, " + novedad + ", " +
+		strconv.Itoa(fechaInicioNovedad.Year()) + ")."
+
+	infoRequest := make(map[string]interface{})
+	infoRequest["IdPersona"] = idInt
+	infoRequest["NumDocumento"] = documentoInt
+	infoRequest["NombreNomina"] = tipoPreliquidacion
+	infoRequest["Novedad"] = novedadSeguridadSocial + " " + concepto
+	infoRequest["Ano"] = anioPeriodo
+	infoRequest["Mes"] = mesPeriodo
+
+	beego.Info(infoRequest)
+
+	beego.Info("http://" + beego.AppConfig.String("titanMidService") + "/preliquidacion/get_ibc_novedad")
+	err = sendJson("http://"+beego.AppConfig.String("titanMidService")+"/preliquidacion/get_ibc_novedad", "POST", &respuestaAPI, infoRequest)
+	if err != nil {
+		ImprimirError("error en calcularIbc()", err)
+	}
+
+	beego.Info(int(respuestaAPI.(float64)))
+	return int(respuestaAPI.(float64))
 }
 
 // buscarUpcAsociada busca todas las upc asociadas a esa persona
@@ -697,9 +820,6 @@ func establecerNovedades(idPersona, idPreliquidacion, cedulaPersona string) {
 		fechaFinTemp string
 	)
 
-	// diasIbc := 0
-	// diasIbcNovedad := 0
-
 	fechaIngresoTemp := revisarIngreso(idPreliquidacion, cedulaPersona)
 
 	err := getJson("http://"+beego.AppConfig.String("titanServicio")+
@@ -732,15 +852,19 @@ func establecerNovedades(idPersona, idPreliquidacion, cedulaPersona string) {
 
 			auxFechaInicio := conceptoNominaPersona[0].FechaDesde
 			if int(auxFechaInicio.Month()) < mesPeriodo {
+				fechaInicioNovedad = time.Date(auxFechaInicio.Year(), time.Month(mesPeriodo), 1, 0, 0, 0, 0, time.UTC)
 				fechaInicioTemp = time.Date(auxFechaInicio.Year(), time.Month(mesPeriodo), 1, 0, 0, 0, 0, time.UTC).Format(formatoFecha)
 			} else {
+				fechaInicioNovedad = conceptoNominaPersona[0].FechaDesde
 				fechaInicioTemp = conceptoNominaPersona[0].FechaDesde.Format(formatoFecha)
 			}
 
 			auxFechaFin := conceptoNominaPersona[0].FechaHasta
 			if int(auxFechaFin.Month()) > mesPeriodo {
+				fechaFinNovedad = time.Date(auxFechaFin.Year(), time.Month(mesPeriodo), 30, 0, 0, 0, 0, time.UTC)
 				fechaFinTemp = time.Date(auxFechaFin.Year(), time.Month(mesPeriodo), 30, 0, 0, 0, 0, time.UTC).Format(formatoFecha)
 			} else {
+				fechaFinNovedad = conceptoNominaPersona[0].FechaHasta
 				fechaFinTemp = conceptoNominaPersona[0].FechaHasta.Format(formatoFecha)
 			}
 		}
@@ -769,7 +893,12 @@ func establecerNovedades(idPersona, idPreliquidacion, cedulaPersona string) {
 			novedadPersona = true
 		case "licencia_maternidad":
 		case "licencia_paternidad":
-			licenciaMaternidad = true
+			switch value.Concepto.NombreConcepto {
+			case "licencia_maternidad":
+				licenciaMaternidad = true
+			case "licencia_paternidad":
+				licenciaPaternidad = true
+			}
 			diasLicenciaMaternidad = int(value.DiasLiquidados)
 			diasArl = int(value.DiasLiquidados)
 			fechaInicioLma = fechaInicioTemp
