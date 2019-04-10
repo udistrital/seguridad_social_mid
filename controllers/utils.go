@@ -1,8 +1,9 @@
 package controllers
 
 import (
-	"time"
 	"fmt"
+	"time"
+
 	"github.com/astaxie/beego"
 )
 
@@ -25,7 +26,8 @@ func (c *UtilsController) URLMapping() {
 // @router /GetActualDate [get]
 func (c *UtilsController) GetActualDate() {
 	t := time.Now()
-	c.Data["json"] = t.Format("2006-01-02")
+	respuesta := map[string]string{"fecha_actual": t.Format("2006-01-02")}
+	c.Data["json"] = respuesta
 	c.ServeJSON()
 }
 
