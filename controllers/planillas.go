@@ -836,7 +836,8 @@ func revisarIngreso(idPreliquidacion, cedulaPersona string) (fechaMenor time.Tim
 	// Contrato de docente de vinculación especial (salarios)
 	err = getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+
 		"/contratos_elaborado_tipo_persona/2/"+anio+"-"+mes+"/"+anio+"-"+mes+"/"+cedulaPersona, &contratosPersona)
-
+	fmt.Println("vinculación especial salarios: http://" + beego.AppConfig.String("argoWso2Service") +
+		"/contratos_elaborado_tipo_persona/2/" + anio + "-" + mes + "/" + anio + "-" + mes + "/" + cedulaPersona)
 	if err != nil {
 		ImprimirError("error en revisarIngreso()", err)
 	}
@@ -844,7 +845,8 @@ func revisarIngreso(idPreliquidacion, cedulaPersona string) (fechaMenor time.Tim
 	if len(contratosPersona["contratos_tipo"]) == 0 {
 		err = getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+
 			"/contratos_elaborado_tipo_persona/18/"+anio+"-"+mes+"/"+anio+"-"+mes+"/"+cedulaPersona, &contratosPersona)
-
+		fmt.Println("Vinculación especial TCO: http://" + beego.AppConfig.String("argoWso2Service") +
+			"/contratos_elaborado_tipo_persona/18/" + anio + "-" + mes + "/" + anio + "-" + mes + "/" + cedulaPersona)
 		if err != nil {
 			ImprimirError("error en revisarIngreso()", err)
 		}
@@ -853,7 +855,8 @@ func revisarIngreso(idPreliquidacion, cedulaPersona string) (fechaMenor time.Tim
 	if len(contratosPersona["contratos_tipo"]) == 0 {
 		err = getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+
 			"/contratos_elaborado_tipo_persona/6/"+anio+"-"+mes+"/"+anio+"-"+mes+"/"+cedulaPersona, &contratosPersona)
-
+		fmt.Println("Contratista: http://" + beego.AppConfig.String("argoWso2Service") +
+			"/contratos_elaborado_tipo_persona/6/" + anio + "-" + mes + "/" + anio + "-" + mes + "/" + cedulaPersona)
 		if err != nil {
 			ImprimirError("error en revisarIngreso()", err)
 		}
