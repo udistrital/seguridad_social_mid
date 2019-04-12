@@ -363,8 +363,9 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					}
 				}
 			}
-
-			c.Data["json"] = filas
+			respuestaJSON := make(map[string]interface{})
+			respuestaJSON["informacion"] = filas
+			c.Data["json"] = respuestaJSON
 		} else {
 			c.Data["json"] = err.Error()
 		}
