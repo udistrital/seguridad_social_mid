@@ -216,7 +216,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				fila += formatoDato(completarSecuencia(diasArl, 2), 2)             // Número de días cotizados a arl
 				diasCaja, pagoCaja := traerDiasCotizadosEmpleador(idPersona, idPreliquidacion, strconv.Itoa(periodoPago.Id), "caja_compensacion")
 				fila += diasCaja // Número de días cotizados a caja de compensación
-				fmt.Println("Persona preliquidación: ", key)
+
 				if contratistas {
 					err = getJson("http://"+beego.AppConfig.String("titanServicio")+
 						"/detalle_preliquidacion?limit=1"+
