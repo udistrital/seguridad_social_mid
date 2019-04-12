@@ -24,6 +24,8 @@ func (c *PlanillasController) URLMapping() {
 }
 
 var (
+	contratistas = false
+
 	formatoFecha = "2006-01-02"
 	fila         string
 	filaAux      string
@@ -132,6 +134,9 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 			"&query=Preliquidacion.Id:"+strconv.Itoa(periodoPago.Liquidacion)+
 			",Concepto.NombreConcepto:ibc_liquidado", &detallePreliquidacion); err == nil {
 
+			if periodoPago.TipoLiquidacion == "CT" {
+				contratistas = true
+			}
 			filas = ""
 
 			for i := range detallePreliquidacion {
@@ -159,12 +164,11 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				filaAux = ""
 				fila += formatoDato(tipoRegistro, 2)                     //Tipo Registro
 				fila += formatoDato(completarSecuencia(secuencia, 5), 5) //Secuencia
-
-				fila += formatoDato("CC", 2)                     //Tip de documento del cotizante
-				fila += formatoDato(value.Id, 16)                //Número de identificación del cotizante
-				fila += formatoDato(completarSecuencia(1, 2), 2) //Tipo Cotizante
-				fila += formatoDato(completarSecuencia(0, 2), 2) //Subtipo de Cotizante
-				fila += formatoDato("", 1)                       //Extranjero no obligado a cotizar pensión
+				fila += formatoDato("CC", 2)                             //Tip de documento del cotizante
+				fila += formatoDato(value.Id, 16)                        //Número de identificación del cotizante
+				fila += formatoDato(completarSecuencia(1, 2), 2)         //Tipo Cotizante
+				fila += formatoDato(completarSecuencia(0, 2), 2)         //Subtipo de Cotizante
+				fila += formatoDato("", 1)                               //Extranjero no obligado a cotizar pensión
 
 				establecerNovedadesExterior(idPersona, idPreliquidacion)
 
@@ -212,11 +216,19 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				fila += formatoDato(completarSecuencia(diasArl, 2), 2)             // Número de días cotizados a arl
 				diasCaja, pagoCaja := traerDiasCotizadosEmpleador(idPersona, idPreliquidacion, strconv.Itoa(periodoPago.Id), "caja_compensacion")
 				fila += diasCaja // Número de días cotizados a caja de compensación
+				fmt.Println("Persona preliquidación: ", key)
+				if contratistas {
+					err = getJson("http://"+beego.AppConfig.String("titanServicio")+
+						"/detalle_preliquidacion?limit=1"+
+						"&fields=ValorCalculado"+
+						"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",Concepto.NombreConcepto:honorarios,Persona:"+key, &preliquidacion)
+				} else {
+					err = getJson("http://"+beego.AppConfig.String("titanServicio")+
+						"/detalle_preliquidacion?limit=1"+
+						"&fields=ValorCalculado"+
+						"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",Concepto.NombreConcepto:salarioBase,Persona:"+key, &preliquidacion)
+				}
 
-				err = getJson("http://"+beego.AppConfig.String("titanServicio")+
-					"/detalle_preliquidacion?limit=1"+
-					"&fields=ValorCalculado"+
-					"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",Concepto.NombreConcepto:salarioBase,Persona:"+key, &preliquidacion)
 				if err == nil {
 					salarioBase = int(preliquidacion[0].ValorCalculado)
 					fila += formatoDato(completarSecuencia(salarioBase, 9), 9) //Salario básico
@@ -806,7 +818,7 @@ func establecerNovedades(idPersona, idPreliquidacion, cedulaPersona string) {
 
 func revisarIngreso(idPreliquidacion, cedulaPersona string) (fechaMenor time.Time) {
 	var preliquidacion models.Preliquidacion
-	var contratosPersona map[string]interface{}
+	var contratosPersona map[string]map[string]interface{}
 
 	err := getJson("http://"+beego.AppConfig.String("titanServicio")+
 		"/preliquidacion/"+idPreliquidacion, &preliquidacion)
@@ -820,24 +832,36 @@ func revisarIngreso(idPreliquidacion, cedulaPersona string) (fechaMenor time.Tim
 		mes = "0" + fmt.Sprint(preliquidacion.Mes)
 	}
 
+	// Contrato de docente de vinculación especial (salarios)
 	err = getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+
 		"/contratos_elaborado_tipo_persona/2/"+anio+"-"+mes+"/"+anio+"-"+mes+"/"+cedulaPersona, &contratosPersona)
 
 	if err != nil {
 		ImprimirError("error en revisarIngreso()", err)
 	}
-	if contratosPersona == nil {
+	// Contrato docente de vinculación especial (Tiempo completo ocasional TCO - MTO)
+	if len(contratosPersona["contratos_tipo"]) == 0 {
 		err = getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+
 			"/contratos_elaborado_tipo_persona/18/"+anio+"-"+mes+"/"+anio+"-"+mes+"/"+cedulaPersona, &contratosPersona)
+
 		if err != nil {
 			ImprimirError("error en revisarIngreso()", err)
 		}
 	}
-	if contratosPersona != nil {
-		var actaInicio map[string]interface{}
+	// Contrato de prestación de servicios profesionales o apoyo a la gestión
+	if len(contratosPersona["contratos_tipo"]) == 0 {
+		err = getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+
+			"/contratos_elaborado_tipo_persona/6/"+anio+"-"+mes+"/"+anio+"-"+mes+"/"+cedulaPersona, &contratosPersona)
 
+		if err != nil {
+			ImprimirError("error en revisarIngreso()", err)
+		}
+	}
+
+	if contratosPersona != nil {
+		var actaInicio map[string]map[string]interface{}
 		for _, value := range contratosPersona {
-			contratos := value.(map[string]interface{})["contrato_tipo"].([]interface{})
+			contratos := value["contrato_tipo"].([]interface{})
 
 			for _, contrato := range contratos {
 				numeroContrato := contrato.(map[string]interface{})["numero_contrato"].(string)
@@ -849,26 +873,30 @@ func revisarIngreso(idPreliquidacion, cedulaPersona string) (fechaMenor time.Tim
 					ImprimirError("error en revisarIngreso()", err)
 				}
 
-				t, err := time.Parse(formatoFecha, actaInicio["actaInicio"].(map[string]interface{})["fechaInicio"].(string))
-				if err != nil {
-					ImprimirError("error en revisarIngreso()", err)
-				}
+				if len(actaInicio["actaInicio"]) != 0 {
 
-				if fechaMenor.IsZero() {
-					fechaMenor = t
-				} else {
-					if t.Year() <= fechaMenor.Year() {
-						if t.Month() <= fechaMenor.Month() {
-							if t.Day() <= fechaMenor.Day() {
-								fechaMenor = t
-							} else if (t.Year() <= fechaMenor.Year()) && (t.Month() <= fechaMenor.Month()) && (t.Day() >= fechaMenor.Day()) {
+					t, err := time.Parse(formatoFecha, actaInicio["actaInicio"]["fechaInicio"].(string))
+					if err != nil {
+						ImprimirError("error en revisarIngreso()", err)
+					}
+
+					if fechaMenor.IsZero() {
+						fechaMenor = t
+					} else {
+						if t.Year() <= fechaMenor.Year() {
+							if t.Month() <= fechaMenor.Month() {
+								if t.Day() <= fechaMenor.Day() {
+									fechaMenor = t
+								} else if (t.Year() <= fechaMenor.Year()) && (t.Month() <= fechaMenor.Month()) && (t.Day() >= fechaMenor.Day()) {
+									fechaMenor = t
+								}
+							} else if (t.Year() <= fechaMenor.Year()) && (t.Month() >= fechaMenor.Month()) {
 								fechaMenor = t
 							}
-						} else if (t.Year() <= fechaMenor.Year()) && (t.Month() >= fechaMenor.Month()) {
-							fechaMenor = t
 						}
 					}
 				}
+
 			}
 
 		}
