@@ -873,6 +873,8 @@ func revisarIngreso(idPreliquidacion, cedulaPersona string) (fechaMenor time.Tim
 
 				err := getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+
 					"/acta_inicio_elaborado/"+numeroContrato+"/"+vigenciaContrato, &actaInicio)
+				fmt.Println("Acta inicio: http://" + beego.AppConfig.String("argoWso2Service") +
+					"/acta_inicio_elaborado/" + numeroContrato + "/" + vigenciaContrato)
 				if err != nil {
 					ImprimirError("error en revisarIngreso()", err)
 				}
