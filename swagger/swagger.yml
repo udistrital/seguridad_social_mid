@@ -270,7 +270,7 @@ definitions:
     type: object
     properties:
       Body:
-        $ref: '#/definitions/69.0xc4204e8d80.false'
+        $ref: '#/definitions/69.0xc4204d1530.false'
       Code:
         type: string
       Type:
