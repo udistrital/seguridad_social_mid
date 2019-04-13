@@ -833,32 +833,34 @@ func revisarIngreso(idPreliquidacion, cedulaPersona string) (fechaMenor time.Tim
 		mes = "0" + fmt.Sprint(preliquidacion.Mes)
 	}
 
-	// Contrato de docente de vinculación especial (salarios)
-	err = getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+
-		"/contratos_elaborado_tipo_persona/2/"+anio+"-"+mes+"/"+anio+"-"+mes+"/"+cedulaPersona, &contratosPersona)
-	fmt.Println("vinculación especial salarios: http://" + beego.AppConfig.String("argoWso2Service") +
-		"/contratos_elaborado_tipo_persona/2/" + anio + "-" + mes + "/" + anio + "-" + mes + "/" + cedulaPersona)
-	if err != nil {
-		ImprimirError("error en revisarIngreso()", err)
-	}
-	// Contrato docente de vinculación especial (Tiempo completo ocasional TCO - MTO)
-	if len(contratosPersona["contratos_tipo"]) == 0 {
-		err = getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+
-			"/contratos_elaborado_tipo_persona/18/"+anio+"-"+mes+"/"+anio+"-"+mes+"/"+cedulaPersona, &contratosPersona)
-		fmt.Println("Vinculación especial TCO: http://" + beego.AppConfig.String("argoWso2Service") +
-			"/contratos_elaborado_tipo_persona/18/" + anio + "-" + mes + "/" + anio + "-" + mes + "/" + cedulaPersona)
-		if err != nil {
-			ImprimirError("error en revisarIngreso()", err)
-		}
-	}
-	// Contrato de prestación de servicios profesionales o apoyo a la gestión
-	if len(contratosPersona["contratos_tipo"]) == 0 {
+	if contratistas {
+		// Contrato de prestación de servicios profesionales o apoyo a la gestión
 		err = getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+
 			"/contratos_elaborado_tipo_persona/6/"+anio+"-"+mes+"/"+anio+"-"+mes+"/"+cedulaPersona, &contratosPersona)
 		fmt.Println("Contratista: http://" + beego.AppConfig.String("argoWso2Service") +
 			"/contratos_elaborado_tipo_persona/6/" + anio + "-" + mes + "/" + anio + "-" + mes + "/" + cedulaPersona)
 		if err != nil {
 			ImprimirError("error en revisarIngreso()", err)
+		}
+
+	} else {
+		// Contrato de docente de vinculación especial (salarios)
+		err = getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+
+			"/contratos_elaborado_tipo_persona/2/"+anio+"-"+mes+"/"+anio+"-"+mes+"/"+cedulaPersona, &contratosPersona)
+		fmt.Println("vinculación especial salarios: http://" + beego.AppConfig.String("argoWso2Service") +
+			"/contratos_elaborado_tipo_persona/2/" + anio + "-" + mes + "/" + anio + "-" + mes + "/" + cedulaPersona)
+		if err != nil {
+			ImprimirError("error en revisarIngreso()", err)
+		}
+		// Contrato docente de vinculación especial (Tiempo completo ocasional TCO - MTO)
+		if len(contratosPersona["contratos_tipo"]) == 0 {
+			err = getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+
+				"/contratos_elaborado_tipo_persona/18/"+anio+"-"+mes+"/"+anio+"-"+mes+"/"+cedulaPersona, &contratosPersona)
+			fmt.Println("Vinculación especial TCO: http://" + beego.AppConfig.String("argoWso2Service") +
+				"/contratos_elaborado_tipo_persona/18/" + anio + "-" + mes + "/" + anio + "-" + mes + "/" + cedulaPersona)
+			if err != nil {
+				ImprimirError("error en revisarIngreso()", err)
+			}
 		}
 	}
 
