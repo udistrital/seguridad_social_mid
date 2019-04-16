@@ -483,20 +483,21 @@ func (c *PagoController) RegistrarPagos() {
 func GetInfoProveedor(idProveedores []string) (map[string]models.InformacionProveedor, error) {
 	proveedores := make(map[string]models.InformacionProveedor)
 	var proveedor models.InformacionProveedor
-
 	for i := range idProveedores {
 		if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_proveedor/"+idProveedores[i], &proveedor); err == nil {
 			proveedores[idProveedores[i]] = proveedor
 		} else {
 			fmt.Println("Error en GetInfoProveedor: ", err.Error())
-			//beego.Error("error en GetInfoProveedor: ", err.Error())
 			return nil, err
 		}
 	}
 	return proveedores, nil
 }
 
-// GetInfoPersona recibe un map de proveedores para consultar el número de contrato y devuelve un mapa con la inforamción de la persona, cuya llave es también el número de contrato
+/*
+GetInfoPersona recibe un map de proveedores para consultar el número de contrato y
+devuelve un map con la inforamción de la persona, cuya llave es también el número de contrato
+*/
 func GetInfoPersona(proveedores map[string]models.InformacionProveedor) (map[string]models.InformacionPersonaNatural, error) {
 	personas := make(map[string]models.InformacionPersonaNatural)
 	var persona models.InformacionPersonaNatural
@@ -524,8 +525,10 @@ func ComporarCajaProveedor(cedulaProveedor string) (tieneCaja bool, err error) {
 	return
 }
 
-/* GetPagosSeguridadSocial busca todos los pagos correspondientes a seguridad social en los
-conceptos de titan y devuelve un mapa cuya llave es el nombre del pago y el valor es el id del pago */
+/* GetPagosSeguridadSocial
+busca todos los pagos correspondientes a seguridad social en los
+conceptos de titan y devuelve un mapa cuya llave es el nombre del pago y el valor es el id del pago
+*/
 func GetPagosSeguridadSocial() (map[int]string, error) {
 	var f interface{}
 	pagos := make(map[int]string)

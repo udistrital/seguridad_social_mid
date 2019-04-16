@@ -2,10 +2,11 @@ package controllers
 
 import (
 	"encoding/json"
-	"strconv"
 	"fmt"
+	"strconv"
+
 	"github.com/udistrital/ss_mid_api/models"
-	
+
 	"github.com/astaxie/beego"
 	"github.com/manucorporat/try"
 )

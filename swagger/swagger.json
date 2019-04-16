@@ -6,7 +6,7 @@
         "version": "1.0.0",
         "termsOfService": "http://beego.me/",
         "contact": {
-            "email": "astaxie@gmail.com"
+            "email": "jcamilosarmientor@gmail.com"
         },
         "license": {
             "name": "Apache 2.0",
@@ -39,6 +39,74 @@
                     },
                     "403": {
                         "description": "body is empty"
+                    }
+                }
+            }
+        },
+        "/conceptos_ibc/ActualizarConceptos/": {
+            "post": {
+                "tags": [
+                    "conceptos_ibc"
+                ],
+                "description": "Actualiza los hechos conceptos_ibc en el ruler",
+                "operationId": "ConceptosIbcController.ActualizarConceptos",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for ConceptosIbc content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ConceptosIbc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "{int} models.Alert"
+                    },
+                    "404": {
+                        "description": "body is empty"
+                    }
+                }
+            }
+        },
+        "/generador_reglas/ObtenerHechosCalculo": {
+            "get": {
+                "tags": [
+                    "generador_reglas"
+                ],
+                "description": "Obtiene los hechos de calculo para seguridad social",
+                "operationId": "GeneradorRelgasController.ObtenerHechosCalculo",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Alert"
+                        }
+                    },
+                    "404": {
+                        "description": "error"
+                    }
+                }
+            }
+        },
+        "/generador_reglas/RegistrarNuevosHechos": {
+            "post": {
+                "tags": [
+                    "generador_reglas"
+                ],
+                "description": "Actualiza los nuevos conceptos y resoluciones de seguridad social",
+                "operationId": "GeneradorRelgasController.RegistrarNuevosHechos",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Alert"
+                        }
+                    },
+                    "404": {
+                        "description": "error"
                     }
                 }
             }
@@ -127,6 +195,114 @@
                 }
             }
         },
+        "/pagoCalcularSegSocial/{id}": {
+            "get": {
+                "tags": [
+                    "pago"
+                ],
+                "description": "Cálcula la seguridad social para una preliquidación correspondiente",
+                "operationId": "PagoController.CalcularSegSocial",
+                "parameters": [
+                    {
+                        "in": "id",
+                        "name": "id",
+                        "description": "preliquidación",
+                        "schema": {
+                            "$ref": "#/definitions/.de"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/.PagoSeguridadSocial"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/pagoCalcularSegSocialHonorarios/{idPreliquidacion}": {
+            "get": {
+                "tags": [
+                    "pago"
+                ],
+                "description": "Cálcula la seguridad social para una preliquidación de honorarios o contratistas correspondiente",
+                "operationId": "PagoController.CalcularSegSocialHonorarios",
+                "parameters": [
+                    {
+                        "in": "id",
+                        "name": "id",
+                        "description": "preliquidación",
+                        "schema": {
+                            "$ref": "#/definitions/.de"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/.PagoSeguridadSocial"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/pagoConceptosIbc/": {
+            "get": {
+                "tags": [
+                    "pago"
+                ],
+                "description": "Obtiene todos los conceptos IBC del ruler y los cruza con los conceptos de nómina",
+                "operationId": "PagoController.ConceptosIbc"
+            }
+        },
+        "/pagoGetInfoCabecera/{idPreliquidacion}": {
+            "get": {
+                "tags": [
+                    "pago"
+                ],
+                "description": "Obtiene información adicional para la cabecera",
+                "operationId": "PagoController.GetInfoCabecera",
+                "parameters": [
+                    {
+                        "in": "id",
+                        "name": "idPeriodoPago",
+                        "description": "periodo",
+                        "schema": {
+                            "$ref": "#/definitions/.del"
+                        }
+                    }
+                ]
+            }
+        },
+        "/pagoNovedadesPorPersona/{persona}": {
+            "get": {
+                "tags": [
+                    "pago"
+                ],
+                "description": "Obtiene todos los conceptos IBC del ruler y los cruza con los conceptos de nómina",
+                "operationId": "PagoController.NovedadesPorPersona",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.NovedadesPersonaSS"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/pagoSumarPagosSalud/{idPeriodoPago}": {
             "get": {
                 "tags": [
@@ -180,7 +356,7 @@
                     "utils"
                 ],
                 "description": "obtiene la fecha actual del servidor",
-                "operationId": "UtilsController.GetActualTime",
+                "operationId": "UtilsController.GetActualDate",
                 "parameters": [
                     {
                         "in": "body",
@@ -207,14 +383,240 @@
         ".Beneficiarios": {
             "type": "object"
         },
+        ".PagoSeguridadSocial": {
+            "type": "object"
+        },
         ".PeriodoPago": {
+            "type": "object"
+        },
+        ".de": {
             "type": "object"
         },
         ".del": {
             "type": "object"
         },
+        ".false": {
+            "type": "object"
+        },
         ".interface{}": {
             "type": "object"
+        },
+        "models.Alert": {
+            "title": "Alert",
+            "type": "object",
+            "properties": {
+                "Body": {
+                    "$ref": "#/definitions/69.0xc4203c8c60.false"
+                },
+                "Code": {
+                    "type": "string"
+                },
+                "Type": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ConceptoNomina": {
+            "title": "ConceptoNomina",
+            "type": "object",
+            "properties": {
+                "AliasConcepto": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "NaturalezaConcepto": {
+                    "$ref": "#/definitions/models.NaturalezaConceptoNomina"
+                },
+                "NombreConcepto": {
+                    "type": "string"
+                },
+                "TipoConcepto": {
+                    "$ref": "#/definitions/models.TipoConceptoNomina"
+                }
+            }
+        },
+        "models.ConceptoNominaPorPersona": {
+            "title": "ConceptoNominaPorPersona",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Concepto": {
+                    "$ref": "#/definitions/models.ConceptoNomina"
+                },
+                "FechaDesde": {
+                    "type": "string",
+                    "format": "string"
+                },
+                "FechaHasta": {
+                    "type": "string",
+                    "format": "string"
+                },
+                "FechaRegistro": {
+                    "type": "string",
+                    "format": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nomina": {
+                    "$ref": "#/definitions/models.Nomina"
+                },
+                "NumCuotas": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Persona": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ValorNovedad": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
+        "models.ConceptosIbc": {
+            "title": "ConceptosIbc",
+            "type": "object",
+            "properties": {
+                "Descripcion": {
+                    "type": "string"
+                },
+                "DescripcionHecho": {
+                    "type": "string"
+                },
+                "Dominio": {
+                    "$ref": "#/definitions/models.Dominio"
+                },
+                "Estado": {
+                    "type": "boolean"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "TipoPredicado": {
+                    "$ref": "#/definitions/models.TipoPredicado"
+                }
+            }
+        },
+        "models.DetallePreliquidacion": {
+            "title": "DetallePreliquidacion",
+            "type": "object",
+            "properties": {
+                "Concepto": {
+                    "$ref": "#/definitions/models.ConceptoNomina"
+                },
+                "DiasLiquidados": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "EstadoDisponibilidad": {
+                    "$ref": "#/definitions/models.EstadoDisponibilidad"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "NumeroContrato": {
+                    "type": "string"
+                },
+                "Persona": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Preliquidacion": {
+                    "$ref": "#/definitions/models.Preliquidacion"
+                },
+                "TipoPreliquidacion": {
+                    "$ref": "#/definitions/models.TipoPreliquidacion"
+                },
+                "ValorCalculado": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "VigenciaContrato": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
+        "models.Dominio": {
+            "title": "Dominio",
+            "type": "object",
+            "properties": {
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.EstadoDisponibilidad": {
+            "title": "EstadoDisponibilidad",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "NumeroOrden": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
+        "models.EstadoPreliquidacion": {
+            "title": "EstadoPreliquidacion",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "NumeroOrden": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
         },
         "models.EstadoSeguridadSocial": {
             "title": "EstadoSeguridadSocial",
@@ -239,6 +641,67 @@
                 "NumeroOrden": {
                     "type": "number",
                     "format": "double"
+                }
+            }
+        },
+        "models.NaturalezaConceptoNomina": {
+            "title": "NaturalezaConceptoNomina",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "NumeroOrden": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
+        "models.Nomina": {
+            "title": "Nomina",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "TipoNomina": {
+                    "$ref": "#/definitions/models.TipoNomina"
+                }
+            }
+        },
+        "models.NovedadesPersonaSS": {
+            "title": "NovedadesPersonaSS",
+            "type": "object",
+            "properties": {
+                "ConceptoNominaPorPersona": {
+                    "$ref": "#/definitions/models.ConceptoNominaPorPersona"
+                },
+                "Persona": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Preliquidacion": {
+                    "$ref": "#/definitions/models.DetallePreliquidacion"
                 }
             }
         },
@@ -299,16 +762,132 @@
                 }
             }
         },
+        "models.Preliquidacion": {
+            "title": "Preliquidacion",
+            "type": "object",
+            "properties": {
+                "Ano": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "EstadoPreliquidacion": {
+                    "$ref": "#/definitions/models.EstadoPreliquidacion"
+                },
+                "FechaRegistro": {
+                    "type": "string",
+                    "format": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Mes": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nomina": {
+                    "$ref": "#/definitions/models.Nomina"
+                }
+            }
+        },
+        "models.TipoConceptoNomina": {
+            "title": "TipoConceptoNomina",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "NumeroOrden": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
+        "models.TipoNomina": {
+            "title": "TipoNomina",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "NumeroOrden": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
+        "models.TipoPredicado": {
+            "title": "TipoPredicado",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TipoPreliquidacion": {
+            "title": "TipoPreliquidacion",
+            "type": "object",
+            "properties": {
+                "Activo": {
+                    "type": "boolean"
+                },
+                "CodigoAbreviacion": {
+                    "type": "string"
+                },
+                "Descripcion": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Nombre": {
+                    "type": "string"
+                },
+                "NumeroOrden": {
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
         "models.TrPeriodoPago": {
             "title": "TrPeriodoPago",
             "type": "object",
             "properties": {
-                "Contratos": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "Pagos": {
                     "type": "array",
                     "items": {
@@ -317,6 +896,12 @@
                 },
                 "PeriodoPago": {
                     "$ref": "#/definitions/models.PeriodoPago"
+                },
+                "Personas": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         }
@@ -345,6 +930,18 @@
         {
             "name": "utils",
             "description": "UtilsController operations for Beneficiarios\n"
+        },
+        {
+            "name": "conceptos_ibc",
+            "description": "ConceptosIbcController ...controlador de tipo beego.Controller\n"
+        },
+        {
+            "name": "pago_honorarios",
+            "description": "PagoHonorariosController operations for Pago_honorarios\n"
+        },
+        {
+            "name": "generador_reglas",
+            "description": "GeneradorRelgasController operations for Generador_relgas\n"
         }
     ]
 }
