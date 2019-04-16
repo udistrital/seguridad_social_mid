@@ -107,7 +107,65 @@ var (
 
 	tipoRegistro = "02"
 	secuencia    = 1
+
+	contratosElaboradosPeriodo map[string]map[string]interface{}
+	actasInicioPeriodo         map[string]map[string]interface{}
 )
+
+func getInfoContratosElaboradoTipoFecha(anioPeriodo, mesPeriodo int, tipoLiquidacion string) error {
+	var contratos map[string]map[string][]map[string]interface{}
+	var idTipoContrato string
+
+	anio := fmt.Sprint(anioPeriodo)
+	mes := fmt.Sprint(mesPeriodo)
+	contratosElaboradosPeriodo = make(map[string]map[string]interface{})
+
+	switch tipoLiquidacion {
+	case "DP":
+		idTipoContrato = "21"
+	case "FP":
+		idTipoContrato = "20"
+	case "HCH":
+		idTipoContrato = "3"
+	case "HCS":
+		idTipoContrato = "18"
+	case "CT":
+		idTipoContrato = "6"
+	}
+
+	err := getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+"/contratos_elaborado_tipo_fecha/"+
+		idTipoContrato+"/"+anio+"-"+mes+"/"+anio+"-"+mes,
+		&contratos)
+
+	if err == nil {
+		for _, value := range contratos["contratos_tipo"]["contrato_tipo"] {
+			contratosElaboradosPeriodo[value["numero_contrato"].(string)] = value
+		}
+	} else {
+		ImprimirError("error en getInfoContratosElaboradoTipoFecha():", err)
+	}
+
+	return err
+}
+
+func getInfoActaInicioElaboradoVigencia(anioPeriodo int) error {
+	var actasInicio map[string]map[string][]map[string]interface{}
+
+	anio := fmt.Sprint(anioPeriodo)
+	actasInicioPeriodo = make(map[string]map[string]interface{})
+
+	err := getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+"/acta_inicio_elaborado_vigencia/"+anio, &actasInicio)
+	if err == nil {
+
+		for _, value := range actasInicio["contratos"]["contrato"] {
+			actasInicioPeriodo[value["numeroContrato"].(string)] = value
+		}
+	} else {
+		ImprimirError("error en getInfoContratosElaboradoTipoFecha():", err)
+	}
+
+	return err
+}
 
 // GenerarPlanillaActivos ...
 // @Title Generar planilla de activos
@@ -128,6 +186,24 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 		tipoPreliquidacion = periodoPago.TipoLiquidacion
 		mesPeriodo = int(periodoPago.Mes)
 		anioPeriodo = int(periodoPago.Anio)
+
+		err = getInfoContratosElaboradoTipoFecha(anioPeriodo, mesPeriodo, periodoPago.TipoLiquidacion)
+		if err != nil {
+			c.Data["json"] = map[string]string{
+				"error": err.Error(),
+			}
+			c.ServeJSON()
+			return
+		}
+
+		err = getInfoActaInicioElaboradoVigencia(anioPeriodo)
+		if err != nil {
+			c.Data["json"] = map[string]string{
+				"error": err.Error(),
+			}
+			c.ServeJSON()
+			return
+		}
 
 		if err = getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion?"+
 			"limit=-1"+
@@ -819,7 +895,6 @@ func establecerNovedades(idPersona, idPreliquidacion, cedulaPersona string) {
 
 func revisarIngreso(idPreliquidacion, cedulaPersona string) (fechaMenor time.Time) {
 	var preliquidacion models.Preliquidacion
-	var contratosPersona map[string]map[string]interface{}
 
 	err := getJson("http://"+beego.AppConfig.String("titanServicio")+
 		"/preliquidacion/"+idPreliquidacion, &preliquidacion)
@@ -827,86 +902,44 @@ func revisarIngreso(idPreliquidacion, cedulaPersona string) (fechaMenor time.Tim
 		ImprimirError("error en revisarIngreso()", err)
 	}
 
-	anio := fmt.Sprint(preliquidacion.Ano)
-	mes := fmt.Sprint(preliquidacion.Mes)
-	if preliquidacion.Mes < 9 {
-		mes = "0" + fmt.Sprint(preliquidacion.Mes)
-	}
+	// beego.Info(contratosElaboradosPeriodo)
+	var actaInicio map[string]map[string]interface{}
 
-	if contratistas {
-		// Contrato de prestación de servicios profesionales o apoyo a la gestión
-		err = getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+
-			"/contratos_elaborado_tipo_persona/6/"+anio+"-"+mes+"/"+anio+"-"+mes+"/"+cedulaPersona, &contratosPersona)
-		fmt.Println("Contratista: http://" + beego.AppConfig.String("argoWso2Service") +
-			"/contratos_elaborado_tipo_persona/6/" + anio + "-" + mes + "/" + anio + "-" + mes + "/" + cedulaPersona)
+	for key, value := range contratosElaboradosPeriodo {
+
+		numeroContrato := value["numero_contrato"].(string)
+		vigenciaContrato := value["vigencia"].(string)
+
+		err := getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+
+			"/acta_inicio_elaborado/"+key+"/"+vigenciaContrato, &actaInicio)
+		beego.Info("http://" + beego.AppConfig.String("argoWso2Service") +
+			"/acta_inicio_elaborado/" + numeroContrato + "/" + vigenciaContrato)
 		if err != nil {
 			ImprimirError("error en revisarIngreso()", err)
 		}
 
-	} else {
-		// Contrato de docente de vinculación especial (salarios)
-		err = getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+
-			"/contratos_elaborado_tipo_persona/2/"+anio+"-"+mes+"/"+anio+"-"+mes+"/"+cedulaPersona, &contratosPersona)
-		fmt.Println("vinculación especial salarios: http://" + beego.AppConfig.String("argoWso2Service") +
-			"/contratos_elaborado_tipo_persona/2/" + anio + "-" + mes + "/" + anio + "-" + mes + "/" + cedulaPersona)
-		if err != nil {
-			ImprimirError("error en revisarIngreso()", err)
-		}
-		// Contrato docente de vinculación especial (Tiempo completo ocasional TCO - MTO)
-		if len(contratosPersona["contratos_tipo"]) == 0 {
-			err = getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+
-				"/contratos_elaborado_tipo_persona/18/"+anio+"-"+mes+"/"+anio+"-"+mes+"/"+cedulaPersona, &contratosPersona)
-			fmt.Println("Vinculación especial TCO: http://" + beego.AppConfig.String("argoWso2Service") +
-				"/contratos_elaborado_tipo_persona/18/" + anio + "-" + mes + "/" + anio + "-" + mes + "/" + cedulaPersona)
+		if len(actaInicio["actaInicio"]) != 0 {
+
+			t, err := time.Parse(formatoFecha, actaInicio["actaInicio"]["fechaInicio"].(string))
 			if err != nil {
 				ImprimirError("error en revisarIngreso()", err)
 			}
-		}
-	}
 
-	if contratosPersona != nil {
-		var actaInicio map[string]map[string]interface{}
-		for _, value := range contratosPersona {
-			contratos := value["contrato_tipo"].([]interface{})
-
-			for _, contrato := range contratos {
-				numeroContrato := contrato.(map[string]interface{})["numero_contrato"].(string)
-				vigenciaContrato := contrato.(map[string]interface{})["vigencia"].(string)
-
-				err := getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+
-					"/acta_inicio_elaborado/"+numeroContrato+"/"+vigenciaContrato, &actaInicio)
-				fmt.Println("Acta inicio: http://" + beego.AppConfig.String("argoWso2Service") +
-					"/acta_inicio_elaborado/" + numeroContrato + "/" + vigenciaContrato)
-				if err != nil {
-					ImprimirError("error en revisarIngreso()", err)
-				}
-
-				if len(actaInicio["actaInicio"]) != 0 {
-
-					t, err := time.Parse(formatoFecha, actaInicio["actaInicio"]["fechaInicio"].(string))
-					if err != nil {
-						ImprimirError("error en revisarIngreso()", err)
-					}
-
-					if fechaMenor.IsZero() {
-						fechaMenor = t
-					} else {
-						if t.Year() <= fechaMenor.Year() {
-							if t.Month() <= fechaMenor.Month() {
-								if t.Day() <= fechaMenor.Day() {
-									fechaMenor = t
-								} else if (t.Year() <= fechaMenor.Year()) && (t.Month() <= fechaMenor.Month()) && (t.Day() >= fechaMenor.Day()) {
-									fechaMenor = t
-								}
-							} else if (t.Year() <= fechaMenor.Year()) && (t.Month() >= fechaMenor.Month()) {
-								fechaMenor = t
-							}
+			if fechaMenor.IsZero() {
+				fechaMenor = t
+			} else {
+				if t.Year() <= fechaMenor.Year() {
+					if t.Month() <= fechaMenor.Month() {
+						if t.Day() <= fechaMenor.Day() {
+							fechaMenor = t
+						} else if (t.Year() <= fechaMenor.Year()) && (t.Month() <= fechaMenor.Month()) && (t.Day() >= fechaMenor.Day()) {
+							fechaMenor = t
 						}
+					} else if (t.Year() <= fechaMenor.Year()) && (t.Month() >= fechaMenor.Month()) {
+						fechaMenor = t
 					}
 				}
-
 			}
-
 		}
 	}
 	return
