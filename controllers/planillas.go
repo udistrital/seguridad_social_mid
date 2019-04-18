@@ -435,7 +435,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					fila += formatoDato(completarSecuenciaString(ibcLiquidado, 9), 9) //IBC otros parafiscales difenrentes a CCF
 					fila += formatoDato(horasLaboradas, 3)
 					fila += formatoDato("", 26)
-					beego.Info(fila)
+//					beego.Info(fila)
 					fila += "\n" // siguiente persona...
 					filas += fila
 					secuencia++
