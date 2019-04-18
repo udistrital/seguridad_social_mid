@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+
 	"github.com/astaxie/beego"
 	"github.com/udistrital/ss_mid_api/golog"
 	"github.com/udistrital/ss_mid_api/models"
@@ -493,7 +494,54 @@ func GetInfoProveedor(idProveedores []string) (map[string]models.InformacionProv
 	return proveedores, nil
 }
 
-// GetInfoPersona recibe un map de proveedores para consultar el número de contrato y devuelve un mapa con la inforamción de la persona, cuya llave es también el número de contrato
+/* 
+GetInfoPersonas Recibe un arreglo de strings con los contratos, cruza cada uno de los elementos del arreglo con un valor de proveedores y retonar un map
+que tenga la información del proveedor y cuya llave sea el id del proveedor
+*/
+func GetInfoPersonas(detallesPreliquidacion []models.DetallePreliquidacion) (map[string]models.InformacionPersonaNatural, error) {
+	var infoProveedores []models.InformacionProveedor
+	var personasNaturales []models.InformacionPersonaNatural
+
+	proveedores := make(map[string]models.InformacionProveedor)
+	personas := make(map[string]models.InformacionPersonaNatural)
+
+	if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_proveedor?limit=-1", &infoProveedores); err != nil {
+		fmt.Println("Error en GetInfoPersonas: ", err.Error())
+		return nil, err
+	}
+
+	if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_persona_natural?limit=-1", &personasNaturales); err != nil {
+		fmt.Println("Error en GetInfoPersonas: ", err.Error())
+		return nil, err
+	}
+	
+	for _, detallePreliquidacion := range detallesPreliquidacion {
+		for _, infoProveedor:= range infoProveedores {
+			if detallePreliquidacion.Persona == infoProveedor.Id {
+				proveedores[strconv.Itoa(detallePreliquidacion.Persona)] = infoProveedor
+				break
+			}
+		}
+		
+	}
+
+	for key, proveedor := range proveedores {
+		for _, personaNatural := range personasNaturales {
+			if proveedor.NumDocumento == personaNatural.Id {
+				personas[key] = personaNatural
+			}
+		}
+	}
+
+	// for i := range idProveedores {
+	// }
+	return personas, nil
+}
+
+/*
+GetInfoPersona recibe un map de proveedores para consultar el número de contrato y
+devuelve un map con la inforamción de la persona, cuya llave es también el número de contrato
+*/
 func GetInfoPersona(proveedores map[string]models.InformacionProveedor) (map[string]models.InformacionPersonaNatural, error) {
 	personas := make(map[string]models.InformacionPersonaNatural)
 	var persona models.InformacionPersonaNatural
@@ -521,8 +569,10 @@ func ComporarCajaProveedor(cedulaProveedor string) (tieneCaja bool, err error) {
 	return
 }
 
-/* GetPagosSeguridadSocial busca todos los pagos correspondientes a seguridad social en los
-conceptos de titan y devuelve un mapa cuya llave es el nombre del pago y el valor es el id del pago */
+/* GetPagosSeguridadSocial
+busca todos los pagos correspondientes a seguridad social en los
+conceptos de titan y devuelve un mapa cuya llave es el nombre del pago y el valor es el id del pago
+*/
 func GetPagosSeguridadSocial() (map[int]string, error) {
 	var f interface{}
 	pagos := make(map[int]string)

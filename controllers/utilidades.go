@@ -228,6 +228,34 @@ func CargarReglasBase() (reglas string) {
 	return
 }
 
+// CrearReglas crea reglas para cálculos de novedades en las filas auxiliares del archivo plano
+func CrearReglas(pagoCompleto bool) string {
+	var reglas string
+	if pagoCompleto {
+		reglas = `
+			concepto(salud, 0.125,	2017). 	%%descuento salud ud
+			concepto(pension, 0.16, 2017).	%%descuento pension ud
+			concepto(arl, 0.00522, 2017). %%descuento de ARL
+			concepto(caja, 0.04, 2017).	%%caja de compensa familiar
+			concepto(icbf, 0.03, 2017).	%%ICBF`
+	} else {
+		reglas = `
+			concepto(salud,  0.085,	2017). 	%%descuento salud ud
+			concepto(pension, 0.12, 2017).	%%descuento pension ud
+			concepto(arl, 0, 2017). %%descuento de ARL
+			concepto(caja, 0, 2017).	%%caja de compensa familiar
+			concepto(icbf, 0, 2017).	%%ICBF`
+	}
+	reglas += `
+		v_total_salud(X,T) :- concepto(salud, V, 2017), ibc(X, W, salud), T is (V * W) approach 100.
+		v_total_pen(X,T) :- concepto(pension, V, 2017), ibc(X, W, salud), T is (V * W) approach 100.
+		v_arl(I,Y) :- concepto(arl, V, 2017), ibc(I, W, riesgos), Y is (V * W) approach 100. 
+		v_caja(I,Y) :- concepto(caja, V, 2017), ibc(I,W,apf), Y is (V * W) approach 100.
+		v_icbf(I,Y) :- concepto(icbf, V, 2017), ibc(I,W,apf), Y is (V * W) approach 100.
+		`
+	return reglas
+}
+
 // FormatoReglas crea el formato necesario de las reglas y hechos para golog a partir de un arreglo de predicados
 func FormatoReglas(v []models.Predicado) (reglas string) {
 	var arregloReglas = make([]string, len(v))

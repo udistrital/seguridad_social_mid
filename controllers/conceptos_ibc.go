@@ -2,8 +2,9 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
-    "fmt"
+
 	"github.com/udistrital/ss_mid_api/models"
 
 	"github.com/astaxie/beego"

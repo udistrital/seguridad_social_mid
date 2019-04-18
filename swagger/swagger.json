@@ -195,7 +195,7 @@
                 }
             }
         },
-        "/pago/CalcularSegSocial/{id}": {
+        "/pagoCalcularSegSocial/{id}": {
             "get": {
                 "tags": [
                     "pago"
@@ -225,7 +225,7 @@
                 }
             }
         },
-        "/pago/CalcularSegSocialHonorarios/{idPreliquidacion}": {
+        "/pagoCalcularSegSocialHonorarios/{idPreliquidacion}": {
             "get": {
                 "tags": [
                     "pago"
@@ -255,7 +255,7 @@
                 }
             }
         },
-        "/pago/ConceptosIbc/": {
+        "/pagoConceptosIbc/": {
             "get": {
                 "tags": [
                     "pago"
@@ -264,7 +264,7 @@
                 "operationId": "PagoController.ConceptosIbc"
             }
         },
-        "/pago/GetInfoCabecera/{idPreliquidacion}": {
+        "/pagoGetInfoCabecera/{idPreliquidacion}": {
             "get": {
                 "tags": [
                     "pago"
@@ -283,7 +283,7 @@
                 ]
             }
         },
-        "/pago/NovedadesPorPersona/{persona}": {
+        "/pagoNovedadesPorPersona/{persona}": {
             "get": {
                 "tags": [
                     "pago"
@@ -303,7 +303,7 @@
                 }
             }
         },
-        "/pago/SumarPagosSalud/{idPeriodoPago}": {
+        "/pagoSumarPagosSalud/{idPeriodoPago}": {
             "get": {
                 "tags": [
                     "pago"
@@ -406,7 +406,7 @@
             "type": "object",
             "properties": {
                 "Body": {
-                    "$ref": "#/definitions/69.0xc4204d1530.false"
+                    "$ref": "#/definitions/69.0xc4203c8c60.false"
                 },
                 "Code": {
                     "type": "string"
