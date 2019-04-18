@@ -472,10 +472,12 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 			respuestaJSON["informacion"] = filas
 			c.Data["json"] = respuestaJSON
 		} else {
+			log.Println("Fallo la generación de la planilla")
 			c.Data["json"] = err.Error()
 		}
 
 	} else {
+		log.Println("Fallo la generación de la planilla")
 		c.Data["json"] = err.Error()
 	}
 	c.ServeJSON()
