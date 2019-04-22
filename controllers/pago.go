@@ -430,20 +430,31 @@ func (c *PagoController) RegistrarPagos() {
 		if validar, periodoModificado := validarPeriodo(PeriodoPago); validar {
 			if err = sendJson("http://"+beego.AppConfig.String("segSocialService")+"/periodo_pago/"+strconv.Itoa(periodoModificado.Id), "PUT", &alerta, periodoModificado); err != nil {
 				c.Data["json"] = err.Error()
+				c.ServeJSON()
+				return
 			}
 		}
 
 		mapProveedores, err := GetInfoProveedor(PeriodoPago.Personas)
 		if err != nil {
 			c.Data["json"] = err.Error()
+			c.ServeJSON()
+			return
 		}
 
 		mapPersonas, err := GetInfoPersona(mapProveedores)
 		if err != nil {
 			c.Data["json"] = err.Error()
+			c.ServeJSON()
+			return
 		}
 
-		pagosSeg, _ := GetPagosSeguridadSocial()
+		pagosSeg, err := GetPagosSeguridadSocial()
+		if err != nil {
+			c.Data["json"] = err.Error()
+			c.ServeJSON()
+			return
+		}
 		contPagos, contContratista := 0, 0 // conPagos sirve para que cuente los 5 pagos de seguridad social, contContratista es para que recorrer los contratistas
 		for i := range PeriodoPago.Pagos {
 			nombrePago := pagosSeg[PeriodoPago.Pagos[i].TipoPago]
@@ -470,6 +481,10 @@ func (c *PagoController) RegistrarPagos() {
 
 		if err = sendJson("http://"+beego.AppConfig.String("segSocialService")+"/tr_periodo_pago", "POST", &alerta, PeriodoPago); err == nil {
 			c.Ctx.Output.SetStatus(201)
+		} else {
+			c.Data["json"] = err.Error()
+			c.ServeJSON()
+			return
 		}
 		c.Data["json"] = alerta
 
@@ -494,7 +509,7 @@ func GetInfoProveedor(idProveedores []string) (map[string]models.InformacionProv
 	return proveedores, nil
 }
 
-/* 
+/*
 GetInfoPersonas Recibe un arreglo de strings con los contratos, cruza cada uno de los elementos del arreglo con un valor de proveedores y retonar un map
 que tenga la información del proveedor y cuya llave sea el id del proveedor
 */
@@ -514,15 +529,15 @@ func GetInfoPersonas(detallesPreliquidacion []models.DetallePreliquidacion) (map
 		fmt.Println("Error en GetInfoPersonas: ", err.Error())
 		return nil, err
 	}
-	
+
 	for _, detallePreliquidacion := range detallesPreliquidacion {
-		for _, infoProveedor:= range infoProveedores {
+		for _, infoProveedor := range infoProveedores {
 			if detallePreliquidacion.Persona == infoProveedor.Id {
 				proveedores[strconv.Itoa(detallePreliquidacion.Persona)] = infoProveedor
 				break
 			}
 		}
-		
+
 	}
 
 	for key, proveedor := range proveedores {
