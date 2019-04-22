@@ -5,10 +5,11 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"strconv"
 	"time"
-	"log"
+
 	"github.com/astaxie/beego"
 	"github.com/udistrital/ss_mid_api/golog"
 	"github.com/udistrital/ss_mid_api/models"
@@ -146,20 +147,18 @@ func getInfoContratosElaboradoTipoFecha(anioPeriodo, mesPeriodo int, tipoLiquida
 	if err != nil {
 		ImprimirError("error en getInfoContratosElaboradoTipoFecha():", err)
 		return
-	} 
+	}
 
 	err = getJsonWSO2("http://"+beego.AppConfig.String("argoWso2Service")+"/acta_inicio_elaborado_vigencia/"+anio, &actasInicio)
 	if err != nil {
 		ImprimirError("error en getInfoContratosElaboradoTipoFecha():", err)
 		return
-	} 
-
-	
+	}
 
 	for _, valueContratos := range contratos["contratos_tipo"]["contrato_tipo"] {
 		for _, valueActas := range actasInicio["contratos"]["contrato"] {
 			if valueContratos["numero_contrato"].(string) == valueActas["numeroContrato"].(string) {
-				
+
 				t, _ := time.Parse(formatoFecha, valueActas["fechaInicio"].(string))
 				if !t.IsZero() {
 					if t.Year() <= fechaMenor.Year() {
@@ -173,18 +172,17 @@ func getInfoContratosElaboradoTipoFecha(anioPeriodo, mesPeriodo int, tipoLiquida
 							fechaMenor = t
 						}
 					}
-					
-				}  
 
-			contratosElaboradosPeriodo[valueContratos["numero_documento"].(string)] = fechaMenor
-			break
+				}
+
+				contratosElaboradosPeriodo[valueContratos["numero_documento"].(string)] = fechaMenor
+				break
 			}
 		}
 	}
-	
-	return 
-}
 
+	return
+}
 
 // GenerarPlanillaActivos ...
 // @Title Generar planilla de activos
@@ -222,7 +220,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 			"&query=Preliquidacion.Id:"+strconv.Itoa(periodoPago.Liquidacion)+
 			",Concepto.NombreConcepto:ibc_liquidado", &detallePreliquidacion); err == nil {
 
-			if periodoPago.TipoLiquidacion == "CT" {
+			if periodoPago.TipoLiquidacion == "CT" || periodoPago.TipoLiquidacion == "HCH" {
 				contratistas = true
 			}
 			filas = ""
@@ -232,11 +230,10 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 			}
 			mapPersonas, err := GetInfoPersonas(detallePreliquidacion)
 			if err != nil {
-				c.Data["json"] = map[string]string{ "error": err.Error() }
+				c.Data["json"] = map[string]string{"error": err.Error()}
 				c.ServeJSON()
 				return
 			}
-
 
 			for key, value := range mapPersonas {
 				var (
@@ -435,7 +432,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					fila += formatoDato(completarSecuenciaString(ibcLiquidado, 9), 9) //IBC otros parafiscales difenrentes a CCF
 					fila += formatoDato(horasLaboradas, 3)
 					fila += formatoDato("", 26)
-//					beego.Info(fila)
+					//					beego.Info(fila)
 					fila += "\n" // siguiente persona...
 					filas += fila
 					secuencia++
@@ -1069,7 +1066,7 @@ func establecerNovedades(idPersona, idPreliquidacion, cedulaPersona string) {
 // 			if err != nil {
 // 				ImprimirError("error en revisarIngreso()", err)
 // 			}
-			
+
 // 			if fechaMenor.IsZero() {
 // 				fechaMenor = t
 // 			} else {
