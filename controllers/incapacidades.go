@@ -27,8 +27,7 @@ func (c *IncapacidadesController) URLMapping() {
 // @Failure 403
 // @router / [get]
 func (c *IncapacidadesController) GetPersonas() {
-	var proveedores, contratos, respuesta []map[string]interface{}
-	var personaNatural map[string]interface{}
+	var proveedores, contratos, personaNatural, respuesta []map[string]interface{}
 	documento := c.GetString("documento")
 	try.This(func() {
 		if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"informacion_proveedor?"+
@@ -44,8 +43,8 @@ func (c *IncapacidadesController) GetPersonas() {
 				panic(err)
 			}
 
-			if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"informacion_persona_natural/"+
-				proveedor["NumDocumento"].(string), &personaNatural); err != nil {
+			if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"informacion_persona_natural?"+
+				"limit=1&query=Id:"+proveedor["NumDocumento"].(string), &personaNatural); err != nil {
 				fmt.Println("error en contrato informacion_persona_natural")
 				panic(err)
 			}
@@ -68,7 +67,7 @@ func (c *IncapacidadesController) GetPersonas() {
 				"value":         proveedor["NumDocumento"],
 				"documento":     proveedor["NumDocumento"],
 				"contratos":     contratosPropios,
-				"tipoDocumento": personaNatural["TipoDocumento"].(map[string]interface{})["Abreviatura"],
+				"tipoDocumento": personaNatural[0]["TipoDocumento"].(map[string]interface{})["Abreviatura"],
 				"idProveedor":   idProveedor,
 			}
 
