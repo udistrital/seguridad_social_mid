@@ -35,20 +35,23 @@ func (c *PagoController) CalcularSegSocialHonorarios() {
 			panic(err)
 		}
 		var (
-			detalleLiquSalud     []models.DetallePreliquidacion
-			pagosSeguridadSocial []*models.PagoSeguridadSocial
-			proveedores          []string
+			detalleLiquSalud []models.DetallePreliquidacion
+			proveedores      []string
 		)
+
+		pagosSeguridadSocial := make(map[int]*models.PagoSeguridadSocial)
 
 		err = getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
 			"?limit=-1&query=Preliquidacion.Id:"+idPreliquidacion+",Concepto.NombreConcepto:salud", &detalleLiquSalud)
-
+		fmt.Println("http://" + beego.AppConfig.String("titanServicio") + "/detalle_preliquidacion" +
+			"?limit=-1&query=Preliquidacion.Id:" + idPreliquidacion + ",Concepto.NombreConcepto:salud")
 		if err != nil {
 			panic(err)
 		}
 
 		for _, value := range detalleLiquSalud {
 			proveedores = append(proveedores, strconv.Itoa(value.Persona))
+
 			aux := &models.PagoSeguridadSocial{
 				NombrePersona:           "",
 				IdProveedor:             int64(value.Persona),
@@ -60,13 +63,17 @@ func (c *PagoController) CalcularSegSocialHonorarios() {
 				Icbf:                    0,
 				IdPreliquidacion:        preliquidacion,
 				IdDetallePreliquidacion: value.Id,
-				Arl: 0}
+				Arl:                     0}
 
-			if err = GetValoresSaludHonorarios(aux); err != nil {
-				panic(err)
+			if pagosSeguridadSocial[value.Persona] == nil {
+				pagosSeguridadSocial[value.Persona] = aux
+			} else {
+				fmt.Println("ya existe: ", value.Persona, "  ", pagosSeguridadSocial[value.Persona])
+				if err = GetValoresSaludHonorarios(aux); err != nil {
+					panic(err)
+				}
 			}
 
-			pagosSeguridadSocial = append(pagosSeguridadSocial, aux)
 		}
 
 		mapProveedores, _ := GetInfoProveedor(proveedores)
@@ -103,13 +110,13 @@ func GetValoresSaludHonorarios(pagoSeguridadSocial *models.PagoSeguridadSocial) 
 		valorConcepto := int64(value.ValorCalculado)
 		switch value.Concepto.NombreConcepto {
 		case "pension":
-			pagoSeguridadSocial.PensionTotal = valorConcepto
+			pagoSeguridadSocial.PensionTotal += valorConcepto
 		case "arl":
-			pagoSeguridadSocial.Arl = valorConcepto
+			pagoSeguridadSocial.Arl += valorConcepto
 		case "icbf":
-			pagoSeguridadSocial.Icbf = valorConcepto
+			pagoSeguridadSocial.Icbf += valorConcepto
 		case "caja_compensacion":
-			pagoSeguridadSocial.Caja = valorConcepto
+			pagoSeguridadSocial.Caja += valorConcepto
 		}
 	}
 	return
