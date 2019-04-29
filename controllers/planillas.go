@@ -26,7 +26,8 @@ func (c *PlanillasController) URLMapping() {
 }
 
 var (
-	contratistas = false
+	detallePreliquidacion []models.DetallePreliquidacion // detalle de toda la preliquidación
+	contratistas          = false
 
 	formatoFecha = "2006-01-02"
 	fila         string
@@ -184,6 +185,27 @@ func getInfoContratosElaboradoTipoFecha(anioPeriodo, mesPeriodo int, tipoLiquida
 	return
 }
 
+func getValorConcepto(preliquidacion string, concepto string) (map[string]int, error) {
+	var detallesPreliquidacion []models.DetallePreliquidacion
+
+	salariosBase := make(map[string]int)
+
+	err := getJson("http://"+beego.AppConfig.String("titanServicio")+
+		"/detalle_preliquidacion?limit=-1"+
+		"&fields=ValorCalculado,Persona"+
+		"&query=Preliquidacion:"+preliquidacion+",Concepto.NombreConcepto:"+concepto, &detallesPreliquidacion)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, value := range detallesPreliquidacion {
+		fmt.Println("value: ", value)
+		salariosBase[strconv.Itoa(value.Persona)] += int(value.ValorCalculado)
+	}
+	return salariosBase, nil
+}
+
 // GenerarPlanillaActivos ...
 // @Title Generar planilla de activos
 // @Description Recibe un periodo pago y devuelve un arreglo de json con la información de la planilla
@@ -193,11 +215,13 @@ func getInfoContratosElaboradoTipoFecha(anioPeriodo, mesPeriodo int, tipoLiquida
 // @router /GenerarPlanillaActivos [post]
 func (c *PlanillasController) GenerarPlanillaActivos() {
 	start := time.Now()
+
+	var filasPlanilla []models.PlanillaTipoE
+
 	log.Println("Comenzó a generar la planilla")
 	var (
-		periodoPago           *models.PeriodoPago
-		detallePreliquidacion []models.DetallePreliquidacion
-		personas              []string
+		periodoPago *models.PeriodoPago
+		personas    []string
 	)
 
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &periodoPago); err == nil {
@@ -223,6 +247,85 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 			if periodoPago.TipoLiquidacion == "CT" || periodoPago.TipoLiquidacion == "HCH" {
 				contratistas = true
 			}
+
+			concepto := "salarioBase"
+			if contratistas {
+				concepto = "honorarios"
+			}
+
+			idPreliquidacion := strconv.Itoa(detallePreliquidacion[0].Preliquidacion.Id)
+
+			salariosBase, err := getValorConcepto(strconv.Itoa(periodoPago.Liquidacion), concepto)
+			if err != nil {
+				c.Data["json"] = map[string]string{
+					"error": err.Error(),
+				}
+				c.ServeJSON()
+				return
+			}
+
+			ingresosCotizacion, err := getValorConcepto(strconv.Itoa(periodoPago.Liquidacion), "ibc_liquidado")
+			if err != nil {
+				c.Data["json"] = map[string]string{
+					"error": err.Error(),
+				}
+				c.ServeJSON()
+				return
+			}
+			idPeriodoPago := strconv.Itoa(periodoPago.Id)
+
+			informacionPagosPension, err := traerDiasCotizadosEmpleador(idPreliquidacion, idPeriodoPago, "pension_ud")
+			if err != nil {
+				c.Data["json"] = map[string]string{"error": err.Error()}
+				c.ServeJSON()
+				return
+			}
+
+			informacionPagosPensionVoluntaria, err := traerDiasCotizadosEmpleador(idPreliquidacion, idPeriodoPago, "nombreRegla2176")
+			if err != nil {
+				c.Data["json"] = map[string]string{"error": err.Error()}
+				c.ServeJSON()
+				return
+			}
+
+			informacionPagosSalud, err := traerDiasCotizadosEmpleador(idPreliquidacion, idPeriodoPago, "salud_ud")
+			if err != nil {
+				c.Data["json"] = map[string]string{"error": err.Error()}
+				c.ServeJSON()
+				return
+			}
+			informacionPagosIcbf, err := traerDiasCotizadosEmpleador(idPreliquidacion, idPeriodoPago, "icbf")
+			if err != nil {
+				c.Data["json"] = map[string]string{"error": err.Error()}
+				c.ServeJSON()
+				return
+			}
+			informacionPagosArl, err := traerDiasCotizadosEmpleador(idPreliquidacion, idPeriodoPago, "arl")
+			if err != nil {
+				c.Data["json"] = map[string]string{"error": err.Error()}
+				c.ServeJSON()
+				return
+			}
+			informacionPagosCaja, err := traerDiasCotizadosEmpleador(idPreliquidacion, idPeriodoPago, "caja_compensacion")
+			if err != nil {
+				c.Data["json"] = map[string]string{"error": err.Error()}
+				c.ServeJSON()
+				return
+			}
+			informacionPagosFondoSoli, err := traerDiasCotizadosEmpleador(idPreliquidacion, idPeriodoPago, "fondoSolidaridad")
+			if err != nil {
+				c.Data["json"] = map[string]string{"error": err.Error()}
+				c.ServeJSON()
+				return
+			}
+
+			informacionUpc, err := buscarUpcAsociada()
+			if err != nil {
+				c.Data["json"] = map[string]string{"error": err.Error()}
+				c.ServeJSON()
+				return
+			}
+
 			filas = ""
 
 			for i := range detallePreliquidacion {
@@ -238,118 +341,92 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 			for key, value := range mapPersonas {
 				var (
 					preliquidacion []models.DetallePreliquidacion
-					ibcLiquidado,
-					pagoSalud,
-					pagoPension,
-					pagoArl,
-					pagoCaja,
-					pagoIcbf,
-					horasLaboradas string
-					totalPagoPension int
 				)
-				idPersona := key
-				idPreliquidacion := strconv.Itoa(detallePreliquidacion[0].Preliquidacion.Id)
+				idPersona := key //idProveedor
+
 				cedulaPersona := fmt.Sprint(value.Id)
 				fila = ""
 				filaAux = ""
-				fila += formatoDato(tipoRegistro, 2)                     //Tipo Registro
-				fila += formatoDato(completarSecuencia(secuencia, 5), 5) //Secuencia
-				fila += formatoDato("CC", 2)                             //Tip de documento del cotizante
-				fila += formatoDato(value.Id, 16)                        //Número de identificación del cotizante
-				fila += formatoDato(completarSecuencia(1, 2), 2)         //Tipo Cotizante
-				fila += formatoDato(completarSecuencia(0, 2), 2)         //Subtipo de Cotizante
-				fila += formatoDato("", 1)                               //Extranjero no obligado a cotizar pensión
+
+				diasLaborados := traerDiasCotizados(idPersona, idPreliquidacion, "salud")
+				if err != nil {
+					c.Data["json"] = map[string]string{"error": err.Error()}
+					c.ServeJSON()
+					return
+				}
+
+				filaPlanilla := models.PlanillaTipoE{
+					TipoRegistro:                    "02",
+					Secuencia:                       secuencia,
+					TipoDocumento:                   "CC",
+					NumeroIdentificacion:            value.Id,
+					TipoCotizante:                   1,
+					SubTipoCotizante:                0,
+					ExtranjeroNoPension:             "",
+					PrimerApellido:                  value.PrimerApellido,
+					SegundoApellido:                 value.SegundoApellido,
+					PrimerNombre:                    value.PrimerNombre,
+					SegundoNombre:                   value.SegundoNombre,
+					CodigoFondoPension:              traerCodigoEntidadSalud(strconv.Itoa(value.IdFondoPension)),
+					TrasladoPension:                 "",
+					CodigoEps:                       traerCodigoEntidadSalud(strconv.Itoa(value.IdEps)),
+					TrasladoEps:                     "",
+					CodigoCCF:                       "CCF24",
+					DiasLaborados:                   diasLaborados,
+					DiasPension:                     diasLaborados,
+					DiasSalud:                       traerDiasCotizados(idPersona, idPreliquidacion, "salud"),
+					DiasArl:                         informacionPagosArl[key]["dias"],
+					DiasCaja:                        informacionPagosCaja[key]["dias"],
+					SalarioBase:                     salariosBase[key],
+					SalarioIntegral:                 "",
+					Ibcension:                       ingresosCotizacion[key],
+					IbcSalud:                        ingresosCotizacion[key],
+					IbcArl:                          ingresosCotizacion[key],
+					IbcCcf:                          ingresosCotizacion[key],
+					TarifaPension:                   "0.16000",
+					PagoPension:                     informacionPagosPension[key]["valor"],
+					AportePension:                   informacionPagosPensionVoluntaria[key]["valor"],
+					TotalPension:                    informacionPagosPension[key]["valor"] + informacionPagosPensionVoluntaria[key]["valor"],
+					FondoSolidaridad:                informacionPagosFondoSoli[key]["valor"],
+					FondoSubsistencia:               informacionPagosFondoSoli[key]["valor"],
+					NoRetenidoAportesVolunarios:     0,
+					TarifaSalud:                     "0.12500",
+					PagoSalud:                       informacionPagosSalud[key]["valor"],
+					ValorUpc:                        informacionUpc[key],
+					AutorizacionEnfermedadGeneral:   "",
+					ValorIncapacidadGeneral:         0,
+					AutotizacionLicenciaMarternidad: "",
+					ValorLicenciaMaternidad:         0,
+					TarifaArl:                       "0.0052200",
+					CentroTrabajo:                   "1",
+					PagoArl:                         informacionPagosArl[key]["valor"],
+					TarifaCaja:                      "0.04000",
+					PagoCaja:                        informacionPagosCaja[key]["valor"],
+					TarifaSena:                      "0",
+					PagoSena:                        0,
+					TarifaIcbf:                      "0.03000",
+					PagoIcbf:                        informacionPagosIcbf[key]["valor"],
+					TarifaEsap:                      "0",
+					PagoEsap:                        0,
+					TarifaMen:                       "0",
+					PagoMen:                         0,
+					TipoDocumentoCotizantePrincipal: "",
+					DocumentoCotizantePrincipal:     "",
+					ExoneradoPagoSalud:              "N",
+					CodigoArl:                       "14-23",
+					ClaseRiesgo:                     "1",
+					IndicadorTarifaEspecialPension:  "",
+					FechasNovedades:                 "",
+					IbcOtrosParaFiscales:            ingresosCotizacion[key],
+					HorasLaboradas:                  diasLaborados * 8,
+					EspacioBlanco:                   "",
+				}
+
+				filasPlanilla = append(filasPlanilla, filaPlanilla)
 
 				establecerNovedadesExterior(idPersona, idPreliquidacion)
 
-				fila += formatoDato(value.PrimerApellido, 20)  //Primer apellido
-				fila += formatoDato(value.SegundoApellido, 30) //Segundo apellido
-				fila += formatoDato(value.PrimerNombre, 20)    //Primer nombre
-				fila += formatoDato(value.SegundoNombre, 30)   //Segundo nombre
-
 				establecerNovedades(idPersona, idPreliquidacion, cedulaPersona)
-
-				//Código de la administradora de fondo de pensiones a la cual pertenece el afiliado
-				codigoFondoPension = traerCodigoEntidadSalud(strconv.Itoa(value.IdFondoPension))
-				fila += codigoFondoPension
-
-				//Código de la admnistradora de pensiones a la cual se traslada el afiliado
-				// Si hay un translado, debe aparecer el nuevo código, de lo contrario será un campo vació
-				if trasladoAPensiones {
-					fila += formatoDato("230301", 6)
-				} else {
-					fila += formatoDato("", 6)
-				}
-
-				//Código EPS o EOC a la cual pertenece el afiliado
-				if codigoEps = traerCodigoEntidadSalud(strconv.Itoa(value.IdEps)); codigoEps == "      " {
-					fila += formatoDato("MIN001", 6)
-				} else {
-					fila += codigoEps
-				}
-
-				//Código EPS o EOC a la cual se traslada el afiliado
-				// Si hay un translado, debe aparecer el nuevo código, de lo contrario será un campo vació
-				if trasladoAEps {
-					fila += formatoDato("EPS012", 6)
-				} else {
-					fila += formatoDato("", 6)
-				}
-
-				// fila += traerCodigoEntidadSalud(strconv.Itoa(value.IdCajaCompensacion)) //Código CCF a la cual pertenece el afiliado
-				fila += formatoDato("CCF24", 6) //Código CCF a la cual pertenece el afiliado
-				diasLaborados, _ := strconv.Atoi(traerDiasCotizados(idPersona, idPreliquidacion, "salud"))
-				horasLaboradas = strconv.Itoa(diasLaborados * 8)
-
-				fila += traerDiasCotizados(idPersona, idPreliquidacion, "pension") // Número de días coitzados a pensión
-				fila += traerDiasCotizados(idPersona, idPreliquidacion, "salud")   // Número de días cotizados a salud
-				fila += formatoDato(completarSecuencia(diasArl, 2), 2)             // Número de días cotizados a arl
-				diasCaja, pagoCaja := traerDiasCotizadosEmpleador(idPersona, idPreliquidacion, strconv.Itoa(periodoPago.Id), "caja_compensacion")
-				fila += diasCaja // Número de días cotizados a caja de compensación
-
-				if contratistas {
-					err = getJson("http://"+beego.AppConfig.String("titanServicio")+
-						"/detalle_preliquidacion?limit=1"+
-						"&fields=ValorCalculado"+
-						"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",Concepto.NombreConcepto:honorarios,Persona:"+key, &preliquidacion)
-				} else {
-					err = getJson("http://"+beego.AppConfig.String("titanServicio")+
-						"/detalle_preliquidacion?limit=1"+
-						"&fields=ValorCalculado"+
-						"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",Concepto.NombreConcepto:salarioBase,Persona:"+key, &preliquidacion)
-				}
-
-				if err == nil {
-					salarioBase = int(preliquidacion[0].ValorCalculado)
-					fila += formatoDato(completarSecuencia(salarioBase, 9), 9) //Salario básico
-				}
-
-				fila += formatoDato("", 1) //Salario integral
-
-				err = getJson("http://"+beego.AppConfig.String("titanServicio")+
-					"/detalle_preliquidacion?limit=1"+
-					"&fields=ValorCalculado,Id"+
-					"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+
-					",Concepto.NombreConcepto:ibc_liquidado,Persona:"+idPersona, &preliquidacion)
-				if err == nil {
-					ibcLiquidadoTemp := int(preliquidacion[0].ValorCalculado)
-					fila += formatoDato(completarSecuencia(ibcLiquidadoTemp, 9), 9) //IBC pensión
-					fila += formatoDato(completarSecuencia(ibcLiquidadoTemp, 9), 9) //IBC salud
-					fila += formatoDato(completarSecuencia(ibcLiquidadoTemp, 9), 9) //IBC ARL
-					fila += formatoDato(completarSecuencia(ibcLiquidadoTemp, 9), 9) //IBC CCF
-					ibcLiquidado = fmt.Sprint(ibcLiquidadoTemp)
-				}
-
-				fila += formatoDato("0.16000", 7) //Tarifa de aportes pensiones
-
-				// Aquí se traen todos los valores totales a pagar correspondientes a seguridad social
-				// (revisar comentarios de la función traerDiasCotizadosEmpleador(idPersona, idPreliquidacion, idPeriodoPago, tipo_pago) )
-				_, pagoPension = traerDiasCotizadosEmpleador(idPersona, idPreliquidacion, strconv.Itoa(periodoPago.Id), "pension_ud")
-				_, pagoSalud = traerDiasCotizadosEmpleador(idPersona, idPreliquidacion, strconv.Itoa(periodoPago.Id), "salud_ud")
-				_, pagoIcbf = traerDiasCotizadosEmpleador(idPersona, idPreliquidacion, strconv.Itoa(periodoPago.Id), "icbf")
-				_, pagoArl = traerDiasCotizadosEmpleador(idPersona, idPreliquidacion, strconv.Itoa(periodoPago.Id), "arl")
-
-				fila += formatoDato(completarSecuenciaString(pagoPension, 9), 9) // Cotización obligatoria a pensiones
 
 				// Aporte voluntario del afiliado al fondo de pensiones
 				err = getJson("http://"+beego.AppConfig.String("titanServicio")+
@@ -360,79 +437,9 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				if err != nil {
 					fila += formatoDato(completarSecuencia(0, 9), 9)
 				} else {
-					valorAporteVoluntarioPension := 0.0
-					filaAporteVoluntarioPension := formatoDato(completarSecuencia(0, 9), 9)
-					for i := 0; i < len(preliquidacion); i++ {
-						tempMap := preliquidacion[i]
-						valorCalculado := strconv.FormatFloat(tempMap.ValorCalculado, 'E', -1, 64)
-						switch tempMap.Concepto.NombreConcepto {
-						// se busca asignar el valor calculado de alguno de estos conceptos,
-						// En caso de que alguno exista en el detalle_preliquidación, se cambia el valor de la fila
-						// y se cambia el valor del aporte voluntario, para luego asignar la fila y sumar el aporte voluntario con el total
-						// de cotización a pensión
-						case "nombreRegla2176":
-							filaAporteVoluntarioPension = formatoDato(valorCalculado, 9)
-							valorAporteVoluntarioPension = tempMap.ValorCalculado
-						case "nombreRegla2178":
-							filaAporteVoluntarioPension = formatoDato(valorCalculado, 9)
-							valorAporteVoluntarioPension = tempMap.ValorCalculado
-						case "nombreRegla2173":
-							filaAporteVoluntarioPension = formatoDato(valorCalculado, 9)
-							valorAporteVoluntarioPension = tempMap.ValorCalculado
-						}
-					}
-					fila += filaAporteVoluntarioPension
-					auxPagoPension, _ := strconv.Atoi(pagoPension)
-					totalPagoPension = int(valorAporteVoluntarioPension) + auxPagoPension
-					fila += formatoDato(completarSecuencia(0, 9), 9)                                    // Aporte voluntario del aportante al fondo de pensiones obligatoria
-					fila += formatoDato(completarSecuencia(totalPagoPension, 9), 9)                     // Total cotización Sistema General de Pensiones
-					fila += traerValorConceptoEmpleado(idPersona, idPreliquidacion, "fondoSolidaridad") // Aportes a fondo de solidaridad pensional subcuenta de solidaridad
-					fila += traerValorConceptoEmpleado(idPersona, idPreliquidacion, "fondoSolidaridad") // Aportes a fondo de solidaridad pensional subcuenta de subsistencia
-					fila += formatoDato(completarSecuencia(0, 9), 9)                                    // Valor no retenido por aportes voluntarios
-					fila += formatoDato("0.12500", 7)                                                   // Tarifa de aportes salud
-					fila += formatoDato(completarSecuenciaString(pagoSalud, 9), 9)                      // Cotización obligatoria a salud
 
-					valorUpc = buscarUpcAsociada(idPersona)
-					fila += valorUpc                                 //Valor UPC Adicional
-					fila += formatoDato("", 15)                      //Nº de autorización de la incapacidad por enfermedad general
-					fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de la incapacidad por enfermedad general
-					fila += formatoDato("", 15)                      //Nº de autorización de la licencia de maternidad o paternidad
-					fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de la licencia de maternidad
-
-					fila += formatoDato("0.0052200", 9) //Tarifa de aportes a Riegos Laborales
-
-					fila += formatoDato("        1", 9)                          // Centro de trabajo CT
-					fila += formatoDato(completarSecuenciaString(pagoArl, 9), 9) // Cotización obligatoria a sistema de riesgos laborales
-
-					fila += formatoDato("0.04000", 7)                             // Tarifa de aportes CCF
-					fila += formatoDato(completarSecuenciaString(pagoCaja, 9), 9) // Cotización obligatoria a salud
-
-					fila += formatoDato(completarSecuencia(0, 7), 7) // Tarifa de aportes SENA
-					fila += formatoDato(completarSecuencia(0, 9), 9) // Valor Aportes SENA
-
-					fila += formatoDato("0.03000", 7)                             //Tarifa de aportes ICBF
-					fila += formatoDato(completarSecuenciaString(pagoIcbf, 9), 9) // Cotización obligatoria a salud
-
-					fila += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes ESAP
-					fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de aporte ESAP
-					fila += formatoDato(completarSecuencia(0, 7), 7) //Tarifa de aportes MEN
-					fila += formatoDato(completarSecuencia(0, 9), 9) //Valor de aporte MEN
-
-					// Estos campos están vacios porque solo aplican a los registros que son upc
-					fila += formatoDato("", 2)  // Tipo de documento del cotizante principal
-					fila += formatoDato("", 16) // Número de identificación del cotizante principal
-
-					fila += formatoDato("N", 1)     // Cotizante exonerado de pago de aporte salud, SENA e ICBF - Ley 1607 de 2012
-					fila += formatoDato("14-23", 6) // Código de la administradora de Riesgos Laborales a la cual pertenece el afiliado
-					fila += formatoDato("1", 1)     // Clase de Riesgo en la que se encuentra el afiliado
-					fila += formatoDato("", 1)      // Indicador tarifa especial pensiones (Actividades de alto riesgo, Senadores, CTI y Aviadores aplican)
-
-					fila += formatoDato("", 150) // Columnas que corresponden a las fechas de las novedades
-
-					fila += formatoDato(completarSecuenciaString(ibcLiquidado, 9), 9) //IBC otros parafiscales difenrentes a CCF
-					fila += formatoDato(horasLaboradas, 3)
 					fila += formatoDato("", 26)
-					//					beego.Info(fila)
+
 					fila += "\n" // siguiente persona...
 					filas += fila
 					secuencia++
@@ -468,6 +475,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 			respuestaJSON := make(map[string]interface{})
 			respuestaJSON["informacion"] = filas
 			c.Data["json"] = respuestaJSON
+			c.Data["json"] = filasPlanilla
 		} else {
 			log.Println("Fallo la generación de la planilla")
 			c.Data["json"] = err.Error()
@@ -689,8 +697,6 @@ func calcularValoresAux(pagoCompleto bool, idPersona string, ibc int) *models.Pa
 
 	reglas := CrearReglas(pagoCompleto) + FormatoReglas(predicados)
 
-	// beego.Info("reglas: ", reglas)
-
 	idProveedor := golog.GetInt64(reglas, "v_total_salud(X,T).", "X")
 	saludTotal := golog.GetInt64(reglas, "v_total_salud(X,T).", "T")
 	pensionTotal := golog.GetInt64(reglas, "v_total_pen(X,T).", "T")
@@ -712,7 +718,7 @@ func calcularValoresAux(pagoCompleto bool, idPersona string, ibc int) *models.Pa
 			Icbf:                    icbf[index],
 			IdPreliquidacion:        0,
 			IdDetallePreliquidacion: 0,
-			Arl: arl[index]}
+			Arl:                     arl[index]}
 	}
 	return pago
 }
@@ -749,43 +755,40 @@ func calcularIbc(idPersona, documentoPersona, novedad, idPreliquidacion string) 
 	infoRequest["Ano"] = anioPeriodo
 	infoRequest["Mes"] = mesPeriodo
 
-	// beego.Info(infoRequest)
-
-	//beego.Info("http://" + beego.AppConfig.String("titanMidService") + "/preliquidacion/get_ibc_novedad")
 	err = sendJson("http://"+beego.AppConfig.String("titanMidService")+"/preliquidacion/get_ibc_novedad", "POST", &respuestaAPI, infoRequest)
 	if err != nil {
 		ImprimirError("error en calcularIbc()", err)
 	}
 
-	//beego.Info(int(respuestaAPI.(float64)))
 	return int(respuestaAPI.(float64))
 }
 
 // buscarUpcAsociada busca todas las upc asociadas a esa persona
-// devuelve el valor total de las upc asociadas a esa persona
-func buscarUpcAsociada(idPersona string) string {
+// devuelve un mapa cuya llave es la persona asociada a la upc y el valor del mapa es el valor de la(s) upc asocaida a la persona
+func buscarUpcAsociada() (map[string]int, error) {
 	var beneficiariosAdicionales []models.UpcAdicional
+	mapaBeneficiarios := make(map[string]int)
 
 	err := getJson("http://"+beego.AppConfig.String("segSocialService")+
 		"/upc_adicional"+
-		"?limit=0"+
-		"&query=PersonaAsociada:"+idPersona, &beneficiariosAdicionales)
+		"?limit=-1", &beneficiariosAdicionales)
 	if err != nil {
 		ImprimirError("error en buscarUpcAsociada()", err)
+		return nil, err
 	}
-	valorTotalBeneficiariosAdc := 0
-	if beneficiariosAdicionales[0].Id != 0 { // Esto es para verificar que el arreglo que devuelve el servicio tiene al menos un elemento con valor
+
+	if beneficiariosAdicionales[0].Id > 0 { // Esto es para verificar que el arreglo que devuelve el servicio tiene al menos un elemento con valor
 		for _, beneficiario := range beneficiariosAdicionales {
-			valorTotalBeneficiariosAdc += int(beneficiario.TipoUpc.Valor)
+			mapaBeneficiarios[strconv.Itoa(beneficiario.PersonaAsociada)] += int(beneficiario.TipoUpc.Valor)
 		}
 	}
-	return formatoDato(completarSecuencia(valorTotalBeneficiariosAdc, 9), 9)
+	return mapaBeneficiarios, nil
 }
 
 // traerDiasCotizados función para trer los días cotizados, tipoPago debe tener el mismo nombre que un concepto_nomina en titán
 // duelve:
 // diasLiquidados: días coritzados del tipo de pago
-func traerDiasCotizados(idPersona, idPreliquidacion, tipoPago string) string {
+func traerDiasCotizados(idPersona, idPreliquidacion, tipoPago string) int {
 
 	var detallePreliquidacion []models.DetallePreliquidacion
 
@@ -804,8 +807,8 @@ func traerDiasCotizados(idPersona, idPreliquidacion, tipoPago string) string {
 	if detallePreliquidacion != nil {
 		dias = int(detallePreliquidacion[0].DiasLiquidados)
 	}
-	diasLiquidados := formatoDato(completarSecuencia(dias, 2), 2)
-	return diasLiquidados
+
+	return dias
 }
 
 // traerValorConceptoEmpleado trae el valor de un concepto que tenga que pagar el empleado
@@ -831,31 +834,19 @@ func traerValorConceptoEmpleado(idPersona, idPreliquidacion, tipoPago string) st
 	return formatoDato(completarSecuencia(valorPagoAproximado, 9), 9)
 }
 
-// traerDiasCotizadosEmpleador trae los días cotizados correspondientes al pago del emplador
+// traerDiasCotizadosEmpleador trae los días cotizados correspondientes al pago del empleador
 // devuelve
 // diasCotizados: días cotizados del tipo de pago
 // valorTipoPago: valor del tipo de pago por parte de la universidad
 // valorTotalPago: valor total del tipo de pago (sumando lo del empleado y la universidad)
-func traerDiasCotizadosEmpleador(idPersona, idPreliquidacion, periodoPago, tipoPago string) (string, string) {
+func traerDiasCotizadosEmpleador(idPreliquidacion, periodoPago, tipoPago string) (map[string]map[string]int, error) {
 	var (
-		pago                  []models.Pago
-		detallePreliquidacion []models.DetallePreliquidacion
-		conceptoNomina        []models.ConceptoNomina
+		pago           []models.Pago
+		conceptoNomina []models.ConceptoNomina
 	)
-
-	valorTipoPagoTemp := GetPagoEmpleado(idPersona, idPreliquidacion, tipoPago)
+	infoPago := make(map[string]map[string]int)
 
 	err := getJson("http://"+beego.AppConfig.String("titanServicio")+
-		"/detalle_preliquidacion"+
-		"?limit=1"+
-		"&query=Persona:"+idPersona+
-		",Preliquidacion.Id:"+idPreliquidacion+
-		",Concepto.NombreConcepto:ibc_liquidado", &detallePreliquidacion)
-	if err != nil {
-		ImprimirError("error en traerDiasCotizadosEmpleador()", err)
-	}
-
-	err = getJson("http://"+beego.AppConfig.String("titanServicio")+
 		"/concepto_nomina"+
 		"?limit=1"+
 		"&query=NaturalezaConcepto.Nombre:seguridad_social"+
@@ -864,23 +855,43 @@ func traerDiasCotizadosEmpleador(idPersona, idPreliquidacion, periodoPago, tipoP
 		ImprimirError("error en traerDiasCotizadosEmpleador()", err)
 	}
 
+	if conceptoNomina == nil {
+		err := getJson("http://"+beego.AppConfig.String("titanServicio")+
+			"/concepto_nomina"+
+			"?limit=1"+
+			"&query=NombreConcepto:"+tipoPago, &conceptoNomina)
+		if err != nil {
+			ImprimirError("error en traerDiasCotizadosEmpleador()", err)
+		}
+	}
+
 	err = getJson("http://"+beego.AppConfig.String("segSocialService")+
 		"/pago"+
 		"?limit=1"+
-		"&query=DetalleLiquidacion:"+strconv.Itoa(detallePreliquidacion[0].Id)+
+		"&query=DetalleLiquidacion:"+idPreliquidacion+
 		",PeriodoPago.Id:"+periodoPago+
 		",TipoPago:"+strconv.Itoa(conceptoNomina[0].Id), &pago)
 	if err != nil {
 		ImprimirError("error en traerDiasCotizadosEmpleador()", err)
+		return nil, err
 	}
 
-	diasCotizados := "00"
-	valorTotalPago := formatoDato(completarSecuencia(valorTipoPagoTemp+int(pago[0].Valor), 9), 9)
+	for _, value := range detallePreliquidacion {
+		auxiliarMap := make(map[string]int) // map con la información interna
+		idProveedor := strconv.Itoa(value.Persona)
+		valorTipoPagoTemp := GetPagoEmpleado(idProveedor, idPreliquidacion, tipoPago)
 
-	if pago[0].EntidadPago != 0 {
-		diasCotizados = formatoDato(completarSecuenciaString(traerDiasCotizados(idPersona, idPreliquidacion, "salud"), 2), 2)
+		auxiliarMap["valor"] += valorTipoPagoTemp + int(pago[0].Valor)
+		auxiliarMap["dias"] = 0
+
+		if pago[0].EntidadPago != 0 {
+			auxiliarMap["dias"] = traerDiasCotizados(idProveedor, idPreliquidacion, "salud")
+
+		}
+		infoPago[idProveedor] = auxiliarMap
 	}
-	return diasCotizados, valorTotalPago
+
+	return infoPago, nil
 }
 
 func establecerNovedadesExterior(idPersona, idPreliquidacion string) {
@@ -921,7 +932,6 @@ func establecerNovedades(idPersona, idPreliquidacion, cedulaPersona string) {
 		fechaFinTemp string
 	)
 
-	// fechaIngresoTemp := revisarIngreso(idPreliquidacion, cedulaPersona)
 	fechaIngresoTemp := contratosElaboradosPeriodo[cedulaPersona]
 
 	err := getJson("http://"+beego.AppConfig.String("titanServicio")+
@@ -1129,30 +1139,35 @@ func traerCodigoEntidadSalud(idEntidad string) string {
 // GetPagoEmpleado obtiene los pagos correspondientes de salud y pensión del empleado
 func GetPagoEmpleado(idPersona, idPreliquidacion, tipoPago string) (valorPago int) {
 	var detallePreliquidacion []models.DetallePreliquidacion
+	var acumuladorPago float64
 	switch tipoPago {
 	case "salud_ud":
 		err := getJson("http://"+beego.AppConfig.String("titanServicio")+
 			"/detalle_preliquidacion"+
-			"?limit=1"+
+			"?limit=0"+
 			"&query=Persona:"+idPersona+
 			",Preliquidacion.Id:"+idPreliquidacion+
 			",Concepto.NombreConcepto:salud", &detallePreliquidacion)
 		if err != nil {
 			ImprimirError("error en traerDiasCotizadosEmpleador()", err)
 		}
-		valorPago = AproximarPesoSuperior(detallePreliquidacion[0].ValorCalculado, 100)
+
 	case "pension_ud":
 		err := getJson("http://"+beego.AppConfig.String("titanServicio")+
 			"/detalle_preliquidacion"+
-			"?limit=1"+
+			"?limit=0"+
 			"&query=Persona:"+idPersona+
 			",Preliquidacion.Id:"+idPreliquidacion+
 			",Concepto.NombreConcepto:salud", &detallePreliquidacion)
 		if err != nil {
 			ImprimirError("error en traerDiasCotizadosEmpleador()", err)
 		}
-		valorPago = AproximarPesoSuperior(detallePreliquidacion[0].ValorCalculado, 100)
+
 	}
+	for _, value := range detallePreliquidacion {
+		acumuladorPago += value.ValorCalculado
+	}
+	valorPago = AproximarPesoSuperior(acumuladorPago, 100)
 	return
 }
 

@@ -1,10 +1,12 @@
 package controllers
 
 import (
-	"strconv"
 	"fmt"
+	"strconv"
+
 	"github.com/astaxie/beego"
 	"github.com/manucorporat/try"
+	"github.com/udistrital/ss_mid_api/models"
 )
 
 // IncapacidadesController operations for Incapacidades
@@ -28,24 +30,22 @@ func (c *IncapacidadesController) GetPersonas() {
 	var proveedores, contratos, personaNatural, respuesta []map[string]interface{}
 	documento := c.GetString("documento")
 	try.This(func() {
-		if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"/informacion_proveedor?"+
+		if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"informacion_proveedor?"+
 			"limit=6&query=NumDocumento__icontains:"+documento+",TipoPersona:NATURAL", &proveedores); err != nil {
 			panic(err)
 		}
 
 		for _, proveedor := range proveedores {
-			id := strconv.Itoa(int(proveedor["Id"].(float64)))
-			if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"/contrato_general?"+
-				"query=Estado:true,Contratista:"+id+"&fields=Id,VigenciaContrato", &contratos); err != nil {
+			idProveedor := strconv.Itoa(int(proveedor["Id"].(float64)))
+			if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"contrato_general?"+
+				"query=Estado:true,Contratista:"+idProveedor+"&fields=Id,VigenciaContrato", &contratos); err != nil {
 				fmt.Println("error en contrato general")
-				//beego.Error("error en contrato general")
 				panic(err)
 			}
 
-			if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"/informacion_persona_natural?"+
+			if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"informacion_persona_natural?"+
 				"limit=1&query=Id:"+proveedor["NumDocumento"].(string), &personaNatural); err != nil {
 				fmt.Println("error en contrato informacion_persona_natural")
-				//beego.Error("error en contrato informacion_persona_natural")
 				panic(err)
 			}
 
@@ -68,7 +68,7 @@ func (c *IncapacidadesController) GetPersonas() {
 				"documento":     proveedor["NumDocumento"],
 				"contratos":     contratosPropios,
 				"tipoDocumento": personaNatural[0]["TipoDocumento"].(map[string]interface{})["Abreviatura"],
-				"idProveedor":   id,
+				"idProveedor":   idProveedor,
 			}
 
 			respuesta = append(respuesta, resp)
@@ -76,12 +76,12 @@ func (c *IncapacidadesController) GetPersonas() {
 		if respuesta == nil {
 			respuesta = append(respuesta, map[string]interface{}{})
 		}
+
 		c.Data["json"] = respuesta
 
 	}).Catch(func(e try.E) {
 		fmt.Println("Error en GetPersonas() ", e)
-		//beego.Error("Error en GetPersonas() ", e)
-		c.Data["json"] = []map[string]interface{}{}
+		c.Data["json"] = models.Alert{Code: "error"}
 	})
 	c.ServeJSON()
 }

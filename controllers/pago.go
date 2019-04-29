@@ -204,10 +204,8 @@ func (c *PagoController) CalcularSegSocial() {
 
 		err := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
 			"?limit=-1&query=Preliquidacion.Id:"+idStr+",Concepto.NombreConcepto:ibc_liquidado", &detallePreliquidacion)
-
 		if err != nil {
-			fmt.Println(err)
-			//beego.Error(err)
+			ImprimirError("error en CalcularSegSocial()", err)
 			alertas = append(alertas, "error al traer detalle liquidacion")
 			c.Data["json"] = alertas
 		} else {
@@ -284,8 +282,7 @@ func valorPagoFondoSolidaridad(persona, idNomina string) float64 {
 		&conceptoNominaPorPersona)
 
 	if err != nil {
-		fmt.Println("error en valorPagoFondoSolidaridad ", err.Error())
-		//beego.Error("error en valorPagoFondoSolidaridad ", err.Error())
+		ImprimirError("error en valorPagoFondoSolidaridad() ", err)
 		return valorFondo
 	}
 	if len(conceptoNominaPorPersona) > 0 {
@@ -570,7 +567,7 @@ func GetInfoPersona(proveedores map[string]models.InformacionProveedor) (map[str
 	return personas, nil
 }
 
-// GetInfoCaja revisa si el proveedor tiene una caja de compensación asociada
+// ComporarCajaProveedor revisa si el proveedor tiene una caja de compensación asociada
 func ComporarCajaProveedor(cedulaProveedor string) (tieneCaja bool, err error) {
 	var persona models.InformacionPersonaNatural
 	err = getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_persona_natural/"+cedulaProveedor, &persona)
@@ -584,8 +581,8 @@ func ComporarCajaProveedor(cedulaProveedor string) (tieneCaja bool, err error) {
 	return
 }
 
-/* GetPagosSeguridadSocial
-busca todos los pagos correspondientes a seguridad social en los
+/*
+GetPagosSeguridadSocial busca todos los pagos correspondientes a seguridad social en los
 conceptos de titan y devuelve un mapa cuya llave es el nombre del pago y el valor es el id del pago
 */
 func GetPagosSeguridadSocial() (map[int]string, error) {
