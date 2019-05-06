@@ -114,7 +114,7 @@ var (
 	fechaFinNovedad time.Time
 
 	tipoRegistro = "02"
-	secuencia    = 1
+	secuencia    = 0
 
 	contratosElaboradosPeriodo map[string]time.Time
 	actasInicioPeriodo         map[string]map[string]interface{}
@@ -200,7 +200,7 @@ func getValorConcepto(preliquidacion string, concepto string) (map[string]int, e
 	}
 
 	for _, value := range detallesPreliquidacion {
-		fmt.Println("value: ", value)
+		// fmt.Println("value: ", value)
 		salariosBase[strconv.Itoa(value.Persona)] += int(value.ValorCalculado)
 	}
 	return salariosBase, nil
@@ -212,11 +212,17 @@ func getValorConcepto(preliquidacion string, concepto string) (map[string]int, e
 // @Param	body body PeriodoPago true	"body for PeriodoPago"
 // @Success 200 {string} string
 // @Failure 403 body is empty
-// @router /GenerarPlanillaActivos [post]
+// @router /GenerarPlanillaActivos/:limit/:offset [post]
 func (c *PlanillasController) GenerarPlanillaActivos() {
+	secuencia = 1
 	start := time.Now()
 
 	var filasPlanilla []models.PlanillaTipoE
+
+	limit := c.Ctx.Input.Param(":limit")
+	offset := c.Ctx.Input.Param(":offset")
+
+	log.Println(limit, offset)
 
 	log.Println("Comenzó a generar la planilla")
 	var (
@@ -235,14 +241,20 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 			c.Data["json"] = map[string]string{
 				"error": err.Error(),
 			}
+			log.Println("error: ", err.Error())
 			c.ServeJSON()
 			return
 		}
-
+		fmt.Println("http://" + beego.AppConfig.String("titanServicio") + "/detalle_preliquidacion?" +
+			"limit=" + limit +
+			"&query=Preliquidacion.Id:" + strconv.Itoa(periodoPago.Liquidacion) +
+			",Concepto.NombreConcepto:ibc_liquidado" +
+			"&sortby=Persona&order=asc&offset=" + offset)
 		if err = getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion?"+
-			"limit=-1"+
+			"limit="+limit+
 			"&query=Preliquidacion.Id:"+strconv.Itoa(periodoPago.Liquidacion)+
-			",Concepto.NombreConcepto:ibc_liquidado", &detallePreliquidacion); err == nil {
+			",Concepto.NombreConcepto:ibc_liquidado"+
+			"&sortby=Persona&order=asc&offset="+offset, &detallePreliquidacion); err == nil {
 
 			if periodoPago.TipoLiquidacion == "CT" || periodoPago.TipoLiquidacion == "HCH" {
 				contratistas = true
@@ -422,6 +434,8 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					EspacioBlanco:                   "",
 				}
 
+				log.Println("filaPlanilla: ", filaPlanilla.NumeroIdentificacion)
+
 				filasPlanilla = append(filasPlanilla, filaPlanilla)
 
 				establecerNovedadesExterior(idPersona, idPreliquidacion)
@@ -483,7 +497,9 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 
 	} else {
 		log.Println("Fallo la generación de la planilla")
-		c.Data["json"] = err.Error()
+		c.Data["json"] = map[string]string{
+			"error": err.Error(),
+		}
 	}
 	c.ServeJSON()
 }
