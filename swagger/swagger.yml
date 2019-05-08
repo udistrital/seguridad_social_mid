@@ -129,7 +129,7 @@ paths:
           description: '{int} models.PeriodoPago'
         "403":
           description: body is empty
-  /pagoCalcularSegSocial/{id}:
+  /pago/CalcularSegSocial/{id}:
     get:
       tags:
       - pago
@@ -148,7 +148,7 @@ paths:
             type: array
             items:
               $ref: '#/definitions/.PagoSeguridadSocial'
-  /pagoCalcularSegSocialHonorarios/{idPreliquidacion}:
+  /pago/CalcularSegSocialHonorarios/{idPreliquidacion}:
     get:
       tags:
       - pago
@@ -175,7 +175,7 @@ paths:
       description: Obtiene todos los conceptos IBC del ruler y los cruza con los conceptos
         de nómina
       operationId: PagoController.ConceptosIbc
-  /pagoGetInfoCabecera/{idPreliquidacion}:
+  /pago/GetInfoCabecera/{idPreliquidacion}:
     get:
       tags:
       - pago
@@ -187,7 +187,7 @@ paths:
         description: periodo
         schema:
           $ref: '#/definitions/.del'
-  /pagoNovedadesPorPersona/{persona}:
+  /pago/NovedadesPorPersona/{persona}:
     get:
       tags:
       - pago
@@ -201,7 +201,7 @@ paths:
             type: array
             items:
               $ref: '#/definitions/models.NovedadesPersonaSS'
-  /pagoSumarPagosSalud/{idPeriodoPago}:
+  /pago/SumarPagosSalud/{idPeriodoPago}:
     get:
       tags:
       - pago
