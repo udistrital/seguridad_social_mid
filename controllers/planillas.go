@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/rand"
 	"strconv"
 	"time"
 
@@ -23,6 +24,7 @@ type PlanillasController struct {
 // URLMapping ...
 func (c *PlanillasController) URLMapping() {
 	c.Mapping("GenerarPlanillaActivos", c.GenerarPlanillaActivos)
+	c.Mapping("PruebaPlanilla", c.PruebaPlanilla)
 }
 
 var (
@@ -206,6 +208,22 @@ func getValorConcepto(preliquidacion string, concepto string) (map[string]int, e
 	return salariosBase, nil
 }
 
+// PruebaPlanilla ...
+// @Title Generar planilla de activos
+// @Description Recibe un periodo pago y devuelve un arreglo de json con la información de la planilla
+// @Param	body body PeriodoPago true	"body for PeriodoPago"
+// @Success 200 {string} string
+// @Failure 403 body is empty
+// @router /PruebaPlanilla/:limit [get]
+func (c *PlanillasController) PruebaPlanilla() {
+	limit := c.Ctx.Input.Param(":limit")
+	num := rand.Intn(100)
+	fmt.Println(num)
+	fmt.Println(limit)
+	c.Data["json"] = map[string]int{"test": num}
+	c.ServeJSON()
+}
+
 // GenerarPlanillaActivos ...
 // @Title Generar planilla de activos
 // @Description Recibe un periodo pago y devuelve un arreglo de json con la información de la planilla
@@ -238,18 +256,12 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 
 		err = getInfoContratosElaboradoTipoFecha(anioPeriodo, mesPeriodo, periodoPago.TipoLiquidacion)
 		if err != nil {
-			c.Data["json"] = map[string]string{
-				"error": err.Error(),
-			}
+			c.Data["json"] = map[string]string{"error": err.Error()}
 			log.Println("error: ", err.Error())
 			c.ServeJSON()
 			return
 		}
-		fmt.Println("http://" + beego.AppConfig.String("titanServicio") + "/detalle_preliquidacion?" +
-			"limit=" + limit +
-			"&query=Preliquidacion.Id:" + strconv.Itoa(periodoPago.Liquidacion) +
-			",Concepto.NombreConcepto:ibc_liquidado" +
-			"&sortby=Persona&order=asc&offset=" + offset)
+
 		if err = getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion?"+
 			"limit="+limit+
 			"&query=Preliquidacion.Id:"+strconv.Itoa(periodoPago.Liquidacion)+
@@ -269,18 +281,14 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 
 			salariosBase, err := getValorConcepto(strconv.Itoa(periodoPago.Liquidacion), concepto)
 			if err != nil {
-				c.Data["json"] = map[string]string{
-					"error": err.Error(),
-				}
+				c.Data["json"] = map[string]string{"error": err.Error()}
 				c.ServeJSON()
 				return
 			}
 
 			ingresosCotizacion, err := getValorConcepto(strconv.Itoa(periodoPago.Liquidacion), "ibc_liquidado")
 			if err != nil {
-				c.Data["json"] = map[string]string{
-					"error": err.Error(),
-				}
+				c.Data["json"] = map[string]string{"error": err.Error()}
 				c.ServeJSON()
 				return
 			}
@@ -350,9 +358,11 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				return
 			}
 
+			contPersonas := 0
+
 			for key, value := range mapPersonas {
 				var (
-					preliquidacion []models.DetallePreliquidacion
+				// preliquidacion []models.DetallePreliquidacion
 				)
 				idPersona := key //idProveedor
 
@@ -368,123 +378,124 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				}
 
 				filaPlanilla := models.PlanillaTipoE{
-					TipoRegistro:                    "02",
-					Secuencia:                       secuencia,
-					TipoDocumento:                   "CC",
-					NumeroIdentificacion:            value.Id,
-					TipoCotizante:                   1,
-					SubTipoCotizante:                0,
-					ExtranjeroNoPension:             "",
-					PrimerApellido:                  value.PrimerApellido,
-					SegundoApellido:                 value.SegundoApellido,
-					PrimerNombre:                    value.PrimerNombre,
-					SegundoNombre:                   value.SegundoNombre,
-					CodigoFondoPension:              traerCodigoEntidadSalud(strconv.Itoa(value.IdFondoPension)),
-					TrasladoPension:                 "",
-					CodigoEps:                       traerCodigoEntidadSalud(strconv.Itoa(value.IdEps)),
-					TrasladoEps:                     "",
-					CodigoCCF:                       "CCF24",
-					DiasLaborados:                   diasLaborados,
-					DiasPension:                     diasLaborados,
-					DiasSalud:                       traerDiasCotizados(idPersona, idPreliquidacion, "salud"),
-					DiasArl:                         informacionPagosArl[key]["dias"],
-					DiasCaja:                        informacionPagosCaja[key]["dias"],
-					SalarioBase:                     salariosBase[key],
-					SalarioIntegral:                 "",
-					Ibcension:                       ingresosCotizacion[key],
-					IbcSalud:                        ingresosCotizacion[key],
-					IbcArl:                          ingresosCotizacion[key],
-					IbcCcf:                          ingresosCotizacion[key],
-					TarifaPension:                   "0.16000",
-					PagoPension:                     informacionPagosPension[key]["valor"],
-					AportePension:                   informacionPagosPensionVoluntaria[key]["valor"],
-					TotalPension:                    informacionPagosPension[key]["valor"] + informacionPagosPensionVoluntaria[key]["valor"],
-					FondoSolidaridad:                informacionPagosFondoSoli[key]["valor"],
-					FondoSubsistencia:               informacionPagosFondoSoli[key]["valor"],
-					NoRetenidoAportesVolunarios:     0,
-					TarifaSalud:                     "0.12500",
-					PagoSalud:                       informacionPagosSalud[key]["valor"],
-					ValorUpc:                        informacionUpc[key],
-					AutorizacionEnfermedadGeneral:   "",
-					ValorIncapacidadGeneral:         0,
-					AutotizacionLicenciaMarternidad: "",
-					ValorLicenciaMaternidad:         0,
-					TarifaArl:                       "0.0052200",
-					CentroTrabajo:                   "1",
-					PagoArl:                         informacionPagosArl[key]["valor"],
-					TarifaCaja:                      "0.04000",
-					PagoCaja:                        informacionPagosCaja[key]["valor"],
-					TarifaSena:                      "0",
-					PagoSena:                        0,
-					TarifaIcbf:                      "0.03000",
-					PagoIcbf:                        informacionPagosIcbf[key]["valor"],
-					TarifaEsap:                      "0",
-					PagoEsap:                        0,
-					TarifaMen:                       "0",
-					PagoMen:                         0,
-					TipoDocumentoCotizantePrincipal: "",
-					DocumentoCotizantePrincipal:     "",
-					ExoneradoPagoSalud:              "N",
-					CodigoArl:                       "14-23",
-					ClaseRiesgo:                     "1",
-					IndicadorTarifaEspecialPension:  "",
-					FechasNovedades:                 "",
-					IbcOtrosParaFiscales:            ingresosCotizacion[key],
-					HorasLaboradas:                  diasLaborados * 8,
-					EspacioBlanco:                   "",
+					TipoRegistro:                    models.Columna{Valor: "02", Longitud: 2},
+					TipoDocumento:                   models.Columna{Valor: "CC", Longitud: 2},
+					NumeroIdentificacion:            models.Columna{Valor: value.Id, Longitud: 16},
+					TipoCotizante:                   models.Columna{Valor: 1, Longitud: 2},
+					SubTipoCotizante:                models.Columna{Valor: 0, Longitud: 2},
+					ExtranjeroNoPension:             models.Columna{Valor: "", Longitud: 1},
+					PrimerApellido:                  models.Columna{Valor: value.PrimerApellido, Longitud: 20},
+					SegundoApellido:                 models.Columna{Valor: value.SegundoApellido, Longitud: 30},
+					PrimerNombre:                    models.Columna{Valor: value.PrimerNombre, Longitud: 20},
+					SegundoNombre:                   models.Columna{Valor: value.SegundoNombre, Longitud: 30},
+					CodigoFondoPension:              models.Columna{Valor: traerCodigoEntidadSalud(strconv.Itoa(value.IdFondoPension)), Longitud: 6},
+					TrasladoPension:                 models.Columna{Valor: "", Longitud: 6},
+					CodigoEps:                       models.Columna{Valor: traerCodigoEntidadSalud(strconv.Itoa(value.IdEps)), Longitud: 6},
+					TrasladoEps:                     models.Columna{Valor: "", Longitud: 6},
+					CodigoCCF:                       models.Columna{Valor: "CCF24", Longitud: 6},
+					DiasLaborados:                   models.Columna{Valor: diasLaborados, Longitud: 2},
+					DiasPension:                     models.Columna{Valor: diasLaborados, Longitud: 2},
+					DiasSalud:                       models.Columna{Valor: traerDiasCotizados(idPersona, idPreliquidacion, "salud"), Longitud: 2},
+					DiasArl:                         models.Columna{Valor: informacionPagosArl[key]["dias"], Longitud: 2},
+					DiasCaja:                        models.Columna{Valor: informacionPagosCaja[key]["dias"], Longitud: 2},
+					SalarioBase:                     models.Columna{Valor: salariosBase[key], Longitud: 9},
+					SalarioIntegral:                 models.Columna{Valor: "", Longitud: 1},
+					Ibcension:                       models.Columna{Valor: ingresosCotizacion[key], Longitud: 9},
+					IbcSalud:                        models.Columna{Valor: ingresosCotizacion[key], Longitud: 9},
+					IbcArl:                          models.Columna{Valor: ingresosCotizacion[key], Longitud: 9},
+					IbcCcf:                          models.Columna{Valor: ingresosCotizacion[key], Longitud: 9},
+					TarifaPension:                   models.Columna{Valor: "0.16000", Longitud: 7},
+					PagoPension:                     models.Columna{Valor: informacionPagosPension[key]["valor"], Longitud: 9},
+					AportePension:                   models.Columna{Valor: informacionPagosPensionVoluntaria[key]["valor"], Longitud: 9},
+					TotalPension:                    models.Columna{Valor: informacionPagosPension[key]["valor"] + informacionPagosPensionVoluntaria[key]["valor"], Longitud: 9},
+					FondoSolidaridad:                models.Columna{Valor: informacionPagosFondoSoli[key]["valor"], Longitud: 9},
+					FondoSubsistencia:               models.Columna{Valor: informacionPagosFondoSoli[key]["valor"], Longitud: 9},
+					NoRetenidoAportesVolunarios:     models.Columna{Valor: 0, Longitud: 9},
+					TarifaSalud:                     models.Columna{Valor: "0.12500", Longitud: 7},
+					PagoSalud:                       models.Columna{Valor: informacionPagosSalud[key]["valor"], Longitud: 9},
+					ValorUpc:                        models.Columna{Valor: informacionUpc[key], Longitud: 9},
+					AutorizacionEnfermedadGeneral:   models.Columna{Valor: "", Longitud: 15},
+					ValorIncapacidadGeneral:         models.Columna{Valor: 0, Longitud: 15},
+					AutotizacionLicenciaMarternidad: models.Columna{Valor: "", Longitud: 15},
+					ValorLicenciaMaternidad:         models.Columna{Valor: 0, Longitud: 15},
+					TarifaArl:                       models.Columna{Valor: "0.0052200", Longitud: 9},
+					CentroTrabajo:                   models.Columna{Valor: "1", Longitud: 9},
+					PagoArl:                         models.Columna{Valor: informacionPagosArl[key]["valor"], Longitud: 9},
+					TarifaCaja:                      models.Columna{Valor: "0.04000", Longitud: 7},
+					PagoCaja:                        models.Columna{Valor: informacionPagosCaja[key]["valor"], Longitud: 9},
+					TarifaSena:                      models.Columna{Valor: 0, Longitud: 7},
+					PagoSena:                        models.Columna{Valor: 0, Longitud: 9},
+					TarifaIcbf:                      models.Columna{Valor: "0.03000", Longitud: 7},
+					PagoIcbf:                        models.Columna{Valor: informacionPagosIcbf[key]["valor"], Longitud: 9},
+					TarifaEsap:                      models.Columna{Valor: 0, Longitud: 9},
+					PagoEsap:                        models.Columna{Valor: 0, Longitud: 9},
+					TarifaMen:                       models.Columna{Valor: 0, Longitud: 9},
+					PagoMen:                         models.Columna{Valor: 0, Longitud: 9},
+					TipoDocumentoCotizantePrincipal: models.Columna{Valor: "", Longitud: 2},
+					DocumentoCotizantePrincipal:     models.Columna{Valor: "", Longitud: 16},
+					ExoneradoPagoSalud:              models.Columna{Valor: "N", Longitud: 1},
+					CodigoArl:                       models.Columna{Valor: "14-23", Longitud: 6},
+					ClaseRiesgo:                     models.Columna{Valor: "1", Longitud: 1},
+					IndicadorTarifaEspecialPension:  models.Columna{Valor: "", Longitud: 1},
+					FechasNovedades:                 models.Columna{Valor: "", Longitud: 150},
+					IbcOtrosParaFiscales:            models.Columna{Valor: ingresosCotizacion[key], Longitud: 9},
+					HorasLaboradas:                  models.Columna{Valor: diasLaborados * 8, Longitud: 3},
+					EspacioBlanco:                   models.Columna{Valor: "", Longitud: 26},
 				}
 
 				log.Println("filaPlanilla: ", filaPlanilla.NumeroIdentificacion)
 
 				filasPlanilla = append(filasPlanilla, filaPlanilla)
+				contPersonas++
+				log.Println("contPersonas:", contPersonas)
 
 				establecerNovedadesExterior(idPersona, idPreliquidacion)
 
 				establecerNovedades(idPersona, idPreliquidacion, cedulaPersona)
 
-				// Aporte voluntario del afiliado al fondo de pensiones
-				err = getJson("http://"+beego.AppConfig.String("titanServicio")+
-					"/detalle_preliquidacion"+
-					"?fields=Concepto,Id"+
-					"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",Persona:"+key, &preliquidacion)
+				// // Aporte voluntario del afiliado al fondo de pensiones
+				// err = getJson("http://"+beego.AppConfig.String("titanServicio")+
+				// 	"/detalle_preliquidacion"+
+				// 	"?fields=Concepto,Id"+
+				// 	"&query=Preliquidacion:"+strconv.Itoa(periodoPago.Liquidacion)+",Persona:"+key, &preliquidacion)
 
-				if err != nil {
-					fila += formatoDato(completarSecuencia(0, 9), 9)
-				} else {
+				// if err != nil {
+				// 	fila += formatoDato(completarSecuencia(0, 9), 9)
+				// } else {
 
-					fila += formatoDato("", 26)
+				// 	fila += formatoDato("", 26)
 
-					fila += "\n" // siguiente persona...
-					filas += fila
-					secuencia++
-					if suspencionTemporalContrato {
-						diasNovedad = diasSuspencionContrato
-						crearFilaNovedad(idPersona, idPreliquidacion, "licencia_norem", value)
-					} else if licenciaNoRemunerada {
-						diasNovedad = diasLicenciaNoRem
-						crearFilaNovedad(idPersona, idPreliquidacion, "licencia_norem", value)
-					} else if comisionServicios {
-						diasNovedad = diasComisionServicios
-						crearFilaNovedad(idPersona, idPreliquidacion, "comision_norem", value)
-					} else if incapacidadGeneral {
-						diasNovedad = diasIncapacidad
-						crearFilaNovedad(idPersona, idPreliquidacion, "incapacidad_general", value)
-					} else if licenciaMaternidad {
-						diasNovedad = diasLicenciaMaternidad
-						crearFilaNovedad(idPersona, idPreliquidacion, "licencia_maternidad", value)
-					} else if licenciaPaternidad {
-						diasNovedad = diasLicenciaMaternidad
-						crearFilaNovedad(idPersona, idPreliquidacion, "licencia_paternidad", value)
-					} else if vacaciones {
-						diasNovedad = diasVacaciones
-						crearFilaNovedad(idPersona, idPreliquidacion, "vacaciones", value)
-					} else if licenciaRemunerada {
-						diasNovedad = diasLicenciaRem
-						crearFilaNovedad(idPersona, idPreliquidacion, "licencia_rem", value)
-					}
-				}
+				// 	fila += "\n" // siguiente persona...
+				// 	filas += fila
+				// 	secuencia++
+				// 	if suspencionTemporalContrato {
+				// 		diasNovedad = diasSuspencionContrato
+				// 		crearFilaNovedad(idPersona, idPreliquidacion, "licencia_norem", value)
+				// 	} else if licenciaNoRemunerada {
+				// 		diasNovedad = diasLicenciaNoRem
+				// 		crearFilaNovedad(idPersona, idPreliquidacion, "licencia_norem", value)
+				// 	} else if comisionServicios {
+				// 		diasNovedad = diasComisionServicios
+				// 		crearFilaNovedad(idPersona, idPreliquidacion, "comision_norem", value)
+				// 	} else if incapacidadGeneral {
+				// 		diasNovedad = diasIncapacidad
+				// 		crearFilaNovedad(idPersona, idPreliquidacion, "incapacidad_general", value)
+				// 	} else if licenciaMaternidad {
+				// 		diasNovedad = diasLicenciaMaternidad
+				// 		crearFilaNovedad(idPersona, idPreliquidacion, "licencia_maternidad", value)
+				// 	} else if licenciaPaternidad {
+				// 		diasNovedad = diasLicenciaMaternidad
+				// 		crearFilaNovedad(idPersona, idPreliquidacion, "licencia_paternidad", value)
+				// 	} else if vacaciones {
+				// 		diasNovedad = diasVacaciones
+				// 		crearFilaNovedad(idPersona, idPreliquidacion, "vacaciones", value)
+				// 	} else if licenciaRemunerada {
+				// 		diasNovedad = diasLicenciaRem
+				// 		crearFilaNovedad(idPersona, idPreliquidacion, "licencia_rem", value)
+				// 	}
+				// }
 			}
-			log.Println("Finalizoó de generar la planilla")
+			log.Println("Finalizó de generar la planilla")
 			log.Println("Tiempo en generar la planilla: ", time.Since(start))
 			respuestaJSON := make(map[string]interface{})
 			respuestaJSON["informacion"] = filas
