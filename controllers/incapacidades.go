@@ -25,7 +25,7 @@ func (c *IncapacidadesController) URLMapping() {
 // @Param	documento		query	string false		"documento de la persona"
 // @Success 200 {object} interface{}
 // @Failure 403
-// @router / [get]
+// @router /:documento [get]
 func (c *IncapacidadesController) GetPersonas() {
 	var proveedores, contratos, personaNatural, respuesta []map[string]interface{}
 	documento := c.GetString("documento")
