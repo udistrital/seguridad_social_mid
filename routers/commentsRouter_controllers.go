@@ -36,8 +36,8 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:IncapacidadesController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:IncapacidadesController"],
         beego.ControllerComments{
-            Method: "GetPersonas",
-            Router: `/:documento`,
+            Method: "BuscarPersonas",
+            Router: `/BuscarPersonas/:documento`,
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,
