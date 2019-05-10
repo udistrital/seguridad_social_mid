@@ -1,69 +1,107 @@
 package models
 
+// Columna
+type Columna struct {
+	Valor    interface{}
+	Longitud int
+}
+
 // PlanillaTipoE Estructura para planilla de activos
 type PlanillaTipoE struct {
-	TipoRegistro                    string
-	Secuencia                       int
-	TipoDocumento                   string
-	NumeroIdentificacion            string
-	TipoCotizante                   int
-	SubTipoCotizante                int
-	ExtranjeroNoPension             string
-	PrimerApellido                  string
-	SegundoApellido                 string
-	PrimerNombre                    string
-	SegundoNombre                   string
-	CodigoFondoPension              string
-	TrasladoPension                 string
-	CodigoEps                       string
-	TrasladoEps                     string
-	CodigoCCF                       string
-	DiasLaborados                   int
-	DiasPension                     int
-	DiasSalud                       int
-	DiasArl                         int
-	DiasCaja                        int
-	SalarioBase                     int
-	SalarioIntegral                 string
-	Ibcension                       int
-	IbcSalud                        int
-	IbcArl                          int
-	IbcCcf                          int
-	TarifaPension                   string
-	PagoPension                     int
-	AportePension                   int
-	TotalPension                    int
-	FondoSolidaridad                int
-	FondoSubsistencia               int
-	NoRetenidoAportesVolunarios     int
-	TarifaSalud                     string
-	PagoSalud                       int
-	ValorUpc                        int
-	AutorizacionEnfermedadGeneral   string
-	ValorIncapacidadGeneral         int
-	AutotizacionLicenciaMarternidad string
-	ValorLicenciaMaternidad         int
-	TarifaArl                       string
-	CentroTrabajo                   string
-	PagoArl                         int
-	TarifaCaja                      string
-	PagoCaja                        int
-	TarifaSena                      string
-	PagoSena                        int
-	TarifaIcbf                      string
-	PagoIcbf                        int
-	TarifaEsap                      string
-	PagoEsap                        int
-	TarifaMen                       string
-	PagoMen                         int
-	TipoDocumentoCotizantePrincipal string
-	DocumentoCotizantePrincipal     string
-	ExoneradoPagoSalud              string
-	CodigoArl                       string
-	ClaseRiesgo                     string
-	IndicadorTarifaEspecialPension  string
-	FechasNovedades                 string
-	IbcOtrosParaFiscales            int
-	HorasLaboradas                  int
-	EspacioBlanco                   string
+	TipoRegistro                    Columna
+	TipoDocumento                   Columna
+	NumeroIdentificacion            Columna
+	TipoCotizante                   Columna
+	SubTipoCotizante                Columna
+	ExtranjeroNoPension             Columna
+	ColombianoExterior              Columna
+	CodigoDepartamento              Columna
+	CodigoMunicipio                 Columna
+	PrimerApellido                  Columna
+	SegundoApellido                 Columna
+	PrimerNombre                    Columna
+	SegundoNombre                   Columna
+	NovIng                          Columna // Ingreso
+	NovRet                          Columna // Retiro
+	NovTde                          Columna // Traslado desde otra EPS o EOC
+	NovTae                          Columna // Traslado a otra EPS o EOC
+	NovTdp                          Columna // Traslado desde otra administadora de pensiones
+	NovTap                          Columna // Traslado a otra administradora de pensiones
+	NovVsp                          Columna // Variación permanente de salario
+	NovCorrecciones                 Columna // Corecciones
+	NovVst                          Columna // Varaición transitoria de salario
+	NovSln                          Columna // Suspención temporal del contrato de trabajo
+	NovIge                          Columna // Inapacidad temporal por enfermedad general
+	NovLma                          Columna // Licencia de maternidad o de paternidad
+	NovVac                          Columna // Vacaciones, Licencia remunerada
+	NovAvp                          Columna // Aporte voluntario
+	NovVct                          Columna // Variación centros de trabajo
+	NavIrl                          Columna // Días de incapacidad por accidente de trabajo o enfermedad laboral
+	CodigoFondoPension              Columna
+	TrasladoPension                 Columna
+	CodigoEps                       Columna
+	TrasladoEps                     Columna
+	CodigoCCF                       Columna
+	DiasLaborados                   Columna
+	DiasPension                     Columna
+	DiasSalud                       Columna
+	DiasArl                         Columna
+	DiasCaja                        Columna
+	SalarioBase                     Columna
+	SalarioIntegral                 Columna
+	IbcPension                      Columna
+	IbcSalud                        Columna
+	IbcArl                          Columna
+	IbcCcf                          Columna
+	TarifaPension                   Columna
+	PagoPension                     Columna
+	AportePension                   Columna
+	TotalPension                    Columna
+	FondoSolidaridad                Columna
+	FondoSubsistencia               Columna
+	NoRetenidoAportesVolunarios     Columna
+	TarifaSalud                     Columna
+	PagoSalud                       Columna
+	ValorUpc                        Columna
+	AutorizacionEnfermedadGeneral   Columna
+	ValorIncapacidadGeneral         Columna
+	AutotizacionLicenciaMarternidad Columna
+	ValorLicenciaMaternidad         Columna
+	TarifaArl                       Columna
+	CentroTrabajo                   Columna
+	PagoArl                         Columna
+	TarifaCaja                      Columna
+	PagoCaja                        Columna
+	TarifaSena                      Columna
+	PagoSena                        Columna
+	TarifaIcbf                      Columna
+	PagoIcbf                        Columna
+	TarifaEsap                      Columna
+	PagoEsap                        Columna
+	TarifaMen                       Columna
+	PagoMen                         Columna
+	TipoDocumentoCotizantePrincipal Columna
+	DocumentoCotizantePrincipal     Columna
+	ExoneradoPagoSalud              Columna
+	CodigoArl                       Columna
+	ClaseRiesgo                     Columna
+	IndicadorTarifaEspecialPension  Columna
+	FechaIngreso                    Columna
+	FechaRetiro                     Columna
+	FechaInicioVsp                  Columna
+	FechaInicioSuspencion           Columna
+	FechaFinSuspencion              Columna
+	FechaInicioIge                  Columna
+	FechaFinIge                     Columna
+	FechaInicioLma                  Columna
+	FechaFinLma                     Columna
+	FechaInicioVac                  Columna
+	FechaFinVac                     Columna
+	FechaInicioVct                  Columna
+	FechaFinVct                     Columna
+	FechaInicioIrl                  Columna
+	FechaFinIrl                     Columna
+	IbcOtrosParaFiscales            Columna
+	HorasLaboradas                  Columna
+	EspacioBlanco                   Columna
 }

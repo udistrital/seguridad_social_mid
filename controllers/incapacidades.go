@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/astaxie/beego"
@@ -16,19 +17,20 @@ type IncapacidadesController struct {
 
 // URLMapping ...
 func (c *IncapacidadesController) URLMapping() {
-	c.Mapping("GetPersonas", c.GetPersonas)
+	c.Mapping("BuscarPersonas", c.BuscarPersonas)
 }
 
-// GetPersonas ...
-// @Title GetPersonas
+// BuscarPersonas ...
+// @Title BuscarPersonas
 // @Description obtiene todas las personas que pueden aplicar a cualquier nómina
 // @Param	documento		query	string false		"documento de la persona"
 // @Success 200 {object} interface{}
 // @Failure 403
-// @router / [get]
-func (c *IncapacidadesController) GetPersonas() {
+// @router /BuscarPersonas/:documento [get]
+func (c *IncapacidadesController) BuscarPersonas() {
 	var proveedores, contratos, personaNatural, respuesta []map[string]interface{}
-	documento := c.GetString("documento")
+	documento := c.Ctx.Input.Param(":documento")
+	log.Println(documento)
 	try.This(func() {
 		if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"informacion_proveedor?"+
 			"limit=6&query=NumDocumento__icontains:"+documento+",TipoPersona:NATURAL", &proveedores); err != nil {
