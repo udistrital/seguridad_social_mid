@@ -115,8 +115,7 @@ func (c *IncapacidadesController) IncapacidadesPorPersona() {
 		incapacidades = append(incapacidades, incapacidaGenerales...)
 		c.Data["json"] = incapacidades
 	}).Catch(func(e try.E) {
-		fmt.Println("Error en IncapacidadesPorPersona() ", e)
-		//beego.Error("Error en IncapacidadesPorPersona() ", e)
+		log.Panicf("Error en IncapacidadesPorPersona() ", e)
 		c.Data["json"] = e
 	})
 
@@ -132,6 +131,8 @@ func traerIncapacidades(tipoIncapacidad, contrato, vigencia string) (incapacidad
 		conceptoNominaPorPesona := strconv.Itoa(int(v["Id"].(float64)))
 		err = getJson("http://"+beego.AppConfig.String("segSocialService")+"/detalle_novedad_seguridad_social?"+
 			"query=ConceptoNominaPorPersona:"+conceptoNominaPorPesona+"&limit=1", &detalleNovedad)
+		log.Println("http://" + beego.AppConfig.String("segSocialService") + "/detalle_novedad_seguridad_social?" +
+			"query=ConceptoNominaPorPersona:" + conceptoNominaPorPesona + "&limit=1")
 		incapacidades[i]["Codigo"] = detalleNovedad[0]["Descripcion"]
 	}
 	return
