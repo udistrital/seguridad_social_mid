@@ -30,7 +30,7 @@ func (c *PagoController) URLMapping() {
 // @Description Obtiene información adicional para la cabecera
 // con el total de pagos de salud y pensión del empleado
 // @Param	idPeriodoPago		id del periodo pago de seguridad social
-// @router GetInfoCabecera/:idPreliquidacion [get]
+// @router /GetInfoCabecera/:idPreliquidacion [get]
 func (c *PagoController) GetInfoCabecera() {
 	idStr := c.Ctx.Input.Param(":idPreliquidacion")
 	var detallesPreliquidacion []models.DetallePreliquidacion
@@ -66,7 +66,7 @@ func (c *PagoController) GetInfoCabecera() {
 // @Description Suma el total de los pagos de salud y pensión de ud
 // con el total de pagos de salud y pensión del empleado
 // @Param	idPeriodoPago		id del periodo pago de seguridad social
-// @router SumarPagosSalud/:idPeriodoPago [get]
+// @router /SumarPagosSalud/:idPeriodoPago [get]
 func (c *PagoController) SumarPagosSalud() {
 	idStr := c.Ctx.Input.Param(":idPeriodoPago")
 	//id, _ := strconv.Atoi(idStr)
@@ -88,7 +88,7 @@ func (c *PagoController) SumarPagosSalud() {
 // ConceptosIbc ...
 // @Title ConceptosIbc
 // @Description Obtiene todos los conceptos IBC del ruler y los cruza con los conceptos de nómina
-// @router ConceptosIbc/ [get]
+// @router /ConceptosIbc/ [get]
 func (c *PagoController) ConceptosIbc() {
 	var predicados []models.Predicado
 	var conceptos []models.Concepto
@@ -134,7 +134,7 @@ func (c *PagoController) ConceptosIbc() {
 // @Title NovedadesPorPersona
 // @Description Obtiene todos los conceptos IBC del ruler y los cruza con los conceptos de nómina
 // @Success 200 {object} []models.NovedadesPersonaSS
-// @router NovedadesPorPersona/:persona [get]
+// @router /NovedadesPorPersona/:persona [get]
 func (c *PagoController) NovedadesPorPersona() {
 	personaStr := c.Ctx.Input.Param(":persona")
 	_, err := strconv.Atoi(personaStr)
@@ -186,7 +186,7 @@ func (c *PagoController) NovedadesPorPersona() {
 // @Description Cálcula la seguridad social para una preliquidación correspondiente
 // @Param	id		id de la preliquidación
 // @Success 200 {object} []*models.PagoSeguridadSocial
-// @router CalcularSegSocial/:id [get]
+// @router /CalcularSegSocial/:id [get]
 func (c *PagoController) CalcularSegSocial() {
 	idStr := c.Ctx.Input.Param(":id")
 	_, err := strconv.Atoi(idStr)
@@ -250,7 +250,7 @@ func (c *PagoController) CalcularSegSocial() {
 					Icbf:                    icbf[index],
 					IdPreliquidacion:        idDetallePreliquidacion,
 					IdDetallePreliquidacion: detallePreliquidacion[index].Id,
-					Arl: arl[index]}
+					Arl:                     arl[index]}
 
 				pagosSeguridadSocial = append(pagosSeguridadSocial, aux)
 			}
