@@ -111,12 +111,18 @@ func (c *IncapacidadesController) IncapacidadesPorPersona() {
 			panic(err.Error())
 		}
 
+		prorrogas, err := traerIncapacidades("prorroga_incapacidad", contrato, vigencia)
+		if err != nil {
+			panic(err.Error())
+		}
+
 		incapacidades = append(incapacidades, incapacidadesLaborales...)
 		incapacidades = append(incapacidades, incapacidaGenerales...)
+		incapacidades = append(incapacidades, prorrogas...)
 		c.Data["json"] = incapacidades
 	}).Catch(func(e try.E) {
 		log.Panicf("Error en IncapacidadesPorPersona() ", e)
-		c.Data["json"] = e
+		c.Data["json"] = map[string]interface{}{"error": e}
 	})
 
 	c.ServeJSON()
@@ -125,14 +131,12 @@ func (c *IncapacidadesController) IncapacidadesPorPersona() {
 func traerIncapacidades(tipoIncapacidad, contrato, vigencia string) (incapacidades []map[string]interface{}, err error) {
 	var detalleNovedad []map[string]interface{}
 	err = getJson("http://"+beego.AppConfig.String("titanServicio")+"/concepto_nomina_por_persona?query=Concepto.Nombreconcepto:"+tipoIncapacidad+
-		",NumeroContrato:"+contrato+",VigenciaContrato:"+vigencia+",Activo:true", &incapacidades)
+		",NumeroContrato:"+contrato+",VigenciaContrato:"+vigencia+",Activo:true&limit=0", &incapacidades)
 
 	for i, v := range incapacidades {
 		conceptoNominaPorPesona := strconv.Itoa(int(v["Id"].(float64)))
 		err = getJson("http://"+beego.AppConfig.String("segSocialService")+"/detalle_novedad_seguridad_social?"+
 			"query=ConceptoNominaPorPersona:"+conceptoNominaPorPesona+"&limit=1", &detalleNovedad)
-		log.Println("http://" + beego.AppConfig.String("segSocialService") + "/detalle_novedad_seguridad_social?" +
-			"query=ConceptoNominaPorPersona:" + conceptoNominaPorPesona + "&limit=1")
 		incapacidades[i]["Codigo"] = detalleNovedad[0]["Descripcion"]
 	}
 	return
