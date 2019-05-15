@@ -148,6 +148,26 @@ paths:
             type: array
             items:
               $ref: '#/definitions/*models.PagoSeguridadSocial'
+  /pago/CalcularSegSocialHonorarios/{idPreliquidacion}:
+    get:
+      tags:
+      - pago
+      description: Cálcula la seguridad social para una preliquidación de honorarios
+        o contratistas correspondiente
+      operationId: PagoController.CalcularSegSocialHonorarios
+      parameters:
+      - in: id
+        name: id
+        description: preliquidación
+        schema:
+          $ref: '#/definitions/de'
+      responses:
+        "200":
+          description: ""
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/*models.PagoSeguridadSocial'
   /pago/ConceptosIbc/:
     get:
       tags:
@@ -212,26 +232,6 @@ paths:
         description: periodo
         schema:
           $ref: '#/definitions/del'
-  /pagoCalcularSegSocialHonorarios/{idPreliquidacion}:
-    get:
-      tags:
-      - pago
-      description: Cálcula la seguridad social para una preliquidación de honorarios
-        o contratistas correspondiente
-      operationId: PagoController.CalcularSegSocialHonorarios
-      parameters:
-      - in: id
-        name: id
-        description: preliquidación
-        schema:
-          $ref: '#/definitions/de'
-      responses:
-        "200":
-          description: ""
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/*models.PagoSeguridadSocial'
   /planillas/GenerarPlanillaActivos/{limit}/{offset}:
     post:
       tags:
@@ -292,7 +292,7 @@ definitions:
   '*models.PagoSeguridadSocial':
     title: PagoSeguridadSocial
     type: object
-  69.0xc00047d170.false:
+  69.0xc000475b90.false:
     title: "false"
     type: object
   PeriodoPago:
@@ -312,7 +312,7 @@ definitions:
     type: object
     properties:
       Body:
-        $ref: '#/definitions/69.0xc00047d170.false'
+        $ref: '#/definitions/69.0xc000475b90.false'
       Code:
         type: string
       Type:
