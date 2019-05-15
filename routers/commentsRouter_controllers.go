@@ -36,8 +36,8 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:IncapacidadesController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:IncapacidadesController"],
         beego.ControllerComments{
-            Method: "GetPersonas",
-            Router: `/:documento`,
+            Method: "BuscarPersonas",
+            Router: `/BuscarPersonas/:documento`,
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,
@@ -54,6 +54,42 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
         beego.ControllerComments{
+            Method: "CalcularSegSocial",
+            Router: `/CalcularSegSocial/:id`,
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
+        beego.ControllerComments{
+            Method: "ConceptosIbc",
+            Router: `/ConceptosIbc/`,
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
+        beego.ControllerComments{
+            Method: "GetInfoCabecera",
+            Router: `/GetInfoCabecera/:idPreliquidacion`,
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
+        beego.ControllerComments{
+            Method: "NovedadesPorPersona",
+            Router: `/NovedadesPorPersona/:persona`,
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
+        beego.ControllerComments{
             Method: "RegistrarPagos",
             Router: `/RegistrarPagos`,
             AllowHTTPMethods: []string{"post"},
@@ -63,8 +99,8 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
         beego.ControllerComments{
-            Method: "CalcularSegSocial",
-            Router: `CalcularSegSocial/:id`,
+            Method: "SumarPagosSalud",
+            Router: `/SumarPagosSalud/:idPeriodoPago`,
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,
@@ -74,42 +110,6 @@ func init() {
         beego.ControllerComments{
             Method: "CalcularSegSocialHonorarios",
             Router: `CalcularSegSocialHonorarios/:idPreliquidacion`,
-            AllowHTTPMethods: []string{"get"},
-            MethodParams: param.Make(),
-            Filters: nil,
-            Params: nil})
-
-    beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
-        beego.ControllerComments{
-            Method: "ConceptosIbc",
-            Router: `ConceptosIbc/`,
-            AllowHTTPMethods: []string{"get"},
-            MethodParams: param.Make(),
-            Filters: nil,
-            Params: nil})
-
-    beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
-        beego.ControllerComments{
-            Method: "GetInfoCabecera",
-            Router: `GetInfoCabecera/:idPreliquidacion`,
-            AllowHTTPMethods: []string{"get"},
-            MethodParams: param.Make(),
-            Filters: nil,
-            Params: nil})
-
-    beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
-        beego.ControllerComments{
-            Method: "NovedadesPorPersona",
-            Router: `NovedadesPorPersona/:persona`,
-            AllowHTTPMethods: []string{"get"},
-            MethodParams: param.Make(),
-            Filters: nil,
-            Params: nil})
-
-    beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/ss_mid_api/controllers:PagoController"],
-        beego.ControllerComments{
-            Method: "SumarPagosSalud",
-            Router: `SumarPagosSalud/:idPeriodoPago`,
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,

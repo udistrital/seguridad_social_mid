@@ -14,10 +14,29 @@ type PlanillaTipoE struct {
 	TipoCotizante                   Columna
 	SubTipoCotizante                Columna
 	ExtranjeroNoPension             Columna
+	ColombianoExterior              Columna
+	CodigoDepartamento              Columna
+	CodigoMunicipio                 Columna
 	PrimerApellido                  Columna
 	SegundoApellido                 Columna
 	PrimerNombre                    Columna
 	SegundoNombre                   Columna
+	NovIng                          Columna // Ingreso
+	NovRet                          Columna // Retiro
+	NovTde                          Columna // Traslado desde otra EPS o EOC
+	NovTae                          Columna // Traslado a otra EPS o EOC
+	NovTdp                          Columna // Traslado desde otra administadora de pensiones
+	NovTap                          Columna // Traslado a otra administradora de pensiones
+	NovVsp                          Columna // Variación permanente de salario
+	NovCorrecciones                 Columna // Corecciones
+	NovVst                          Columna // Varaición transitoria de salario
+	NovSln                          Columna // Suspención temporal del contrato de trabajo
+	NovIge                          Columna // Inapacidad temporal por enfermedad general
+	NovLma                          Columna // Licencia de maternidad o de paternidad
+	NovVac                          Columna // Vacaciones, Licencia remunerada
+	NovAvp                          Columna // Aporte voluntario
+	NovVct                          Columna // Variación centros de trabajo
+	NavIrl                          Columna // Días de incapacidad por accidente de trabajo o enfermedad laboral
 	CodigoFondoPension              Columna
 	TrasladoPension                 Columna
 	CodigoEps                       Columna
@@ -30,7 +49,7 @@ type PlanillaTipoE struct {
 	DiasCaja                        Columna
 	SalarioBase                     Columna
 	SalarioIntegral                 Columna
-	Ibcension                       Columna
+	IbcPension                      Columna
 	IbcSalud                        Columna
 	IbcArl                          Columna
 	IbcCcf                          Columna
@@ -67,7 +86,21 @@ type PlanillaTipoE struct {
 	CodigoArl                       Columna
 	ClaseRiesgo                     Columna
 	IndicadorTarifaEspecialPension  Columna
-	FechasNovedades                 Columna
+	FechaIngreso                    Columna
+	FechaRetiro                     Columna
+	FechaInicioVsp                  Columna
+	FechaInicioSuspencion           Columna
+	FechaFinSuspencion              Columna
+	FechaInicioIge                  Columna
+	FechaFinIge                     Columna
+	FechaInicioLma                  Columna
+	FechaFinLma                     Columna
+	FechaInicioVac                  Columna
+	FechaFinVac                     Columna
+	FechaInicioVct                  Columna
+	FechaFinVct                     Columna
+	FechaInicioIrl                  Columna
+	FechaFinIrl                     Columna
 	IbcOtrosParaFiscales            Columna
 	HorasLaboradas                  Columna
 	EspacioBlanco                   Columna

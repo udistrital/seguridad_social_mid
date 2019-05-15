@@ -15,7 +15,7 @@
     },
     "basePath": "/v1",
     "paths": {
-        "/aportante/GenerarPlanillaActivos": {
+        "/aportante/GenerarPlanillaActivos/{limit}/{offset}": {
             "post": {
                 "tags": [
                     "aportante"
@@ -29,7 +29,35 @@
                         "description": "body for PeriodoPago",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/.PeriodoPago"
+                            "$ref": "#/definitions/PeriodoPago"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{string} string"
+                    },
+                    "403": {
+                        "description": "body is empty"
+                    }
+                }
+            }
+        },
+        "/aportante/PruebaPlanilla/{limit}": {
+            "get": {
+                "tags": [
+                    "aportante"
+                ],
+                "description": "Recibe un periodo pago y devuelve un arreglo de json con la información de la planilla",
+                "operationId": "PlanillasController.Generar planilla de activos",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for PeriodoPago",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PeriodoPago"
                         }
                     }
                 ],
@@ -111,13 +139,13 @@
                 }
             }
         },
-        "/incapacidades/": {
+        "/incapacidades/BuscarPersonas/{documento}": {
             "get": {
                 "tags": [
                     "incapacidades"
                 ],
                 "description": "obtiene todas las personas que pueden aplicar a cualquier nómina",
-                "operationId": "IncapacidadesController.GetPersonas",
+                "operationId": "IncapacidadesController.BuscarPersonas",
                 "parameters": [
                     {
                         "in": "query",
@@ -130,7 +158,7 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/.interface{}"
+                            "$ref": "#/definitions/interface{}"
                         }
                     },
                     "403": {
@@ -158,11 +186,89 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/.interface{}"
+                            "$ref": "#/definitions/interface{}"
                         }
                     },
                     "403": {
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/pago/CalcularSegSocial/{id}": {
+            "get": {
+                "tags": [
+                    "pago"
+                ],
+                "description": "Cálcula la seguridad social para una preliquidación correspondiente",
+                "operationId": "PagoController.CalcularSegSocial",
+                "parameters": [
+                    {
+                        "in": "id",
+                        "name": "id",
+                        "description": "preliquidación",
+                        "schema": {
+                            "$ref": "#/definitions/de"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/*models.PagoSeguridadSocial"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/pago/ConceptosIbc/": {
+            "get": {
+                "tags": [
+                    "pago"
+                ],
+                "description": "Obtiene todos los conceptos IBC del ruler y los cruza con los conceptos de nómina",
+                "operationId": "PagoController.ConceptosIbc"
+            }
+        },
+        "/pago/GetInfoCabecera/{idPreliquidacion}": {
+            "get": {
+                "tags": [
+                    "pago"
+                ],
+                "description": "Obtiene información adicional para la cabecera",
+                "operationId": "PagoController.GetInfoCabecera",
+                "parameters": [
+                    {
+                        "in": "id",
+                        "name": "idPeriodoPago",
+                        "description": "periodo",
+                        "schema": {
+                            "$ref": "#/definitions/del"
+                        }
+                    }
+                ]
+            }
+        },
+        "/pago/NovedadesPorPersona/{persona}": {
+            "get": {
+                "tags": [
+                    "pago"
+                ],
+                "description": "Obtiene todos los conceptos IBC del ruler y los cruza con los conceptos de nómina",
+                "operationId": "PagoController.NovedadesPorPersona",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.NovedadesPersonaSS"
+                            }
+                        }
                     }
                 }
             }
@@ -195,114 +301,6 @@
                 }
             }
         },
-        "/pago/CalcularSegSocial/{id}": {
-            "get": {
-                "tags": [
-                    "pago"
-                ],
-                "description": "Cálcula la seguridad social para una preliquidación correspondiente",
-                "operationId": "PagoController.CalcularSegSocial",
-                "parameters": [
-                    {
-                        "in": "id",
-                        "name": "id",
-                        "description": "preliquidación",
-                        "schema": {
-                            "$ref": "#/definitions/.de"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/.PagoSeguridadSocial"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/pago/CalcularSegSocialHonorarios/{idPreliquidacion}": {
-            "get": {
-                "tags": [
-                    "pago"
-                ],
-                "description": "Cálcula la seguridad social para una preliquidación de honorarios o contratistas correspondiente",
-                "operationId": "PagoController.CalcularSegSocialHonorarios",
-                "parameters": [
-                    {
-                        "in": "id",
-                        "name": "id",
-                        "description": "preliquidación",
-                        "schema": {
-                            "$ref": "#/definitions/.de"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/.PagoSeguridadSocial"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/pago/ConceptosIbc/": {
-            "get": {
-                "tags": [
-                    "pago"
-                ],
-                "description": "Obtiene todos los conceptos IBC del ruler y los cruza con los conceptos de nómina",
-                "operationId": "PagoController.ConceptosIbc"
-            }
-        },
-        "/pago/GetInfoCabecera/{idPreliquidacion}": {
-            "get": {
-                "tags": [
-                    "pago"
-                ],
-                "description": "Obtiene información adicional para la cabecera",
-                "operationId": "PagoController.GetInfoCabecera",
-                "parameters": [
-                    {
-                        "in": "id",
-                        "name": "idPeriodoPago",
-                        "description": "periodo",
-                        "schema": {
-                            "$ref": "#/definitions/.del"
-                        }
-                    }
-                ]
-            }
-        },
-        "/pago/NovedadesPorPersona/{persona}": {
-            "get": {
-                "tags": [
-                    "pago"
-                ],
-                "description": "Obtiene todos los conceptos IBC del ruler y los cruza con los conceptos de nómina",
-                "operationId": "PagoController.NovedadesPorPersona",
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.NovedadesPersonaSS"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/pago/SumarPagosSalud/{idPeriodoPago}": {
             "get": {
                 "tags": [
@@ -316,10 +314,40 @@
                         "name": "idPeriodoPago",
                         "description": "periodo",
                         "schema": {
-                            "$ref": "#/definitions/.del"
+                            "$ref": "#/definitions/del"
                         }
                     }
                 ]
+            }
+        },
+        "/pagoCalcularSegSocialHonorarios/{idPreliquidacion}": {
+            "get": {
+                "tags": [
+                    "pago"
+                ],
+                "description": "Cálcula la seguridad social para una preliquidación de honorarios o contratistas correspondiente",
+                "operationId": "PagoController.CalcularSegSocialHonorarios",
+                "parameters": [
+                    {
+                        "in": "id",
+                        "name": "id",
+                        "description": "preliquidación",
+                        "schema": {
+                            "$ref": "#/definitions/de"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/*models.PagoSeguridadSocial"
+                            }
+                        }
+                    }
+                }
             }
         },
         "/planillas/GenerarPlanillaActivos/{limit}/{offset}": {
@@ -336,7 +364,35 @@
                         "description": "body for PeriodoPago",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/.PeriodoPago"
+                            "$ref": "#/definitions/PeriodoPago"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{string} string"
+                    },
+                    "403": {
+                        "description": "body is empty"
+                    }
+                }
+            }
+        },
+        "/planillas/PruebaPlanilla/{limit}": {
+            "get": {
+                "tags": [
+                    "aportante"
+                ],
+                "description": "Recibe un periodo pago y devuelve un arreglo de json con la información de la planilla",
+                "operationId": "PlanillasController.Generar planilla de activos",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for PeriodoPago",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PeriodoPago"
                         }
                     }
                 ],
@@ -364,7 +420,7 @@
                         "description": "body for Beneficiarios content",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/.Beneficiarios"
+                            "$ref": "#/definitions/models.Beneficiarios"
                         }
                     }
                 ],
@@ -380,25 +436,28 @@
         }
     },
     "definitions": {
-        ".Beneficiarios": {
+        "*models.PagoSeguridadSocial": {
+            "title": "PagoSeguridadSocial",
             "type": "object"
         },
-        ".PagoSeguridadSocial": {
+        "69.0xc00047d170.false": {
+            "title": "false",
             "type": "object"
         },
-        ".PeriodoPago": {
+        "PeriodoPago": {
+            "title": "PeriodoPago",
             "type": "object"
         },
-        ".de": {
+        "de": {
+            "title": "de",
             "type": "object"
         },
-        ".del": {
+        "del": {
+            "title": "del",
             "type": "object"
         },
-        ".false": {
-            "type": "object"
-        },
-        ".interface{}": {
+        "interface{}": {
+            "title": "interface{}",
             "type": "object"
         },
         "models.Alert": {
@@ -406,7 +465,7 @@
             "type": "object",
             "properties": {
                 "Body": {
-                    "$ref": "#/definitions/69.0xc4203c8c60.false"
+                    "$ref": "#/definitions/69.0xc00047d170.false"
                 },
                 "Code": {
                     "type": "string"
@@ -415,6 +474,10 @@
                     "type": "string"
                 }
             }
+        },
+        "models.Beneficiarios": {
+            "title": "Beneficiarios",
+            "type": "object"
         },
         "models.ConceptoNomina": {
             "title": "ConceptoNomina",
@@ -450,15 +513,15 @@
                 },
                 "FechaDesde": {
                     "type": "string",
-                    "format": "string"
+                    "format": "datetime"
                 },
                 "FechaHasta": {
                     "type": "string",
-                    "format": "string"
+                    "format": "datetime"
                 },
                 "FechaRegistro": {
                     "type": "string",
-                    "format": "string"
+                    "format": "datetime"
                 },
                 "Id": {
                     "type": "integer",
@@ -778,7 +841,7 @@
                 },
                 "FechaRegistro": {
                     "type": "string",
-                    "format": "string"
+                    "format": "datetime"
                 },
                 "Id": {
                     "type": "integer",
