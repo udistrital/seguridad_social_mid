@@ -23,7 +23,7 @@ func (c *PagoHonorariosController) URLMapping() {
 // @Description Cálcula la seguridad social para una preliquidación de honorarios o contratistas correspondiente
 // @Param	id		id de la preliquidación
 // @Success 200 {object} []*models.PagoSeguridadSocial
-// @router CalcularSegSocialHonorarios/:idPreliquidacion [get]
+// @router /CalcularSegSocialHonorarios/:idPreliquidacion [get]
 func (c *PagoController) CalcularSegSocialHonorarios() {
 	var alerta models.Alert
 
