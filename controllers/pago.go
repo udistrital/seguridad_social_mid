@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/ss_mid_api/golog"
@@ -30,9 +31,10 @@ func (c *PagoController) URLMapping() {
 // @Description Obtiene información adicional para la cabecera
 // con el total de pagos de salud y pensión del empleado
 // @Param	idPeriodoPago		id del periodo pago de seguridad social
-// @router /GetInfoCabecera/:idPreliquidacion [get]
+// @router /GetInfoCabecera/:idPreliquidacion/:tipoPlanilla [get]
 func (c *PagoController) GetInfoCabecera() {
 	idStr := c.Ctx.Input.Param(":idPreliquidacion")
+	tipoPlanilla := c.Ctx.Input.Param(":tipoPlanilla")
 	var detallesPreliquidacion []models.DetallePreliquidacion
 
 	informacionCabecera := make(map[string]interface{})
@@ -51,12 +53,46 @@ func (c *PagoController) GetInfoCabecera() {
 	for _, value := range detallesPreliquidacion {
 		acumuladorPreliquidacion += value.ValorCalculado
 	}
+	anioActual, mesActual, _ := time.Now().Date()
+
+	mesString := strconv.Itoa(int(mesActual))
+	anioString := strconv.Itoa(anioActual)
 
 	totalPreliquidacion := AproximarPesoSuperior(acumuladorPreliquidacion, 100)
-	informacionCabecera["TotalPersonas"] = len(detallesPreliquidacion)
-	informacionCabecera["TotalNomina"] = totalPreliquidacion
-	informacionCabecera["CodigoUD"] = "01"
-	informacionCabecera["CodigoOperador"] = "83"
+	informacionCabecera["TotalPersonas"] = models.Columna{Valor: len(detallesPreliquidacion), Longitud: 5}
+	informacionCabecera["TotalNomina"] = models.Columna{Valor: totalPreliquidacion, Longitud: 12}
+	informacionCabecera["CodigoUD"] = models.Columna{Valor: "01", Longitud: 2}
+	informacionCabecera["CodigoOperador"] = models.Columna{Valor: 83, Longitud: 2}
+	informacionCabecera["ValorDesconocido"] = models.Columna{Valor: "0100000", Longitud: 7}
+	informacionCabecera["NombreaAportante"] = models.Columna{Valor: "UNIVERSIDAD DISTRITAL FRANCISCO JOSÉ DE CALDAS", Longitud: 200}
+	informacionCabecera["NitAportante"] = models.Columna{Valor: "NI899999230", Longitud: 18}
+	informacionCabecera["CodigoArl"] = models.Columna{Valor: "14-23", Longitud: 6}
+
+	if int(mesActual) < 10 {
+		mesString = "0" + mesString
+	}
+
+	informacionCabecera["PeriodoPension"] = models.Columna{Valor: anioString + "-" + mesString, Longitud: 27}
+
+	switch tipoPlanilla {
+	case "CT":
+		informacionCabecera["TipoPlanilla"] = models.Columna{Valor: "7Y", Longitud: 22}
+		informacionCabecera["Sucursal"] = models.Columna{Valor: "S59", Longitud: 51}
+		informacionCabecera["PeriodoSalud"] = models.Columna{Valor: anioString + "-" + mesString, Longitud: 7}
+
+	default:
+		if int(mesActual) == 12 {
+			mesString = "01"
+		} else {
+			if int(mesActual) < 10 {
+				mesString = "0" + strconv.Itoa(int(mesActual-1))
+			}
+		}
+		informacionCabecera["TipoPlanilla"] = models.Columna{Valor: "7E", Longitud: 22}
+		informacionCabecera["Sucursal"] = models.Columna{Valor: "S01", Longitud: 51}
+		informacionCabecera["PeriodoSalud"] = models.Columna{Valor: anioString + "-" + mesString, Longitud: 7}
+	}
+
 	c.Data["json"] = informacionCabecera
 	c.ServeJSON()
 }
