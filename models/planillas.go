@@ -6,6 +6,22 @@ type Columna struct {
 	Longitud int
 }
 
+// CabeceraPlanilla Estructura para la cabecera de todas las planillas
+type CabeceraPlanilla struct {
+	Codigo           Columna
+	NombreProveedor  Columna
+	NitProveedor     Columna
+	TipoPlanilla     Columna
+	Sucursal         Columna
+	CodigoArl        Columna
+	PeriodoSalud     Columna
+	PeriodoPension   Columna
+	CantidadPersonas Columna
+	TotalNomina      Columna
+	CodigoProveedor  Columna
+	CodigoOperador   Columna
+}
+
 // PlanillaTipoE Estructura para planilla de activos
 type PlanillaTipoE struct {
 	TipoRegistro                    Columna
