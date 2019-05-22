@@ -37,8 +37,6 @@ func (c *PagoController) GetInfoCabecera() {
 	tipoPlanilla := c.Ctx.Input.Param(":tipoPlanilla")
 	var detallesPreliquidacion []models.DetallePreliquidacion
 
-	informacionCabecera := make(map[string]interface{})
-
 	err := getJson("http://"+beego.AppConfig.String("titanServicio")+
 		"/detalle_preliquidacion"+
 		"?limit=-1"+
@@ -59,27 +57,28 @@ func (c *PagoController) GetInfoCabecera() {
 	anioString := strconv.Itoa(anioActual)
 
 	totalPreliquidacion := AproximarPesoSuperior(acumuladorPreliquidacion, 100)
-	informacionCabecera["TotalPersonas"] = models.Columna{Valor: len(detallesPreliquidacion), Longitud: 5}
-	informacionCabecera["TotalNomina"] = models.Columna{Valor: totalPreliquidacion, Longitud: 12}
-	informacionCabecera["CodigoUD"] = models.Columna{Valor: "01", Longitud: 2}
-	informacionCabecera["CodigoOperador"] = models.Columna{Valor: 83, Longitud: 2}
-	informacionCabecera["ValorDesconocido"] = models.Columna{Valor: "0100000", Longitud: 7}
-	informacionCabecera["NombreaAportante"] = models.Columna{Valor: "UNIVERSIDAD DISTRITAL FRANCISCO JOSÉ DE CALDAS", Longitud: 200}
-	informacionCabecera["NitAportante"] = models.Columna{Valor: "NI899999230", Longitud: 18}
-	informacionCabecera["CodigoArl"] = models.Columna{Valor: "14-23", Longitud: 6}
 
 	if int(mesActual) < 10 {
 		mesString = "0" + mesString
 	}
 
-	informacionCabecera["PeriodoPension"] = models.Columna{Valor: anioString + "-" + mesString, Longitud: 27}
+	cabecera := models.CabeceraPlanilla{
+		Codigo:           models.Columna{Valor: "0100000", Longitud: 7},
+		NombreProveedor:  models.Columna{Valor: "UNIVERSIDAD DISTRITAL FRANCISCO JOSÉ DE CALDAS", Longitud: 200},
+		NitProveedor:     models.Columna{Valor: "NI899999230", Longitud: 18},
+		CodigoArl:        models.Columna{Valor: "14-23", Longitud: 6},
+		PeriodoPension:   models.Columna{Valor: anioString + "-" + mesString, Longitud: 27},
+		CantidadPersonas: models.Columna{Valor: len(detallesPreliquidacion), Longitud: 5},
+		TotalNomina:      models.Columna{Valor: totalPreliquidacion, Longitud: 12},
+		CodigoProveedor:  models.Columna{Valor: 1, Longitud: 2},
+		CodigoOperador:   models.Columna{Valor: 83, Longitud: 2},
+	}
 
 	switch tipoPlanilla {
 	case "CT":
-		informacionCabecera["TipoPlanilla"] = models.Columna{Valor: "7Y", Longitud: 22}
-		informacionCabecera["Sucursal"] = models.Columna{Valor: "S59", Longitud: 51}
-		informacionCabecera["PeriodoSalud"] = models.Columna{Valor: anioString + "-" + mesString, Longitud: 7}
-
+		cabecera.TipoPlanilla = models.Columna{Valor: "7Y", Longitud: 22}
+		cabecera.Sucursal = models.Columna{Valor: "S59", Longitud: 51}
+		cabecera.PeriodoSalud = models.Columna{Valor: anioString + "-" + mesString, Longitud: 7}
 	default:
 		if int(mesActual) == 12 {
 			mesString = "01"
@@ -88,12 +87,12 @@ func (c *PagoController) GetInfoCabecera() {
 				mesString = "0" + strconv.Itoa(int(mesActual-1))
 			}
 		}
-		informacionCabecera["TipoPlanilla"] = models.Columna{Valor: "7E", Longitud: 22}
-		informacionCabecera["Sucursal"] = models.Columna{Valor: "S01", Longitud: 51}
-		informacionCabecera["PeriodoSalud"] = models.Columna{Valor: anioString + "-" + mesString, Longitud: 7}
+		cabecera.TipoPlanilla = models.Columna{Valor: "7E", Longitud: 22}
+		cabecera.Sucursal = models.Columna{Valor: "S01", Longitud: 51}
+		cabecera.PeriodoSalud = models.Columna{Valor: anioString + "-" + mesString, Longitud: 7}
 	}
 
-	c.Data["json"] = informacionCabecera
+	c.Data["json"] = cabecera
 	c.ServeJSON()
 }
 
