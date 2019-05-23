@@ -14,6 +14,7 @@ type ParametroEstandar struct {
 	ClaseParametro       string `orm:"column(clase_parametro);null"`
 	ValorParametro       string `orm:"column(valor_parametro)"`
 	DescripcionParametro string `orm:"column(descripcion_parametro);null"`
+	Abreviatura          string `orm:"column(abreviatura);null"`
 }
 
 func (t *ParametroEstandar) TableName() string {

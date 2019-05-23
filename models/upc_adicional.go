@@ -12,7 +12,7 @@ import (
 
 type UpcAdicional struct {
 	Id                int       `orm:"column(id);pk"`
-	PersonaAsociada   int       `orm:"column(persona_asociada)"`
+	PersonaAsociada   string    `orm:"column(persona_asociada)"`
 	ParametroEstandar int       `orm:"column(parametro_estandar)"`
 	NumDocumento      string    `orm:"column(num_documento)"`
 	TipoUpc           *TipoUpc  `orm:"column(tipo_upc);rel(fk)"`

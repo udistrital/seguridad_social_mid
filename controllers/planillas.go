@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"math/rand"
 	"strconv"
 	"time"
 
@@ -24,17 +23,16 @@ type PlanillasController struct {
 // URLMapping ...
 func (c *PlanillasController) URLMapping() {
 	c.Mapping("GenerarPlanillaActivos", c.GenerarPlanillaActivos)
-	c.Mapping("PruebaPlanilla", c.PruebaPlanilla)
 }
 
 var (
-	detallePreliquidacion []models.DetallePreliquidacion // detalle de toda la preliquidación
+	detallePreliquidacion []models.DetallePreliquidacion   // detalle de toda la preliquidación
+	informacionUpcs       map[string][]models.UpcAdicional // información de todos los beneficiarios adicionales
 	contratistas          = false
 
 	formatoFecha = "2006-01-02"
 	fila         string
 	filaAux      string
-	filas        string
 
 	//Variables para cada una de las novedades y sus días validos
 	ingreso      = false
@@ -208,22 +206,6 @@ func getValorConcepto(preliquidacion string, concepto string) (map[string]int, e
 	return salariosBase, nil
 }
 
-// PruebaPlanilla ...
-// @Title Generar planilla de activos
-// @Description Recibe un periodo pago y devuelve un arreglo de json con la información de la planilla
-// @Param	body body PeriodoPago true	"body for PeriodoPago"
-// @Success 200 {string} string
-// @Failure 403 body is empty
-// @router /PruebaPlanilla/:limit [get]
-func (c *PlanillasController) PruebaPlanilla() {
-	limit := c.Ctx.Input.Param(":limit")
-	num := rand.Intn(100)
-	fmt.Println(num)
-	fmt.Println(limit)
-	c.Data["json"] = map[string]int{"test": num}
-	c.ServeJSON()
-}
-
 // GenerarPlanillaActivos ...
 // @Title Generar planilla de activos
 // @Description Recibe un periodo pago y devuelve un arreglo de json con la información de la planilla
@@ -346,8 +328,6 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				return
 			}
 
-			filas = ""
-
 			for i := range detallePreliquidacion {
 				personas = append(personas, fmt.Sprint(detallePreliquidacion[i].Persona))
 			}
@@ -373,20 +353,19 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 				}
 
 				filaPlanilla := models.PlanillaTipoE{
-					TipoRegistro:         models.Columna{Valor: "02", Longitud: 2},
-					TipoDocumento:        models.Columna{Valor: "CC", Longitud: 2},
-					NumeroIdentificacion: models.Columna{Valor: value.Id, Longitud: 16},
-					TipoCotizante:        models.Columna{Valor: 1, Longitud: 2},
-					SubTipoCotizante:     models.Columna{Valor: 0, Longitud: 2},
-					ExtranjeroNoPension:  models.Columna{Valor: "", Longitud: 1},
-					ColombianoExterior:   models.Columna{Valor: "", Longitud: 1},
-					CodigoDepartamento:   models.Columna{Valor: "11", Longitud: 2},
-					CodigoMunicipio:      models.Columna{Valor: "001", Longitud: 3},
-					PrimerApellido:       models.Columna{Valor: value.PrimerApellido, Longitud: 20},
-					SegundoApellido:      models.Columna{Valor: value.SegundoApellido, Longitud: 30},
-					PrimerNombre:         models.Columna{Valor: value.PrimerNombre, Longitud: 20},
-					SegundoNombre:        models.Columna{Valor: value.SegundoNombre, Longitud: 30},
-					// Novedades
+					TipoRegistro:                    models.Columna{Valor: "02", Longitud: 2},
+					TipoDocumento:                   models.Columna{Valor: "CC", Longitud: 2},
+					NumeroIdentificacion:            models.Columna{Valor: value.Id, Longitud: 16},
+					TipoCotizante:                   models.Columna{Valor: 1, Longitud: 2},
+					SubTipoCotizante:                models.Columna{Valor: 0, Longitud: 2},
+					ExtranjeroNoPension:             models.Columna{Valor: "", Longitud: 1},
+					ColombianoExterior:              models.Columna{Valor: "", Longitud: 1},
+					CodigoDepartamento:              models.Columna{Valor: "11", Longitud: 2},
+					CodigoMunicipio:                 models.Columna{Valor: "001", Longitud: 3},
+					PrimerApellido:                  models.Columna{Valor: value.PrimerApellido, Longitud: 20},
+					SegundoApellido:                 models.Columna{Valor: value.SegundoApellido, Longitud: 30},
+					PrimerNombre:                    models.Columna{Valor: value.PrimerNombre, Longitud: 20},
+					SegundoNombre:                   models.Columna{Valor: value.SegundoNombre, Longitud: 30},
 					NovIng:                          models.Columna{Valor: "", Longitud: 1},
 					NovRet:                          models.Columna{Valor: "", Longitud: 1},
 					NovTde:                          models.Columna{Valor: "", Longitud: 1},
@@ -472,8 +451,6 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					EspacioBlanco:                   models.Columna{Valor: "", Longitud: 26},
 				}
 
-				log.Println("filaPlanilla: ", filaPlanilla.NumeroIdentificacion)
-
 				filasPlanilla = append(filasPlanilla, filaPlanilla)
 
 				establecerNovedadesExterior(idPersona, idPreliquidacion)
@@ -482,34 +459,26 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 
 				if suspencionTemporalContrato {
 					diasNovedad = diasSuspencionContrato
-					log.Println("agrego una suspencionTemporaContrato")
 					filasPlanilla = append(filasPlanilla, crearFilaNovedad(filaPlanilla, idPersona, idPreliquidacion, "licencia_norem", value))
 				} else if licenciaNoRemunerada {
-					log.Println("agrego una licenciaNoRemunerada")
 					diasNovedad = diasLicenciaNoRem
 					filasPlanilla = append(filasPlanilla, crearFilaNovedad(filaPlanilla, idPersona, idPreliquidacion, "licencia_norem", value))
 				} else if comisionServicios {
-					log.Println("agrego una comisionServicios")
 					diasNovedad = diasComisionServicios
 					filasPlanilla = append(filasPlanilla, crearFilaNovedad(filaPlanilla, idPersona, idPreliquidacion, "comision_norem", value))
 				} else if incapacidadGeneral {
-					log.Println("agrego una incapacidadGeneral")
 					diasNovedad = diasIncapacidad
 					filasPlanilla = append(filasPlanilla, crearFilaNovedad(filaPlanilla, idPersona, idPreliquidacion, "incapacidad_general", value))
 				} else if licenciaMaternidad {
-					log.Println("agrego una licenciaMaternidad")
 					diasNovedad = diasLicenciaMaternidad
 					filasPlanilla = append(filasPlanilla, crearFilaNovedad(filaPlanilla, idPersona, idPreliquidacion, "licencia_maternidad", value))
 				} else if licenciaPaternidad {
-					log.Println("agrego una licenciaPaternidad")
 					diasNovedad = diasLicenciaMaternidad
 					filasPlanilla = append(filasPlanilla, crearFilaNovedad(filaPlanilla, idPersona, idPreliquidacion, "licencia_paternidad", value))
 				} else if vacaciones {
-					log.Println("agrego unas vacaciones")
 					diasNovedad = diasVacaciones
 					filasPlanilla = append(filasPlanilla, crearFilaNovedad(filaPlanilla, idPersona, idPreliquidacion, "vacaciones", value))
 				} else if licenciaRemunerada {
-					log.Println("agrego una licenciaRemunerada")
 					diasNovedad = diasLicenciaRem
 					filasPlanilla = append(filasPlanilla, crearFilaNovedad(filaPlanilla, idPersona, idPreliquidacion, "licencia_rem", value))
 				}
@@ -517,22 +486,164 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 			}
 			log.Println("Finalizó de generar la planilla")
 			log.Println("Tiempo en generar la planilla: ", time.Since(start))
-			respuestaJSON := make(map[string]interface{})
-			respuestaJSON["informacion"] = filas
-			c.Data["json"] = respuestaJSON
+
 			c.Data["json"] = filasPlanilla
 		} else {
 			log.Println("Fallo la generación de la planilla")
-			c.Data["json"] = err.Error()
+			c.Data["json"] = map[string]string{ "error": err.Error() }
 		}
 
 	} else {
 		log.Println("Fallo la generación de la planilla")
-		c.Data["json"] = map[string]string{
-			"error": err.Error(),
-		}
+		c.Data["json"] = map[string]string{ "error": err.Error() }
 	}
 	c.ServeJSON()
+}
+
+// GetFilasUpc ...
+// @Title Generar filas de planilla correspondientes a UPC
+// @Description Recibe un periodo pago y devuelve un arreglo de json con la información de las filas para las upc
+// @Param	body body PeriodoPago true	"body for PeriodoPago"
+// @Success 200 {string} string
+// @Failure 403 body is empty
+// @router /GetFilasUpc [post]
+func (c *PlanillasController)GetFilasUpc() {
+	var periodoPago *models.PeriodoPago
+
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &periodoPago); err == nil {
+		log.Println("Error en los parámetros")
+		c.Data["json"] = map[string]string{ "error": err.Error() }
+		c.ServeJSON()
+	}
+
+	err = getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion?"+
+	"limit="+limit+
+	"&query=Preliquidacion.Id:"+strconv.Itoa(periodoPago.Liquidacion)+
+	",Concepto.NombreConcepto:ibc_liquidado"+
+	"&sortby=Persona&order=asc&offset="+offset, &detallePreliquidacion);
+
+	if err != nil {
+		log.Println("Error al obtener el detalle de liquidación")
+		c.Data["json"] = map[string]string{ "error": err.Error() }
+		c.ServeJSON()
+	}
+
+	mapPersonas, err := GetInfoPersonas(detallePreliquidacion)
+			if err != nil {
+				c.Data["json"] = map[string]string{"error": err.Error()}
+				c.ServeJSON()
+				return
+			}
+
+	var filasUpc []models.PlanillaTipoE
+	_, parametros := GetParametroEstandar()
+
+	for _, trabajador := range informacionUpcs {
+		for _, upc := range trabajador {
+			filaPlanilla := models.PlanillaTipoE{
+
+				TipoRegistro:                    models.Columna{Valor: "02", Longitud: 2},
+				TipoDocumento:                   models.Columna{Valor: parametros[upc.ParametroEstandar], Longitud: 2},
+				NumeroIdentificacion:            models.Columna{Valor: upc.NumDocumento, Longitud: 16},
+				TipoCotizante:                   models.Columna{Valor: 40, Longitud: 2},
+				SubTipoCotizante:                models.Columna{Valor: 1, Longitud: 2},
+				ExtranjeroNoPension:             models.Columna{Valor: "", Longitud: 1},
+				ColombianoExterior:              models.Columna{Valor: "", Longitud: 1},
+				CodigoDepartamento:              models.Columna{Valor: "", Longitud: 2},
+				CodigoMunicipio:                 models.Columna{Valor: "", Longitud: 3},
+				PrimerApellido:                  models.Columna{Valor: upc.PrimerApellido, Longitud: 20},
+				SegundoApellido:                 models.Columna{Valor: upc.SegundoApellido, Longitud: 30},
+				PrimerNombre:                    models.Columna{Valor: upc.PrimerNombre, Longitud: 20},
+				SegundoNombre:                   models.Columna{Valor: upc.SegundoNombre, Longitud: 30},
+				NovIng:                          models.Columna{Valor: "", Longitud: 1},
+				NovRet:                          models.Columna{Valor: "", Longitud: 1},
+				NovTde:                          models.Columna{Valor: "", Longitud: 1},
+				NovTae:                          models.Columna{Valor: "", Longitud: 1},
+				NovTdp:                          models.Columna{Valor: "", Longitud: 1},
+				NovTap:                          models.Columna{Valor: "", Longitud: 1},
+				NovVsp:                          models.Columna{Valor: "", Longitud: 1},
+				NovCorrecciones:                 models.Columna{Valor: "", Longitud: 1},
+				NovVst:                          models.Columna{Valor: "", Longitud: 1},
+				NovSln:                          models.Columna{Valor: "", Longitud: 1},
+				NovIge:                          models.Columna{Valor: "", Longitud: 1},
+				NovLma:                          models.Columna{Valor: "", Longitud: 1},
+				NovVac:                          models.Columna{Valor: "", Longitud: 1},
+				NovAvp:                          models.Columna{Valor: "", Longitud: 1},
+				NovVct:                          models.Columna{Valor: "", Longitud: 1},
+				NavIrl:                          models.Columna{Valor: 0, Longitud: 2},
+				CodigoFondoPension:              models.Columna{Valor: "", Longitud: 6},
+				TrasladoPension:                 models.Columna{Valor: "", Longitud: 6},
+				CodigoEps:                       models.Columna{Valor: "", Longitud: 6},
+				TrasladoEps:                     models.Columna{Valor: "", Longitud: 6},
+				CodigoCCF:                       models.Columna{Valor: "", Longitud: 6},
+				DiasLaborados:                   models.Columna{Valor: 0, Longitud: 2},
+				DiasPension:                     models.Columna{Valor: 0, Longitud: 2},
+				DiasSalud:                       models.Columna{Valor: 0, Longitud: 2},
+				DiasArl:                         models.Columna{Valor: 0, Longitud: 2},
+				DiasCaja:                        models.Columna{Valor: 0, Longitud: 2},
+				SalarioBase:                     models.Columna{Valor: 0, Longitud: 9},
+				SalarioIntegral:                 models.Columna{Valor: "", Longitud: 1},
+				IbcPension:                      models.Columna{Valor: 0, Longitud: 9},
+				IbcSalud:                        models.Columna{Valor: 0, Longitud: 9},
+				IbcArl:                          models.Columna{Valor: 0, Longitud: 9},
+				IbcCcf:                          models.Columna{Valor: 0, Longitud: 9},
+				TarifaPension:                   models.Columna{Valor: 0, Longitud: 7},
+				PagoPension:                     models.Columna{Valor: "", Longitud: 9},
+				AportePension:                   models.Columna{Valor: "", Longitud: 9},
+				TotalPension:                    models.Columna{Valor: "", Longitud: 9},
+				FondoSolidaridad:                models.Columna{Valor: "", Longitud: 9},
+				FondoSubsistencia:               models.Columna{Valor: "", Longitud: 9},
+				NoRetenidoAportesVolunarios:     models.Columna{Valor: 0, Longitud: 9},
+				TarifaSalud:                     models.Columna{Valor: "", Longitud: 7},
+				PagoSalud:                       models.Columna{Valor: "", Longitud: 9},
+				ValorUpc:                        models.Columna{Valor: int(upc.TipoUpc.Valor), Longitud: 9},
+				AutorizacionEnfermedadGeneral:   models.Columna{Valor: "", Longitud: 15},
+				ValorIncapacidadGeneral:         models.Columna{Valor: 0, Longitud: 15},
+				AutotizacionLicenciaMarternidad: models.Columna{Valor: "", Longitud: 15},
+				ValorLicenciaMaternidad:         models.Columna{Valor: 0, Longitud: 15},
+				TarifaArl:                       models.Columna{Valor: "", Longitud: 9},
+				CentroTrabajo:                   models.Columna{Valor: 0, Longitud: 9},
+				PagoArl:                         models.Columna{Valor: 0, Longitud: 9},
+				TarifaCaja:                      models.Columna{Valor: 0, Longitud: 7},
+				PagoCaja:                        models.Columna{Valor: 0, Longitud: 9},
+				TarifaSena:                      models.Columna{Valor: 0, Longitud: 7},
+				PagoSena:                        models.Columna{Valor: 0, Longitud: 9},
+				TarifaIcbf:                      models.Columna{Valor: 0, Longitud: 7},
+				PagoIcbf:                        models.Columna{Valor: 0, Longitud: 9},
+				TarifaEsap:                      models.Columna{Valor: 0, Longitud: 9},
+				PagoEsap:                        models.Columna{Valor: 0, Longitud: 9},
+				TarifaMen:                       models.Columna{Valor: 0, Longitud: 9},
+				PagoMen:                         models.Columna{Valor: 0, Longitud: 9},
+				TipoDocumentoCotizantePrincipal: models.Columna{Valor: "CC", Longitud: 2},
+				DocumentoCotizantePrincipal:     models.Columna{Valor: mapPersonas[upc.PersonaAsociada].Id, Longitud: 16},
+				ExoneradoPagoSalud:              models.Columna{Valor: "", Longitud: 1},
+				CodigoArl:                       models.Columna{Valor: "", Longitud: 6},
+				ClaseRiesgo:                     models.Columna{Valor: "", Longitud: 1},
+				IndicadorTarifaEspecialPension:  models.Columna{Valor: "", Longitud: 1},
+				FechaIngreso:                    models.Columna{Valor: "", Longitud: 10},
+				FechaRetiro:                     models.Columna{Valor: "", Longitud: 10},
+				FechaInicioVsp:                  models.Columna{Valor: "", Longitud: 10},
+				FechaInicioSuspencion:           models.Columna{Valor: "", Longitud: 10},
+				FechaFinSuspencion:              models.Columna{Valor: "", Longitud: 10},
+				FechaInicioIge:                  models.Columna{Valor: "", Longitud: 10},
+				FechaFinIge:                     models.Columna{Valor: "", Longitud: 10},
+				FechaInicioLma:                  models.Columna{Valor: "", Longitud: 10},
+				FechaFinLma:                     models.Columna{Valor: "", Longitud: 10},
+				FechaInicioVac:                  models.Columna{Valor: "", Longitud: 10},
+				FechaFinVac:                     models.Columna{Valor: "", Longitud: 10},
+				FechaInicioVct:                  models.Columna{Valor: "", Longitud: 10},
+				FechaFinVct:                     models.Columna{Valor: "", Longitud: 10},
+				FechaInicioIrl:                  models.Columna{Valor: "", Longitud: 10},
+				FechaFinIrl:                     models.Columna{Valor: "", Longitud: 10},
+				IbcOtrosParaFiscales:            models.Columna{Valor: 0, Longitud: 9},
+				HorasLaboradas:                  models.Columna{Valor: 0, Longitud: 3},
+				EspacioBlanco:                   models.Columna{Valor: "", Longitud: 26},
+			}
+			filasUpc = append(filasUpc, filaPlanilla)
+		}
+	}
+
+	return filasUpc
 }
 
 // crearFilaNovedad crea las filas de acuerdo a las novedades de una persona
@@ -645,7 +756,7 @@ func crearFilaNovedad(filaPersona models.PlanillaTipoE, idPersona, idPreliquidac
 	filaPersona.FechaFinIrl.Valor = fechaFinIrl
 	filaPersona.IbcOtrosParaFiscales.Valor = 0
 	filaPersona.HorasLaboradas.Valor = 0
-	
+
 	personaNovedad = filaPersona
 	return
 }
@@ -709,14 +820,10 @@ func calcularIbc(idPersona, documentoPersona, novedad, idPreliquidacion string) 
 
 	var respuestaAPI interface{}
 
-	// "seg_social(exterior_familia,2018,3,7,2018,4,7). concepto(420,seguridad_social, seguridad_social, exterior_familia, 0, 2018)."
-
-	// seg_social(nombre de regla, año inicio, mes inicio, dia inicio, año fin, mes fin, dia fin).
 	novedadSeguridadSocial := "seg_social(" + novedad + ", " + strconv.Itoa(fechaInicioNovedad.Year()) + ", " +
 		strconv.Itoa(int(fechaInicioNovedad.Month())) + ", " + strconv.Itoa(fechaInicioNovedad.Day()) + ", " +
 		strconv.Itoa(fechaFinNovedad.Year()) + ", " + strconv.Itoa(int(fechaFinNovedad.Month())) + ", " +
 		strconv.Itoa(fechaInicioNovedad.Day()) + ")."
-	// concepto(id proveedor, seguridad_social, seguridad_social, nombre de regla, 0, vigencia)
 	concepto := "concepto(" + idPersona + ", seguridad_social, seguridad_social, " + novedad + ", " +
 		strconv.Itoa(fechaInicioNovedad.Year()) + ")."
 
@@ -729,12 +836,12 @@ func calcularIbc(idPersona, documentoPersona, novedad, idPreliquidacion string) 
 	infoRequest["Mes"] = mesPeriodo
 
 	err = sendJson("http://"+beego.AppConfig.String("titanMidService")+"/preliquidacion/get_ibc_novedad", "POST", &respuestaAPI, infoRequest)
-	log.Println("http://"+beego.AppConfig.String("titanMidService")+"/preliquidacion/get_ibc_novedad")
-	log.Println("inforequest: ",infoRequest)
+	log.Println("http://" + beego.AppConfig.String("titanMidService") + "/preliquidacion/get_ibc_novedad")
+	log.Println("inforequest: ", infoRequest)
 	if err != nil {
 		ImprimirError("error en calcularIbc()", err)
 	}
-	log.Println("respuestaapi: ",respuestaAPI)
+	log.Println("respuestaapi: ", respuestaAPI)
 	return 243000
 	// return int(respuestaAPI.(float64))
 }
@@ -744,7 +851,7 @@ func calcularIbc(idPersona, documentoPersona, novedad, idPreliquidacion string) 
 func buscarUpcAsociada() (map[string]int, error) {
 	var beneficiariosAdicionales []models.UpcAdicional
 	mapaBeneficiarios := make(map[string]int)
-
+	informacionUpcs = make(map[string][]models.UpcAdicional)
 	err := getJson("http://"+beego.AppConfig.String("segSocialService")+
 		"/upc_adicional"+
 		"?limit=-1", &beneficiariosAdicionales)
@@ -755,9 +862,11 @@ func buscarUpcAsociada() (map[string]int, error) {
 
 	if beneficiariosAdicionales[0].Id > 0 { // Esto es para verificar que el arreglo que devuelve el servicio tiene al menos un elemento con valor
 		for _, beneficiario := range beneficiariosAdicionales {
-			mapaBeneficiarios[strconv.Itoa(beneficiario.PersonaAsociada)] += int(beneficiario.TipoUpc.Valor)
+			mapaBeneficiarios[beneficiario.PersonaAsociada] += int(beneficiario.TipoUpc.Valor)
+			informacionUpcs[beneficiario.PersonaAsociada] = append(informacionUpcs[beneficiario.PersonaAsociada], beneficiario)
 		}
 	}
+
 	return mapaBeneficiarios, nil
 }
 
@@ -916,11 +1025,11 @@ func establecerNovedades(idPersona, idPreliquidacion, cedulaPersona string) {
 		"&query=Persona:"+idPersona+
 		",Preliquidacion.Id:"+idPreliquidacion, &detallePreliquidaicon)
 
-	log.Println("http://"+beego.AppConfig.String("titanServicio")+
-	"/detalle_preliquidacion"+
-	"?limit=0"+
-	"&query=Persona:"+idPersona+
-	",Preliquidacion.Id:"+idPreliquidacion)
+	log.Println("http://" + beego.AppConfig.String("titanServicio") +
+		"/detalle_preliquidacion" +
+		"?limit=0" +
+		"&query=Persona:" + idPersona +
+		",Preliquidacion.Id:" + idPreliquidacion)
 
 	if err != nil {
 		ImprimirError("error en establecerNovedades()", err)
@@ -939,7 +1048,7 @@ func establecerNovedades(idPersona, idPreliquidacion, cedulaPersona string) {
 			"&query=Persona:"+idPersona+
 			",Concepto.NombreConcepto:"+value.Concepto.NombreConcepto+
 			",Activo:true", &conceptoNominaPersona)
-			
+
 		if err != nil {
 			ImprimirError("error en establecerNovedades()", err)
 		}
@@ -963,8 +1072,6 @@ func establecerNovedades(idPersona, idPreliquidacion, cedulaPersona string) {
 				fechaFinTemp = conceptoNominaPersona[0].FechaHasta.Format(formatoFecha)
 			}
 		}
-
-		log.Println(value.Concepto.NombreConcepto)
 
 		switch value.Concepto.NombreConcepto {
 		case "licencia_rem":
@@ -1030,8 +1137,6 @@ func establecerNovedades(idPersona, idPreliquidacion, cedulaPersona string) {
 			novedadPersona = true
 		}
 	}
-
-	log.Println("Persona: ", idPersona," incapacidad_general: ",incapacidadGeneral)
 
 	fila += formatoDato("", 8)                             // son espacios del archivo plano hasta la novedad de VST
 	fila += formatoDato("X", 1)                            // VST: Variación transitoria de salario
@@ -1202,15 +1307,6 @@ func reinicializarVariablesNovedades() {
 
 	novedadPersona = false
 	diasIrl = 0
-}
-
-func completarSecuenciaString(num string, cantSecuencia int) (secuencia string) {
-	tamanioNum := len(num)
-	for i := 0; i < cantSecuencia-tamanioNum; i++ {
-		secuencia += "0"
-	}
-	secuencia += num
-	return
 }
 
 func formatoDato(texto string, longitud int) (textoEscribir string) {
