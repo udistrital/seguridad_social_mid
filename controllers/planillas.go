@@ -486,160 +486,128 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 			}
 			log.Println("Finalizó de generar la planilla")
 			log.Println("Tiempo en generar la planilla: ", time.Since(start))
-
+			filasPlanilla = append(filasPlanilla, getFilasUpc(mapPersonas)...)
 			c.Data["json"] = filasPlanilla
 		} else {
 			log.Println("Fallo la generación de la planilla")
-			c.Data["json"] = map[string]string{ "error": err.Error() }
+			c.Data["json"] = map[string]string{"error": err.Error()}
 		}
 
 	} else {
 		log.Println("Fallo la generación de la planilla")
-		c.Data["json"] = map[string]string{ "error": err.Error() }
+		c.Data["json"] = map[string]string{"error": err.Error()}
 	}
 	c.ServeJSON()
 }
 
-// GetFilasUpc ...
-// @Title Generar filas de planilla correspondientes a UPC
-// @Description Recibe un periodo pago y devuelve un arreglo de json con la información de las filas para las upc
-// @Param	body body PeriodoPago true	"body for PeriodoPago"
-// @Success 200 {string} string
-// @Failure 403 body is empty
-// @router /GetFilasUpc [post]
-func (c *PlanillasController)GetFilasUpc() {
-	var periodoPago *models.PeriodoPago
-
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &periodoPago); err == nil {
-		log.Println("Error en los parámetros")
-		c.Data["json"] = map[string]string{ "error": err.Error() }
-		c.ServeJSON()
-	}
-
-	err = getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion?"+
-	"limit="+limit+
-	"&query=Preliquidacion.Id:"+strconv.Itoa(periodoPago.Liquidacion)+
-	",Concepto.NombreConcepto:ibc_liquidado"+
-	"&sortby=Persona&order=asc&offset="+offset, &detallePreliquidacion);
-
-	if err != nil {
-		log.Println("Error al obtener el detalle de liquidación")
-		c.Data["json"] = map[string]string{ "error": err.Error() }
-		c.ServeJSON()
-	}
-
-	mapPersonas, err := GetInfoPersonas(detallePreliquidacion)
-			if err != nil {
-				c.Data["json"] = map[string]string{"error": err.Error()}
-				c.ServeJSON()
-				return
-			}
-
+func getFilasUpc(mapPersonas map[string]models.InformacionPersonaNatural) []models.PlanillaTipoE {
 	var filasUpc []models.PlanillaTipoE
-	_, parametros := GetParametroEstandar()
+	parametros, _ := GetParametroEstandar()
 
-	for _, trabajador := range informacionUpcs {
-		for _, upc := range trabajador {
-			filaPlanilla := models.PlanillaTipoE{
-
-				TipoRegistro:                    models.Columna{Valor: "02", Longitud: 2},
-				TipoDocumento:                   models.Columna{Valor: parametros[upc.ParametroEstandar], Longitud: 2},
-				NumeroIdentificacion:            models.Columna{Valor: upc.NumDocumento, Longitud: 16},
-				TipoCotizante:                   models.Columna{Valor: 40, Longitud: 2},
-				SubTipoCotizante:                models.Columna{Valor: 1, Longitud: 2},
-				ExtranjeroNoPension:             models.Columna{Valor: "", Longitud: 1},
-				ColombianoExterior:              models.Columna{Valor: "", Longitud: 1},
-				CodigoDepartamento:              models.Columna{Valor: "", Longitud: 2},
-				CodigoMunicipio:                 models.Columna{Valor: "", Longitud: 3},
-				PrimerApellido:                  models.Columna{Valor: upc.PrimerApellido, Longitud: 20},
-				SegundoApellido:                 models.Columna{Valor: upc.SegundoApellido, Longitud: 30},
-				PrimerNombre:                    models.Columna{Valor: upc.PrimerNombre, Longitud: 20},
-				SegundoNombre:                   models.Columna{Valor: upc.SegundoNombre, Longitud: 30},
-				NovIng:                          models.Columna{Valor: "", Longitud: 1},
-				NovRet:                          models.Columna{Valor: "", Longitud: 1},
-				NovTde:                          models.Columna{Valor: "", Longitud: 1},
-				NovTae:                          models.Columna{Valor: "", Longitud: 1},
-				NovTdp:                          models.Columna{Valor: "", Longitud: 1},
-				NovTap:                          models.Columna{Valor: "", Longitud: 1},
-				NovVsp:                          models.Columna{Valor: "", Longitud: 1},
-				NovCorrecciones:                 models.Columna{Valor: "", Longitud: 1},
-				NovVst:                          models.Columna{Valor: "", Longitud: 1},
-				NovSln:                          models.Columna{Valor: "", Longitud: 1},
-				NovIge:                          models.Columna{Valor: "", Longitud: 1},
-				NovLma:                          models.Columna{Valor: "", Longitud: 1},
-				NovVac:                          models.Columna{Valor: "", Longitud: 1},
-				NovAvp:                          models.Columna{Valor: "", Longitud: 1},
-				NovVct:                          models.Columna{Valor: "", Longitud: 1},
-				NavIrl:                          models.Columna{Valor: 0, Longitud: 2},
-				CodigoFondoPension:              models.Columna{Valor: "", Longitud: 6},
-				TrasladoPension:                 models.Columna{Valor: "", Longitud: 6},
-				CodigoEps:                       models.Columna{Valor: "", Longitud: 6},
-				TrasladoEps:                     models.Columna{Valor: "", Longitud: 6},
-				CodigoCCF:                       models.Columna{Valor: "", Longitud: 6},
-				DiasLaborados:                   models.Columna{Valor: 0, Longitud: 2},
-				DiasPension:                     models.Columna{Valor: 0, Longitud: 2},
-				DiasSalud:                       models.Columna{Valor: 0, Longitud: 2},
-				DiasArl:                         models.Columna{Valor: 0, Longitud: 2},
-				DiasCaja:                        models.Columna{Valor: 0, Longitud: 2},
-				SalarioBase:                     models.Columna{Valor: 0, Longitud: 9},
-				SalarioIntegral:                 models.Columna{Valor: "", Longitud: 1},
-				IbcPension:                      models.Columna{Valor: 0, Longitud: 9},
-				IbcSalud:                        models.Columna{Valor: 0, Longitud: 9},
-				IbcArl:                          models.Columna{Valor: 0, Longitud: 9},
-				IbcCcf:                          models.Columna{Valor: 0, Longitud: 9},
-				TarifaPension:                   models.Columna{Valor: 0, Longitud: 7},
-				PagoPension:                     models.Columna{Valor: "", Longitud: 9},
-				AportePension:                   models.Columna{Valor: "", Longitud: 9},
-				TotalPension:                    models.Columna{Valor: "", Longitud: 9},
-				FondoSolidaridad:                models.Columna{Valor: "", Longitud: 9},
-				FondoSubsistencia:               models.Columna{Valor: "", Longitud: 9},
-				NoRetenidoAportesVolunarios:     models.Columna{Valor: 0, Longitud: 9},
-				TarifaSalud:                     models.Columna{Valor: "", Longitud: 7},
-				PagoSalud:                       models.Columna{Valor: "", Longitud: 9},
-				ValorUpc:                        models.Columna{Valor: int(upc.TipoUpc.Valor), Longitud: 9},
-				AutorizacionEnfermedadGeneral:   models.Columna{Valor: "", Longitud: 15},
-				ValorIncapacidadGeneral:         models.Columna{Valor: 0, Longitud: 15},
-				AutotizacionLicenciaMarternidad: models.Columna{Valor: "", Longitud: 15},
-				ValorLicenciaMaternidad:         models.Columna{Valor: 0, Longitud: 15},
-				TarifaArl:                       models.Columna{Valor: "", Longitud: 9},
-				CentroTrabajo:                   models.Columna{Valor: 0, Longitud: 9},
-				PagoArl:                         models.Columna{Valor: 0, Longitud: 9},
-				TarifaCaja:                      models.Columna{Valor: 0, Longitud: 7},
-				PagoCaja:                        models.Columna{Valor: 0, Longitud: 9},
-				TarifaSena:                      models.Columna{Valor: 0, Longitud: 7},
-				PagoSena:                        models.Columna{Valor: 0, Longitud: 9},
-				TarifaIcbf:                      models.Columna{Valor: 0, Longitud: 7},
-				PagoIcbf:                        models.Columna{Valor: 0, Longitud: 9},
-				TarifaEsap:                      models.Columna{Valor: 0, Longitud: 9},
-				PagoEsap:                        models.Columna{Valor: 0, Longitud: 9},
-				TarifaMen:                       models.Columna{Valor: 0, Longitud: 9},
-				PagoMen:                         models.Columna{Valor: 0, Longitud: 9},
-				TipoDocumentoCotizantePrincipal: models.Columna{Valor: "CC", Longitud: 2},
-				DocumentoCotizantePrincipal:     models.Columna{Valor: mapPersonas[upc.PersonaAsociada].Id, Longitud: 16},
-				ExoneradoPagoSalud:              models.Columna{Valor: "", Longitud: 1},
-				CodigoArl:                       models.Columna{Valor: "", Longitud: 6},
-				ClaseRiesgo:                     models.Columna{Valor: "", Longitud: 1},
-				IndicadorTarifaEspecialPension:  models.Columna{Valor: "", Longitud: 1},
-				FechaIngreso:                    models.Columna{Valor: "", Longitud: 10},
-				FechaRetiro:                     models.Columna{Valor: "", Longitud: 10},
-				FechaInicioVsp:                  models.Columna{Valor: "", Longitud: 10},
-				FechaInicioSuspencion:           models.Columna{Valor: "", Longitud: 10},
-				FechaFinSuspencion:              models.Columna{Valor: "", Longitud: 10},
-				FechaInicioIge:                  models.Columna{Valor: "", Longitud: 10},
-				FechaFinIge:                     models.Columna{Valor: "", Longitud: 10},
-				FechaInicioLma:                  models.Columna{Valor: "", Longitud: 10},
-				FechaFinLma:                     models.Columna{Valor: "", Longitud: 10},
-				FechaInicioVac:                  models.Columna{Valor: "", Longitud: 10},
-				FechaFinVac:                     models.Columna{Valor: "", Longitud: 10},
-				FechaInicioVct:                  models.Columna{Valor: "", Longitud: 10},
-				FechaFinVct:                     models.Columna{Valor: "", Longitud: 10},
-				FechaInicioIrl:                  models.Columna{Valor: "", Longitud: 10},
-				FechaFinIrl:                     models.Columna{Valor: "", Longitud: 10},
-				IbcOtrosParaFiscales:            models.Columna{Valor: 0, Longitud: 9},
-				HorasLaboradas:                  models.Columna{Valor: 0, Longitud: 3},
-				EspacioBlanco:                   models.Columna{Valor: "", Longitud: 26},
+	for key, value := range mapPersonas {
+		if informacionUpcs[key] != nil {
+			for _, upc := range informacionUpcs[key] {
+				filaPlanilla := models.PlanillaTipoE{
+					TipoRegistro:                    models.Columna{Valor: "02", Longitud: 2},
+					TipoDocumento:                   models.Columna{Valor: parametros[upc.ParametroEstandar], Longitud: 2},
+					NumeroIdentificacion:            models.Columna{Valor: upc.NumDocumento, Longitud: 16},
+					TipoCotizante:                   models.Columna{Valor: 40, Longitud: 2},
+					SubTipoCotizante:                models.Columna{Valor: 1, Longitud: 2},
+					ExtranjeroNoPension:             models.Columna{Valor: "", Longitud: 1},
+					ColombianoExterior:              models.Columna{Valor: "", Longitud: 1},
+					CodigoDepartamento:              models.Columna{Valor: "", Longitud: 2},
+					CodigoMunicipio:                 models.Columna{Valor: "", Longitud: 3},
+					PrimerApellido:                  models.Columna{Valor: upc.PrimerApellido, Longitud: 20},
+					SegundoApellido:                 models.Columna{Valor: upc.SegundoApellido, Longitud: 30},
+					PrimerNombre:                    models.Columna{Valor: upc.PrimerNombre, Longitud: 20},
+					SegundoNombre:                   models.Columna{Valor: upc.SegundoNombre, Longitud: 30},
+					NovIng:                          models.Columna{Valor: "", Longitud: 1},
+					NovRet:                          models.Columna{Valor: "", Longitud: 1},
+					NovTde:                          models.Columna{Valor: "", Longitud: 1},
+					NovTae:                          models.Columna{Valor: "", Longitud: 1},
+					NovTdp:                          models.Columna{Valor: "", Longitud: 1},
+					NovTap:                          models.Columna{Valor: "", Longitud: 1},
+					NovVsp:                          models.Columna{Valor: "", Longitud: 1},
+					NovCorrecciones:                 models.Columna{Valor: "", Longitud: 1},
+					NovVst:                          models.Columna{Valor: "", Longitud: 1},
+					NovSln:                          models.Columna{Valor: "", Longitud: 1},
+					NovIge:                          models.Columna{Valor: "", Longitud: 1},
+					NovLma:                          models.Columna{Valor: "", Longitud: 1},
+					NovVac:                          models.Columna{Valor: "", Longitud: 1},
+					NovAvp:                          models.Columna{Valor: "", Longitud: 1},
+					NovVct:                          models.Columna{Valor: "", Longitud: 1},
+					NavIrl:                          models.Columna{Valor: 0, Longitud: 2},
+					CodigoFondoPension:              models.Columna{Valor: "", Longitud: 6},
+					TrasladoPension:                 models.Columna{Valor: "", Longitud: 6},
+					CodigoEps:                       models.Columna{Valor: "", Longitud: 6},
+					TrasladoEps:                     models.Columna{Valor: "", Longitud: 6},
+					CodigoCCF:                       models.Columna{Valor: "", Longitud: 6},
+					DiasLaborados:                   models.Columna{Valor: 0, Longitud: 2},
+					DiasPension:                     models.Columna{Valor: 0, Longitud: 2},
+					DiasSalud:                       models.Columna{Valor: 0, Longitud: 2},
+					DiasArl:                         models.Columna{Valor: 0, Longitud: 2},
+					DiasCaja:                        models.Columna{Valor: 0, Longitud: 2},
+					SalarioBase:                     models.Columna{Valor: 0, Longitud: 9},
+					SalarioIntegral:                 models.Columna{Valor: "", Longitud: 1},
+					IbcPension:                      models.Columna{Valor: 0, Longitud: 9},
+					IbcSalud:                        models.Columna{Valor: 0, Longitud: 9},
+					IbcArl:                          models.Columna{Valor: 0, Longitud: 9},
+					IbcCcf:                          models.Columna{Valor: 0, Longitud: 9},
+					TarifaPension:                   models.Columna{Valor: 0, Longitud: 7},
+					PagoPension:                     models.Columna{Valor: "", Longitud: 9},
+					AportePension:                   models.Columna{Valor: "", Longitud: 9},
+					TotalPension:                    models.Columna{Valor: "", Longitud: 9},
+					FondoSolidaridad:                models.Columna{Valor: "", Longitud: 9},
+					FondoSubsistencia:               models.Columna{Valor: "", Longitud: 9},
+					NoRetenidoAportesVolunarios:     models.Columna{Valor: 0, Longitud: 9},
+					TarifaSalud:                     models.Columna{Valor: "", Longitud: 7},
+					PagoSalud:                       models.Columna{Valor: "", Longitud: 9},
+					ValorUpc:                        models.Columna{Valor: int(upc.TipoUpc.Valor), Longitud: 9},
+					AutorizacionEnfermedadGeneral:   models.Columna{Valor: "", Longitud: 15},
+					ValorIncapacidadGeneral:         models.Columna{Valor: 0, Longitud: 15},
+					AutotizacionLicenciaMarternidad: models.Columna{Valor: "", Longitud: 15},
+					ValorLicenciaMaternidad:         models.Columna{Valor: 0, Longitud: 15},
+					TarifaArl:                       models.Columna{Valor: "", Longitud: 9},
+					CentroTrabajo:                   models.Columna{Valor: 0, Longitud: 9},
+					PagoArl:                         models.Columna{Valor: 0, Longitud: 9},
+					TarifaCaja:                      models.Columna{Valor: 0, Longitud: 7},
+					PagoCaja:                        models.Columna{Valor: 0, Longitud: 9},
+					TarifaSena:                      models.Columna{Valor: 0, Longitud: 7},
+					PagoSena:                        models.Columna{Valor: 0, Longitud: 9},
+					TarifaIcbf:                      models.Columna{Valor: 0, Longitud: 7},
+					PagoIcbf:                        models.Columna{Valor: 0, Longitud: 9},
+					TarifaEsap:                      models.Columna{Valor: 0, Longitud: 9},
+					PagoEsap:                        models.Columna{Valor: 0, Longitud: 9},
+					TarifaMen:                       models.Columna{Valor: 0, Longitud: 9},
+					PagoMen:                         models.Columna{Valor: 0, Longitud: 9},
+					TipoDocumentoCotizantePrincipal: models.Columna{Valor: "CC", Longitud: 2},
+					DocumentoCotizantePrincipal:     models.Columna{Valor: value.Id, Longitud: 16},
+					ExoneradoPagoSalud:              models.Columna{Valor: "", Longitud: 1},
+					CodigoArl:                       models.Columna{Valor: "", Longitud: 6},
+					ClaseRiesgo:                     models.Columna{Valor: "", Longitud: 1},
+					IndicadorTarifaEspecialPension:  models.Columna{Valor: "", Longitud: 1},
+					FechaIngreso:                    models.Columna{Valor: "", Longitud: 10},
+					FechaRetiro:                     models.Columna{Valor: "", Longitud: 10},
+					FechaInicioVsp:                  models.Columna{Valor: "", Longitud: 10},
+					FechaInicioSuspencion:           models.Columna{Valor: "", Longitud: 10},
+					FechaFinSuspencion:              models.Columna{Valor: "", Longitud: 10},
+					FechaInicioIge:                  models.Columna{Valor: "", Longitud: 10},
+					FechaFinIge:                     models.Columna{Valor: "", Longitud: 10},
+					FechaInicioLma:                  models.Columna{Valor: "", Longitud: 10},
+					FechaFinLma:                     models.Columna{Valor: "", Longitud: 10},
+					FechaInicioVac:                  models.Columna{Valor: "", Longitud: 10},
+					FechaFinVac:                     models.Columna{Valor: "", Longitud: 10},
+					FechaInicioVct:                  models.Columna{Valor: "", Longitud: 10},
+					FechaFinVct:                     models.Columna{Valor: "", Longitud: 10},
+					FechaInicioIrl:                  models.Columna{Valor: "", Longitud: 10},
+					FechaFinIrl:                     models.Columna{Valor: "", Longitud: 10},
+					IbcOtrosParaFiscales:            models.Columna{Valor: 0, Longitud: 9},
+					HorasLaboradas:                  models.Columna{Valor: 0, Longitud: 3},
+					EspacioBlanco:                   models.Columna{Valor: "", Longitud: 26},
+				}
+				filasUpc = append(filasUpc, filaPlanilla)
 			}
-			filasUpc = append(filasUpc, filaPlanilla)
+
 		}
 	}
 

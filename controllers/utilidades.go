@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -129,19 +128,18 @@ func diff(a, b time.Time) (year, month, day int) {
 }
 
 // GetParametroEstandar devuelve un mapa con la información de los tipos de documento
-func GetParametroEstandar() (error, map[int]string) {
+func GetParametroEstandar() (map[int]string, error) {
 	var parametrosEstandar []models.ParametroEstandar
 	parametros := make(map[int]string)
 	err := getJson("http://"+beego.AppConfig.String("administrativaService")+
 		"/parametro_estandar?query=ClaseParametro:Tipo%20Documento&limit=-1", &parametrosEstandar)
-	log.Println("parametrosEstandar: ", parametrosEstandar)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	for _, value := range parametrosEstandar {
 		parametros[value.Id] = value.Abreviatura
 	}
-	return nil, parametros
+	return parametros, nil
 }
 
 func describe(i interface{}) {
