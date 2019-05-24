@@ -356,7 +356,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					TipoRegistro:                    models.Columna{Valor: "02", Longitud: 2},
 					TipoDocumento:                   models.Columna{Valor: "CC", Longitud: 2},
 					NumeroIdentificacion:            models.Columna{Valor: value.Id, Longitud: 16},
-					TipoCotizante:                   models.Columna{Valor: 1, Longitud: 2},
+					TipoCotizante:                   models.Columna{Valor: 59, Longitud: 2},
 					SubTipoCotizante:                models.Columna{Valor: 0, Longitud: 2},
 					ExtranjeroNoPension:             models.Columna{Valor: "", Longitud: 1},
 					ColombianoExterior:              models.Columna{Valor: "", Longitud: 1},
