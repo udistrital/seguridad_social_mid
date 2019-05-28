@@ -60,7 +60,7 @@ func (c *PagoController) CalcularSegSocialHonorarios() {
 				Icbf:                    0,
 				IdPreliquidacion:        preliquidacion,
 				IdDetallePreliquidacion: value.Id,
-				Arl: 0}
+				Arl:                     0}
 
 			if err = GetValoresSaludHonorarios(aux); err != nil {
 				panic(err)
