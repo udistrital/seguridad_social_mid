@@ -222,8 +222,6 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 	limit := c.Ctx.Input.Param(":limit")
 	offset := c.Ctx.Input.Param(":offset")
 
-	log.Println(limit, offset)
-
 	log.Println("Comenzó a generar la planilla")
 	var (
 		periodoPago *models.PeriodoPago
@@ -356,7 +354,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 					TipoRegistro:                    models.Columna{Valor: "02", Longitud: 2},
 					TipoDocumento:                   models.Columna{Valor: "CC", Longitud: 2},
 					NumeroIdentificacion:            models.Columna{Valor: value.Id, Longitud: 16},
-					TipoCotizante:                   models.Columna{Valor: 59, Longitud: 2},
+					TipoCotizante:                   models.Columna{Valor: 1, Longitud: 2},
 					SubTipoCotizante:                models.Columna{Valor: 0, Longitud: 2},
 					ExtranjeroNoPension:             models.Columna{Valor: "", Longitud: 1},
 					ColombianoExterior:              models.Columna{Valor: "", Longitud: 1},
@@ -453,7 +451,7 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 
 				filasPlanilla = append(filasPlanilla, filaPlanilla)
 
-				establecerNovedadesExterior(idPersona, idPreliquidacion)
+				establecerNovedadesExterior(idPersona, idPreliquidacion, &filaPlanilla)
 
 				establecerNovedades(idPersona, idPreliquidacion, cedulaPersona)
 
@@ -486,24 +484,32 @@ func (c *PlanillasController) GenerarPlanillaActivos() {
 			}
 			log.Println("Finalizó de generar la planilla")
 			log.Println("Tiempo en generar la planilla: ", time.Since(start))
-			filasPlanilla = append(filasPlanilla, getFilasUpc(mapPersonas)...)
+			filasUpc, err := getFilasUpc(mapPersonas)
+			if err != nil {
+				log.Println("Falló al traer las filas de UPC")
+				c.Data["json"] = map[string]string{"error": err.Error()}
+			}
+			filasPlanilla = append(filasPlanilla, filasUpc...)
 			c.Data["json"] = filasPlanilla
 		} else {
-			log.Println("Fallo la generación de la planilla")
+			log.Println("Falló la generación de la planilla")
 			c.Data["json"] = map[string]string{"error": err.Error()}
 		}
 
 	} else {
-		log.Println("Fallo la generación de la planilla")
+		log.Println("Falló la generación de la planilla")
 		c.Data["json"] = map[string]string{"error": err.Error()}
 	}
 	c.ServeJSON()
 }
 
-func getFilasUpc(mapPersonas map[string]models.InformacionPersonaNatural) []models.PlanillaTipoE {
+//getFilasUpc trae todas las fila de las upc de las personas correspondientes a ese periodo
+func getFilasUpc(mapPersonas map[string]models.InformacionPersonaNatural) ([]models.PlanillaTipoE, error) {
 	var filasUpc []models.PlanillaTipoE
-	parametros, _ := GetParametroEstandar()
-
+	parametros, err := GetParametroEstandar()
+	if err != nil {
+		return filasUpc, err
+	}
 	for key, value := range mapPersonas {
 		if informacionUpcs[key] != nil {
 			for _, upc := range informacionUpcs[key] {
@@ -611,7 +617,7 @@ func getFilasUpc(mapPersonas map[string]models.InformacionPersonaNatural) []mode
 		}
 	}
 
-	return filasUpc
+	return filasUpc, err
 }
 
 // crearFilaNovedad crea las filas de acuerdo a las novedades de una persona
@@ -804,14 +810,10 @@ func calcularIbc(idPersona, documentoPersona, novedad, idPreliquidacion string) 
 	infoRequest["Mes"] = mesPeriodo
 
 	err = sendJson("http://"+beego.AppConfig.String("titanMidService")+"/preliquidacion/get_ibc_novedad", "POST", &respuestaAPI, infoRequest)
-	log.Println("http://" + beego.AppConfig.String("titanMidService") + "/preliquidacion/get_ibc_novedad")
-	log.Println("inforequest: ", infoRequest)
 	if err != nil {
 		ImprimirError("error en calcularIbc()", err)
 	}
-	log.Println("respuestaapi: ", respuestaAPI)
-	return 243000
-	// return int(respuestaAPI.(float64))
+	return int(respuestaAPI.(float64))
 }
 
 // buscarUpcAsociada busca todas las upc asociadas a esa persona
@@ -947,7 +949,7 @@ func traerDiasCotizadosEmpleador(idPreliquidacion, periodoPago, tipoPago string)
 	return infoPago, nil
 }
 
-func establecerNovedadesExterior(idPersona, idPreliquidacion string) {
+func establecerNovedadesExterior(idPersona, idPreliquidacion string, filaPersona *models.PlanillaTipoE) {
 	var conceptoNominaPorPersona []models.ConceptoNominaPorPersona
 
 	err := getJson("http://"+beego.AppConfig.String("titanServicio")+
@@ -962,15 +964,11 @@ func establecerNovedadesExterior(idPersona, idPreliquidacion string) {
 	}
 
 	if len(conceptoNominaPorPersona) > 0 {
-		fila += formatoDato("X", 1) //Colombiano en el exterior
 		novedadPersona = true
 		exterior = true
-	} else {
-		fila += formatoDato("", 1) //Colombiano en el exterior
+		filaPersona.CodigoDepartamento = models.Columna{Valor: "", Longitud: 2}
+		filaPersona.CodigoMunicipio = models.Columna{Valor: "", Longitud: 3}
 	}
-
-	fila += formatoDato("11", 2)  //Código del departamento de la ubicación laboral
-	fila += formatoDato("001", 3) //Código del municipio de ubicación laboral
 }
 
 // establecerNovedades se encarga de buscar todas las novedades de una persona en una preliquidación especifica
@@ -992,12 +990,6 @@ func establecerNovedades(idPersona, idPreliquidacion, cedulaPersona string) {
 		"?limit=0"+
 		"&query=Persona:"+idPersona+
 		",Preliquidacion.Id:"+idPreliquidacion, &detallePreliquidaicon)
-
-	log.Println("http://" + beego.AppConfig.String("titanServicio") +
-		"/detalle_preliquidacion" +
-		"?limit=0" +
-		"&query=Persona:" + idPersona +
-		",Preliquidacion.Id:" + idPreliquidacion)
 
 	if err != nil {
 		ImprimirError("error en establecerNovedades()", err)
@@ -1105,11 +1097,6 @@ func establecerNovedades(idPersona, idPreliquidacion, cedulaPersona string) {
 			novedadPersona = true
 		}
 	}
-
-	fila += formatoDato("", 8)                             // son espacios del archivo plano hasta la novedad de VST
-	fila += formatoDato("X", 1)                            // VST: Variación transitoria de salario
-	fila += formatoDato("", 6)                             //son espacios del archivo plano hasta el código de la adminitradora de fondo de pensiones
-	fila += formatoDato(completarSecuencia(diasIrl, 2), 2) // IRL
 }
 
 // marcarNovedad marca el valor para la novedad o la deja vacia
