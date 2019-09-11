@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/ss_mid_api/golog"
-	"github.com/udistrital/ss_mid_api/models"
+	"github.com/udistrital/seguridad_social_mid/golog"
+	"github.com/udistrital/seguridad_social_mid/models"
 )
 
 // PagoController operations for Pago

@@ -1,4 +1,4 @@
-# ss_mid_api
+# seguridad_social_mid
 
 # seguridad_social_crud
 
@@ -14,13 +14,13 @@ Se utiliza para administrar los modelos, transacciones y efectos de cambios dire
 1. Clonar el repositorio
 
 ```go
-  go get github.com/udistrital/ss_mid_api`
+  go get github.com/udistrital/seguridad_social_mid`
 ```
 
 2. Moverse a la carpeta del proyecto
 
 ```sh
-  cd $GOPATH/src/github.com/udistrital/ss_mid_api
+  cd $GOPATH/src/github.com/udistrital/seguridad_social_mid
 ```
 
 3. Actualizar la rama develop

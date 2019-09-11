@@ -10,7 +10,7 @@ package routers
 
 import (
 	"github.com/astaxie/beego"
-	"github.com/udistrital/ss_mid_api/controllers"
+	"github.com/udistrital/seguridad_social_mid/controllers"
 )
 
 func init() {

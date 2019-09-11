@@ -7,7 +7,7 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/manucorporat/try"
-	"github.com/udistrital/ss_mid_api/models"
+	"github.com/udistrital/seguridad_social_mid/models"
 )
 
 // IncapacidadesController operations for Incapacidades
