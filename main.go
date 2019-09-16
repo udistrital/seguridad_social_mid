@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "github.com/udistrital/ss_mid_api/routers"
+	_ "github.com/udistrital/seguridad_social_mid/routers"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/plugins/cors"

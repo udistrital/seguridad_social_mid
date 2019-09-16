@@ -43,34 +43,6 @@
                 }
             }
         },
-        "/aportante/PruebaPlanilla/{limit}": {
-            "get": {
-                "tags": [
-                    "aportante"
-                ],
-                "description": "Recibe un periodo pago y devuelve un arreglo de json con la información de la planilla",
-                "operationId": "PlanillasController.Generar planilla de activos",
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "body for PeriodoPago",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/PeriodoPago"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{string} string"
-                    },
-                    "403": {
-                        "description": "body is empty"
-                    }
-                }
-            }
-        },
         "/conceptos_ibc/ActualizarConceptos/": {
             "post": {
                 "tags": [
@@ -255,7 +227,7 @@
                 }
             }
         },
-        "/pago/ConceptosIbc/": {
+        "/pago/ConceptosIbc": {
             "get": {
                 "tags": [
                     "pago"
@@ -264,7 +236,7 @@
                 "operationId": "PagoController.ConceptosIbc"
             }
         },
-        "/pago/GetInfoCabecera/{idPreliquidacion}": {
+        "/pago/GetInfoCabecera/{idPreliquidacion}/{tipoPlanilla}": {
             "get": {
                 "tags": [
                     "pago"
@@ -378,34 +350,6 @@
                 }
             }
         },
-        "/planillas/PruebaPlanilla/{limit}": {
-            "get": {
-                "tags": [
-                    "aportante"
-                ],
-                "description": "Recibe un periodo pago y devuelve un arreglo de json con la información de la planilla",
-                "operationId": "PlanillasController.Generar planilla de activos",
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "body for PeriodoPago",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/PeriodoPago"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{string} string"
-                    },
-                    "403": {
-                        "description": "body is empty"
-                    }
-                }
-            }
-        },
         "/utils/GetActualDate": {
             "get": {
                 "tags": [
@@ -440,7 +384,7 @@
             "title": "PagoSeguridadSocial",
             "type": "object"
         },
-        "69.0xc000475b90.false": {
+        "69.0xc0003e3e60.false": {
             "title": "false",
             "type": "object"
         },
@@ -465,7 +409,7 @@
             "type": "object",
             "properties": {
                 "Body": {
-                    "$ref": "#/definitions/69.0xc000475b90.false"
+                    "$ref": "#/definitions/69.0xc0003e3e60.false"
                 },
                 "Code": {
                     "type": "string"

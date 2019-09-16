@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/ss_mid_api/golog"
-	"github.com/udistrital/ss_mid_api/models"
+	"github.com/udistrital/seguridad_social_mid/golog"
+	"github.com/udistrital/seguridad_social_mid/models"
 )
 
 // PagoController operations for Pago
@@ -123,7 +123,7 @@ func (c *PagoController) SumarPagosSalud() {
 // ConceptosIbc ...
 // @Title ConceptosIbc
 // @Description Obtiene todos los conceptos IBC del ruler y los cruza con los conceptos de nómina
-// @router /ConceptosIbc/ [get]
+// @router /ConceptosIbc [get]
 func (c *PagoController) ConceptosIbc() {
 	var predicados []models.Predicado
 	var conceptos []models.Concepto

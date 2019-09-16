@@ -14,29 +14,6 @@ pipeline:
      - GOOS=linux GOARCH=amd64 go build -o main
     when:
       branch: [master, test]
-  
-   # run beego migration
-  beego_migrate:
-    image: golang:1.9
-    secrets: [ pg_administrativa_url, pg_administrativa_user, pg_administrativa_password, pg_administrativa_dbname]
-    commands:
-     - go get -t
-     - go get -u github.com/beego/bee
-     - bee migrate -driver=postgres -conn="postgres://$${PG_ADMINISTRATIVA_USER}:$${PG_ADMINISTRATIVA_PASSWORD}@$${PG_ADMINISTRATIVA_URL}:5432/$${PG_ADMINISTRATIVA_DBNAME}?sslmode=disable"
-    when:
-      branch: [master]
-
-  # rollback beego migration if it fails
-  beego_rollback:
-    image: golang:1.9
-    secrets: [ pg_administrativa_url, pg_administrativa_user, pg_administrativa_password, pg_administrativa_dbname]
-    commands:
-     - go get -t
-     - go get -u github.com/beego/bee
-     - bee migrate rollback -driver=postgres -conn="postgres://$${PG_ADMINISTRATIVA_USER}:$${PG_ADMINISTRATIVA_PASSWORD}@$${PG_ADMINISTRATIVA_URL}:5432/$${PG_ADMINISTRATIVA_DBNAME}?sslmode=disable"
-    when:
-      status: [failure]
-      branch: [master]
       
   # build and push docker image to docker hub
   publish_dockerhub:
