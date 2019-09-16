@@ -73,7 +73,7 @@ func init() {
     beego.GlobalControllerRouter["github.com/udistrital/seguridad_social_mid/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/seguridad_social_mid/controllers:PagoController"],
         beego.ControllerComments{
             Method: "ConceptosIbc",
-            Router: `/ConceptosIbc/`,
+            Router: `/ConceptosIbc`,
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,

@@ -123,7 +123,7 @@ func (c *PagoController) SumarPagosSalud() {
 // ConceptosIbc ...
 // @Title ConceptosIbc
 // @Description Obtiene todos los conceptos IBC del ruler y los cruza con los conceptos de nómina
-// @router /ConceptosIbc/ [get]
+// @router /ConceptosIbc [get]
 func (c *PagoController) ConceptosIbc() {
 	var predicados []models.Predicado
 	var conceptos []models.Concepto
