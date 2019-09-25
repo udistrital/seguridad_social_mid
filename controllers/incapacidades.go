@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -20,6 +19,7 @@ type IncapacidadesController struct {
 // URLMapping ...
 func (c *IncapacidadesController) URLMapping() {
 	c.Mapping("BuscarPersonas", c.BuscarPersonas)
+	c.Mapping("IncapacidadesPorPersona", c.IncapacidadesPorPersona)
 }
 
 // BuscarPersonas ...
@@ -142,21 +142,21 @@ func (c *IncapacidadesController) IncapacidadesPorPersona() {
 	try.This(func() {
 		incapacidadesLaborales, err := traerIncapacidades("incapacidad_laboral", contrato, vigencia)
 		if err != nil {
-			panic(err.Error())
+			log.Panicln(err.Error())
 		}
 
-		incapacidaGenerales, err := traerIncapacidades("incapacidad_general", contrato, vigencia)
+		incapacidadesGenerales, err := traerIncapacidades("incapacidad_general", contrato, vigencia)
 		if err != nil {
-			panic(err.Error())
+			log.Panicln(err.Error())
 		}
 
 		prorrogas, err := traerIncapacidades("prorroga_incapacidad", contrato, vigencia)
 		if err != nil {
-			panic(err.Error())
+			log.Panicln(err.Error())
 		}
 
 		incapacidades = append(incapacidades, incapacidadesLaborales...)
-		incapacidades = append(incapacidades, incapacidaGenerales...)
+		incapacidades = append(incapacidades, incapacidadesGenerales...)
 		incapacidades = append(incapacidades, prorrogas...)
 		c.Data["json"] = incapacidades
 	}).Catch(func(e try.E) {
@@ -169,14 +169,21 @@ func (c *IncapacidadesController) IncapacidadesPorPersona() {
 
 func traerIncapacidades(tipoIncapacidad, contrato, vigencia string) (incapacidades []map[string]interface{}, err error) {
 	var detalleNovedad []map[string]interface{}
-	err = getJson("http://"+beego.AppConfig.String("titanServicio")+"/concepto_nomina_por_persona?query=Concepto.Nombreconcepto:"+tipoIncapacidad+
+
+	_ = getJson("http://"+beego.AppConfig.String("titanServicio")+"/concepto_nomina_por_persona?"+
+		"query=Concepto.Nombreconcepto:"+tipoIncapacidad+
 		",NumeroContrato:"+contrato+",VigenciaContrato:"+vigencia+",Activo:true&limit=0", &incapacidades)
 
-	for i, v := range incapacidades {
-		conceptoNominaPorPesona := strconv.Itoa(int(v["Id"].(float64)))
-		err = getJson("http://"+beego.AppConfig.String("segSocialService")+"/detalle_novedad_seguridad_social?"+
-			"query=ConceptoNominaPorPersona:"+conceptoNominaPorPesona+"&limit=1", &detalleNovedad)
-		incapacidades[i]["Codigo"] = detalleNovedad[0]["Descripcion"]
+	for _, v := range incapacidades {
+		if len(v) > 0 {
+			conceptoNominaPorPesona := strconv.Itoa(int(v["Id"].(float64)))
+			_ = getJson("http://"+beego.AppConfig.String("segSocialService")+"/detalle_novedad_seguridad_social?"+
+				"query=ConceptoNominaPorPersona:"+conceptoNominaPorPesona+"&limit=1", &detalleNovedad)
+			v["Codigo"] = detalleNovedad[0]["Descripcion"]
+		}  else {
+			incapacidades = nil
+		}
 	}
+
 	return
 }
