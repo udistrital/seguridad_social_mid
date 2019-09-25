@@ -34,8 +34,7 @@ func (c *IncapacidadesController) BuscarPersonas() {
 	documento := c.Ctx.Input.Param(":documento")
 
 	try.This(func() {
-		fmt.Println("http://" + beego.AppConfig.String("administrativaService") + "informacion_proveedor?" +
-			"limit=6&query=NumDocumento__icontains:" + documento + ",TipoPersona:NATURAL")
+
 		if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"informacion_proveedor?"+
 			"limit=6&query=NumDocumento__icontains:"+documento+",TipoPersona:NATURAL", &proveedores); err != nil {
 			panic(err)
@@ -43,8 +42,7 @@ func (c *IncapacidadesController) BuscarPersonas() {
 
 		for _, proveedor := range proveedores {
 			idProveedor := strconv.Itoa(int(proveedor["Id"].(float64)))
-			fmt.Println("http://" + beego.AppConfig.String("administrativaService") + "contrato_general?" +
-				"query=Estado:true,Contratista:" + idProveedor + "&fields=Id,VigenciaContrato")
+			
 			if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"contrato_general?"+
 				"query=Estado:true,Contratista:"+idProveedor, &contratos); err != nil {
 				log.Panicln("error en contrato general")
@@ -93,28 +91,39 @@ func (c *IncapacidadesController) BuscarPersonas() {
 	c.ServeJSON()
 }
 
+// revisarcontratosActivos revisa si el contrato está activo, si el contrato es de DVE revisa las actas de inicio, si es de CPS revisa contrato_estado
 func revisarcontratosActivos(contratos []map[string]interface{}) (contratosActivos []map[string]interface{}) {
 	var actaInicio []map[string]time.Time
 
 	for _, contrato := range contratos {
-		if strings.Contains(contrato["Id"].(string), "DVE") {
+		if strings.Contains(contrato["Id"].(string), "DVE") { // Contrato de DVE
 
 			if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"acta_inicio?"+
 				"query=NumeroContrato:"+contrato["Id"].(string)+"&fields=FechaFin", &actaInicio); err != nil {
 				log.Panicln("error en contrato informacion_persona_natural")
 			}
 
-			if actaInicio[0]["FechaFin"].Before(time.Now()) {
-				fmt.Println("contrato...", contrato)
-				contratosActivos = append(contratosActivos, contrato)
+			for _, acta := range actaInicio {
+				if time.Now().Before(acta["FechaFin"]) { // Si la fecha actual es anterior a la fecha fin, entonces el contrato todavía está activo
+					contratosActivos = append(contratosActivos, contrato)
+				}
 			}
 
 		} else {
-			fmt.Println("es un contrato de CPS...", contrato)
+			var contratoEstado interface{}
+
+			if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"contrato_estado?"+
+				"query=NumeroContrato:"+contrato["Id"].(string)+",Estado.NombreEstado:Finalizado", &contratoEstado); err != nil {
+				log.Panicln("error en contrato contrato_estado")
+			}
+
+			if contratoEstado == nil {
+				contratosActivos = append(contratosActivos, contrato)
+			}
 		}
 
 	}
-	fmt.Println("contratosActivos:", contratosActivos)
+	
 	return
 }
 
