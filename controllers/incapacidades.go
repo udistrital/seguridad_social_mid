@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/manucorporat/try"
@@ -30,8 +32,10 @@ func (c *IncapacidadesController) URLMapping() {
 func (c *IncapacidadesController) BuscarPersonas() {
 	var proveedores, contratos, personaNatural, respuesta []map[string]interface{}
 	documento := c.Ctx.Input.Param(":documento")
-	log.Println(documento)
+
 	try.This(func() {
+		fmt.Println("http://" + beego.AppConfig.String("administrativaService") + "informacion_proveedor?" +
+			"limit=6&query=NumDocumento__icontains:" + documento + ",TipoPersona:NATURAL")
 		if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"informacion_proveedor?"+
 			"limit=6&query=NumDocumento__icontains:"+documento+",TipoPersona:NATURAL", &proveedores); err != nil {
 			panic(err)
@@ -39,21 +43,22 @@ func (c *IncapacidadesController) BuscarPersonas() {
 
 		for _, proveedor := range proveedores {
 			idProveedor := strconv.Itoa(int(proveedor["Id"].(float64)))
+			fmt.Println("http://" + beego.AppConfig.String("administrativaService") + "contrato_general?" +
+				"query=Estado:true,Contratista:" + idProveedor + "&fields=Id,VigenciaContrato")
 			if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"contrato_general?"+
-				"query=Estado:true,Contratista:"+idProveedor+"&fields=Id,VigenciaContrato", &contratos); err != nil {
-				fmt.Println("error en contrato general")
-				panic(err)
+				"query=Estado:true,Contratista:"+idProveedor, &contratos); err != nil {
+				log.Panicln("error en contrato general")
 			}
 
 			if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"informacion_persona_natural?"+
 				"limit=1&query=Id:"+proveedor["NumDocumento"].(string), &personaNatural); err != nil {
-				fmt.Println("error en contrato informacion_persona_natural")
-				panic(err)
+				log.Panicln("error en contrato informacion_persona_natural")
 			}
 
 			var contratosPropios []map[string]interface{} // contratos de cada proveedor
+			contratosActivos := revisarcontratosActivos(contratos)
 
-			for _, contrato := range contratos {
+			for _, contrato := range contratosActivos {
 				numeroContrato := contrato["Id"].(string)
 				vigenciaContrato := contrato["VigenciaContrato"].(float64)
 
@@ -82,10 +87,35 @@ func (c *IncapacidadesController) BuscarPersonas() {
 		c.Data["json"] = respuesta
 
 	}).Catch(func(e try.E) {
-		fmt.Println("Error en GetPersonas() ", e)
+		log.Panicln("Error en GetPersonas() ", e)
 		c.Data["json"] = models.Alert{Code: "error"}
 	})
 	c.ServeJSON()
+}
+
+func revisarcontratosActivos(contratos []map[string]interface{}) (contratosActivos []map[string]interface{}) {
+	var actaInicio []map[string]time.Time
+
+	for _, contrato := range contratos {
+		if strings.Contains(contrato["Id"].(string), "DVE") {
+
+			if err := getJson("http://"+beego.AppConfig.String("administrativaService")+"acta_inicio?"+
+				"query=NumeroContrato:"+contrato["Id"].(string)+"&fields=FechaFin", &actaInicio); err != nil {
+				log.Panicln("error en contrato informacion_persona_natural")
+			}
+
+			if actaInicio[0]["FechaFin"].Before(time.Now()) {
+				fmt.Println("contrato...", contrato)
+				contratosActivos = append(contratosActivos, contrato)
+			}
+
+		} else {
+			fmt.Println("es un contrato de CPS...", contrato)
+		}
+
+	}
+	fmt.Println("contratosActivos:", contratosActivos)
+	return
 }
 
 // IncapacidadesPorPersona ...
