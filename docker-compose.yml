@@ -16,7 +16,7 @@ services:
       - RUN_MODE=dev 
       - SS_MID_API_HTTP_PORT=${PORT}
       - SERVICE_TAGS=traefik.enable=true,traefik.frontend.entryPoints=http,traefik.frontend.rule=Host:${SERVICE_NAME}.localhost   
-    command: sh -c 'cd ${API_BASE_DIR}/${API_NAME};go get -v -u ./...; bee run'
+    command: sh -c 'cd ${API_BASE_DIR}/${API_NAME};go get -v -d -u ./...; bee run'
     networks: 
       - back_end
 
