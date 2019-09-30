@@ -2,7 +2,7 @@ package models
 
 // DetallePreliquidacion modelo de titán
 type DetallePreliquidacion struct {
-	Id                   int                   `orm:"column(id);pk"`
+	Id                   int                   `orm:"auto;column(id);pk"`
 	ValorCalculado       float64               `orm:"column(valor_calculado)"`
 	NumeroContrato       string                `orm:"column(numero_contrato);null"`
 	VigenciaContrato     int                   `orm:"column(vigencia_contrato);null"`
@@ -11,9 +11,7 @@ type DetallePreliquidacion struct {
 	TipoPreliquidacion   *TipoPreliquidacion   `orm:"column(tipo_preliquidacion);rel(fk)"`
 	Preliquidacion       *Preliquidacion       `orm:"column(preliquidacion);rel(fk)"`
 	Concepto             *ConceptoNomina       `orm:"column(concepto);rel(fk)"`
-	EstadoDisponibilidad *EstadoDisponibilidad `orm:"column(estado_disponibilidad);rel(fk)"`
-	NombreCompleto       string
-	Documento            string
+	EstadoDisponibilidad *EstadoDisponibilidad `orm:"column(estado_disponibilidad);rel(fk);null"`
 }
 
 // EstadoDisponibilidad modelo de titán
