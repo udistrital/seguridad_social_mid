@@ -1,10 +1,10 @@
 package controllers
 
 import (
-	"log"
 	"time"
 
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 )
 
 // UtilsController operations for Beneficiarios
@@ -33,6 +33,6 @@ func (c *UtilsController) GetActualDate() {
 
 // ImprimirError estándar para imprimir errores
 func ImprimirError(mensaje string, err error) {
-	log.Println(mensaje, " => Error:", err.Error())
+	logs.Error(mensaje, " => Error:", err.Error())
 	//beego.Error(mensaje, " => Error:", err.Error())
 }
