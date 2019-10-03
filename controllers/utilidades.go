@@ -231,14 +231,14 @@ func CargarReglasBase() (reglas string) {
 				S is 19*M, W@>= S, D is 20*M, W@=< D -> Y is W * 0.018;
 				S is 20*M, W@> S -> Y is W * 0.02), Y is Y approach 100.	%calculo de fondo de solidaridad 1
 
-				%% 		PAGO UPC
-				v_upc(I,Y,Z) :- ibc(I,W,salud,D), upc(Z,V,I), Y is W - V.
+			%% 		PAGO UPC
+			v_upc(I,Y,Z) :- ibc(I,W,salud,D), upc(Z,V,I), Y is W - V.
 
-				%%		CAJA DE COMPENSACION FAMILIAR
-				v_caja(I,Y) :- concepto(Z,T,caja,X,V,2017), ibc(I,W,apf), Y is (V * W) approach 100.
+			%%		CAJA DE COMPENSACION FAMILIAR
+			v_caja(I,Y) :- concepto(Z,T,caja,X,V,2017), ibc(I,W,apf), Y is (V * W) approach 100.
 
-				%%		ICBF
-				v_icbf(I,Y) :- concepto(Z,T,icbf,X,V,2017), ibc(I,W,apf), Y is (V * W) approach 100.
+			%%		ICBF
+			v_icbf(I,Y) :- concepto(Z,T,icbf,X,V,2017), ibc(I,W,apf), Y is (V * W) approach 100.
 	`
 	return
 }
