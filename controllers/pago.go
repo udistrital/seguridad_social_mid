@@ -3,9 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/astaxie/beego"
@@ -27,24 +25,6 @@ func (c *PagoController) URLMapping() {
 	c.Mapping("SumarPagosSalud", c.SumarPagosSalud)
 	c.Mapping("RegistrarPagos", c.RegistrarPagos)
 	c.Mapping("GetInfoCabecera", c.GetInfoCabecera)
-	c.Mapping("Testing", c.Testing)
-}
-
-// Testing ...
-// @Title Testing
-// @Description Obtiene información adicional para la cabecera
-// con el total de pagos de salud y pensión del empleado
-// @router /Testing [get]
-func (c *PagoController) Testing() {
-	var result []*models.DetallePreliquidacion
-	err := getJson("http://pruebasapi.intranetoas.udistrital.edu.co:8081/v1/detalle_preliquidacion?limit=0&query=Preliquidacion:26,Concepto.NombreConcepto:pension,Persona:11238", &result)
-
-	if err != nil {
-		log.Panicln("error en testing()")
-	}
-
-	c.Data["json"] = result
-	c.ServeJSON()
 }
 
 // GetInfoCabecera ...
@@ -263,10 +243,8 @@ func (c *PagoController) CalcularSegSocial() {
 			c.Data["json"] = alertas
 		} else {
 			var (
-				wg                   sync.WaitGroup
-				proveedores          []string
 				predicado            []models.Predicado
-				pagosSeguridadSocial []*models.PagoSeguridadSocial
+				pagosSeguridadSocial []models.PagoSeguridadSocial
 			)
 
 			idDetallePreliquidacion := detallePreliquidacion[0].Preliquidacion.Id
@@ -276,25 +254,18 @@ func (c *PagoController) CalcularSegSocial() {
 			totalPensionLiquidacion := valorConceptoTotal(idStr, "pension")
 			totalFondoSolidaridad := valorFondoTotal(idNomina)
 
-			wg.Add(len(detallePreliquidacion))
-			// aquí se van armando los hechos
-			for i := 0; i < len(detallePreliquidacion); i++ {
-				go func(i int) {
-					defer wg.Done()
-					persona := strconv.Itoa(detallePreliquidacion[i].Persona)
-					valorCalculado := strconv.Itoa(int(detallePreliquidacion[i].ValorCalculado))
+			for i := range detallePreliquidacion {
+				persona := strconv.FormatInt(detallePreliquidacion[i].Persona, 10)
+				valorCalculado := strconv.Itoa(int(detallePreliquidacion[i].ValorCalculado))
 
-					predicado = append(predicado, []models.Predicado{
-						models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", salud)."},
-						models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", riesgos)."},
-						models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", apf)."},
-						models.Predicado{Nombre: "v_salud_func(" + persona + ", " + strconv.Itoa(totalSaludLiquidacion[persona]) + ")."},
-						models.Predicado{Nombre: "v_pen_func(" + persona + ", " + strconv.Itoa(totalPensionLiquidacion[persona]) + ")."},
-					}...)
-				}(i)
-
+				predicado = append(predicado, []models.Predicado{
+					models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", salud)."},
+					models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", riesgos)."},
+					models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", apf)."},
+					models.Predicado{Nombre: "v_salud_func(" + persona + ", " + strconv.Itoa(totalSaludLiquidacion[persona]) + ")."},
+					models.Predicado{Nombre: "v_pen_func(" + persona + ", " + strconv.Itoa(totalPensionLiquidacion[persona]) + ")."},
+				}...)
 			}
-			wg.Wait()
 
 			reglas := CargarReglasBase() + FormatoReglas(predicado) + cargarNovedades()
 
@@ -307,61 +278,23 @@ func (c *PagoController) CalcularSegSocial() {
 			caja := golog.GetInt64(reglas, "v_caja(I,Y).", "Y")
 			icbf := golog.GetInt64(reglas, "v_icbf(I,Y).", "Y")
 
-			fmt.Println("idProveedores:", len(idProveedores))
-			fmt.Println("saludUd:", len(saludUd))
-			fmt.Println("saludTotal:", len(saludTotal))
-			fmt.Println("pensionUd:", len(pensionUd))
-			fmt.Println("pensionTotal:", len(pensionTotal))
-			fmt.Println("arl:", len(arl))
-			fmt.Println("caja:", len(caja))
-			fmt.Println("icbf:", len(icbf))
+			for i := range idProveedores {
+				aux := models.PagoSeguridadSocial{
+					NombrePersona:           "",
+					IdProveedor:             idProveedores[i],
+					SaludUd:                 saludUd[i],
+					SaludTotal:              saludTotal[i],
+					PensionUd:               pensionUd[i],
+					PensionTotal:            pensionTotal[i],
+					FondoSolidaridad:        totalFondoSolidaridad[int(idProveedores[i])],
+					IdPreliquidacion:        idDetallePreliquidacion,
+					IdDetallePreliquidacion: detallePreliquidacion[i].Id,
+					Arl:                     arl[i],
+					Caja:                    caja[i],
+					Icbf:                    icbf[i]}
 
-			wg.Add(len(idProveedores))
-			// aquí se construye parte de la respuesta
-			for i := 0; i < len(idProveedores); i++ {
-				go func(i int) {
-					defer wg.Done()
-					idProveedor := fmt.Sprint(idProveedores[i])
-					proveedores = append(proveedores, idProveedor)
-
-					aux := &models.PagoSeguridadSocial{
-						NombrePersona:           "",
-						IdProveedor:             idProveedores[i],
-						SaludUd:                 saludUd[i],
-						SaludTotal:              saludTotal[i],
-						PensionUd:               pensionUd[i],
-						PensionTotal:            pensionTotal[i],
-						FondoSolidaridad:        totalFondoSolidaridad[int(idProveedores[i])],
-						IdPreliquidacion:        idDetallePreliquidacion,
-						IdDetallePreliquidacion: detallePreliquidacion[i].Id,
-						Arl:                     arl[i],
-						Caja:                    caja[i],
-						Icbf:                    icbf[i]}
-
-					pagosSeguridadSocial = append(pagosSeguridadSocial, aux)
-				}(i)
+				pagosSeguridadSocial = append(pagosSeguridadSocial, aux)
 			}
-			wg.Wait()
-
-			// mapProveedores, _ := GetInfoProveedor(proveedores)
-
-			// wg.Add(len(pagosSeguridadSocial))
-			// for i := range pagosSeguridadSocial {
-			// 	go func(i int) {
-			// 		defer wg.Done()
-			// 		pagosSeguridadSocial[i].Arl = arl[i]
-			// 		pagosSeguridadSocial[i].Caja = caja[i]
-			// 		pagosSeguridadSocial[i].Icbf = icbf[i]
-
-			// 		// proveedor := mapProveedores[fmt.Sprint(pagosSeguridadSocial[i].IdProveedor)]
-			// 		// pagosSeguridadSocial[i].NombrePersona = proveedor.NomProveedor
-			// 		// caja, _ := ComprovarCajaProveedor(proveedor.NumDocumento)
-			// 		// if !caja {
-			// 		// 	pagosSeguridadSocial[i].Caja = 0
-			// 		// }
-			// 	}(i)
-			// }
-			// wg.Wait()
 
 			c.Data["json"] = pagosSeguridadSocial
 		}
@@ -404,7 +337,7 @@ func valorConceptoTotal(idLiquidacion, concepto string) (valores map[string]int)
 		valores = make(map[string]int)
 
 		for _, value := range detalleLiquSalud {
-			valores[strconv.Itoa(value.Persona)] += int(value.ValorCalculado)
+			valores[strconv.FormatInt(value.Persona, 10)] += int(value.ValorCalculado)
 		}
 	}
 
@@ -559,7 +492,7 @@ func (c *PagoController) RegistrarPagos() {
 			}
 		}
 
-		mapProveedores, err := GetInfoProveedor(PeriodoPago.Personas)
+		mapProveedores, err := GetInfoProveedor()
 		if err != nil {
 			c.Data["json"] = err.Error()
 			c.ServeJSON()
@@ -619,17 +552,20 @@ func (c *PagoController) RegistrarPagos() {
 }
 
 // GetInfoProveedor Recibe un arreglo de strings con los contratos y devuelve un map con la información del proveedor
-func GetInfoProveedor(idProveedores []string) (map[string]models.InformacionProveedor, error) {
-	proveedores := make(map[string]models.InformacionProveedor)
-	var proveedor models.InformacionProveedor
-	for i := range idProveedores {
-		if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_proveedor/"+idProveedores[i], &proveedor); err == nil {
-			proveedores[idProveedores[i]] = proveedor
-		} else {
-			fmt.Println("Error en GetInfoProveedor: ", err.Error())
-			return nil, err
+func GetInfoProveedor() (map[int64]models.InformacionProveedor, error) {
+	var infoProveedores []models.InformacionProveedor
+	proveedores := make(map[int64]models.InformacionProveedor)
+
+	if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"informacion_proveedor?limit=-1", &infoProveedores); err == nil {
+		for _, proveedor := range infoProveedores {
+			proveedores[int64(proveedor.Id)] = proveedor
 		}
+	} else {
+		fmt.Println("http://" + beego.AppConfig.String("agoraServicio") + "informacion_proveedor")
+		ImprimirError("Error en GetInfoProveedor: ", err)
+		return nil, err
 	}
+
 	return proveedores, nil
 }
 
@@ -645,19 +581,19 @@ func GetInfoPersonas(detallesPreliquidacion []models.DetallePreliquidacion) (map
 	personas := make(map[string]models.InformacionPersonaNatural)
 
 	if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_proveedor?limit=-1", &infoProveedores); err != nil {
-		fmt.Println("Error en GetInfoPersonas: ", err.Error())
+		ImprimirError("Error en GetInfoPersonas: ", err)
 		return nil, err
 	}
 
 	if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_persona_natural?limit=-1", &personasNaturales); err != nil {
-		fmt.Println("Error en GetInfoPersonas: ", err.Error())
+		ImprimirError("Error en GetInfoPersonas: ", err)
 		return nil, err
 	}
 
 	for _, detallePreliquidacion := range detallesPreliquidacion {
 		for _, infoProveedor := range infoProveedores {
-			if detallePreliquidacion.Persona == infoProveedor.Id {
-				proveedores[strconv.Itoa(detallePreliquidacion.Persona)] = infoProveedor
+			if detallePreliquidacion.Persona == int64(infoProveedor.Id) {
+				proveedores[strconv.FormatInt(detallePreliquidacion.Persona, 10)] = infoProveedor
 				break
 			}
 		}
@@ -681,12 +617,12 @@ func GetInfoPersonas(detallesPreliquidacion []models.DetallePreliquidacion) (map
 GetInfoPersona recibe un map de proveedores para consultar el número de contrato y
 devuelve un map con la inforamción de la persona, cuya llave es también el número de contrato
 */
-func GetInfoPersona(proveedores map[string]models.InformacionProveedor) (map[string]models.InformacionPersonaNatural, error) {
+func GetInfoPersona(proveedores map[int64]models.InformacionProveedor) (map[string]models.InformacionPersonaNatural, error) {
 	personas := make(map[string]models.InformacionPersonaNatural)
 	var persona models.InformacionPersonaNatural
 	for key, value := range proveedores {
 		if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_persona_natural/"+value.NumDocumento, &persona); err == nil {
-			personas[key] = persona
+			personas[strconv.FormatInt(key, 10)] = persona
 		} else {
 			return nil, err
 		}
