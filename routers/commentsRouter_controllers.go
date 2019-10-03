@@ -115,15 +115,6 @@ func init() {
             Filters: nil,
             Params: nil})
 
-    beego.GlobalControllerRouter["github.com/udistrital/seguridad_social_mid/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/seguridad_social_mid/controllers:PagoController"],
-        beego.ControllerComments{
-            Method: "Testing",
-            Router: `/Testing`,
-            AllowHTTPMethods: []string{"get"},
-            MethodParams: param.Make(),
-            Filters: nil,
-            Params: nil})
-
     beego.GlobalControllerRouter["github.com/udistrital/seguridad_social_mid/controllers:PlanillasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/seguridad_social_mid/controllers:PlanillasController"],
         beego.ControllerComments{
             Method: "GenerarPlanillaActivos",

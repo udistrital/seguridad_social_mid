@@ -201,7 +201,7 @@ func getValorConcepto(preliquidacion string, concepto string) (map[string]int, e
 
 	for _, value := range detallesPreliquidacion {
 		// fmt.Println("value: ", value)
-		salariosBase[strconv.Itoa(value.Persona)] += int(value.ValorCalculado)
+		salariosBase[strconv.FormatInt(value.Persona, 10)] += int(value.ValorCalculado)
 	}
 	return salariosBase, nil
 }
@@ -933,7 +933,7 @@ func traerDiasCotizadosEmpleador(idPreliquidacion, periodoPago, tipoPago string)
 
 	for _, value := range detallePreliquidacion {
 		auxiliarMap := make(map[string]int) // map con la información interna
-		idProveedor := strconv.Itoa(value.Persona)
+		idProveedor := strconv.FormatInt(value.Persona, 10)
 		valorTipoPagoTemp := GetPagoEmpleado(idProveedor, idPreliquidacion, tipoPago)
 
 		auxiliarMap["valor"] += valorTipoPagoTemp + int(pago[0].Valor)
