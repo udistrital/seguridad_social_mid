@@ -277,21 +277,13 @@ func (c *PagoController) CalcularSegSocial() {
 			totalFondoSolidaridad := valorFondoTotal(idNomina)
 
 			wg.Add(len(detallePreliquidacion))
-
-			fmt.Println("comienzan las gorutines...", len(detallePreliquidacion))
 			// aquí se van armando los hechos
 			for i := 0; i < len(detallePreliquidacion); i++ {
 				go func(i int) {
 					defer wg.Done()
 					persona := strconv.Itoa(detallePreliquidacion[i].Persona)
 					valorCalculado := strconv.Itoa(int(detallePreliquidacion[i].ValorCalculado))
-					// predicadosTemp := []models.Predicado{
-					// 	models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", salud)."},
-					// 	models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", riesgos)."},
-					// 	models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", apf)."},
-					// 	models.Predicado{Nombre: "v_salud_func(" + persona + ", " + strconv.Itoa(totalSaludLiquidacion[persona]) + ")."},
-					// 	models.Predicado{Nombre: "v_pen_func(" + persona + ", " + strconv.Itoa(totalPensionLiquidacion[persona]) + ")."},
-					// }
+
 					predicado = append(predicado, []models.Predicado{
 						models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", salud)."},
 						models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", riesgos)."},
@@ -299,11 +291,6 @@ func (c *PagoController) CalcularSegSocial() {
 						models.Predicado{Nombre: "v_salud_func(" + persona + ", " + strconv.Itoa(totalSaludLiquidacion[persona]) + ")."},
 						models.Predicado{Nombre: "v_pen_func(" + persona + ", " + strconv.Itoa(totalPensionLiquidacion[persona]) + ")."},
 					}...)
-					// predicado = append(predicado, models.Predicado{models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", salud)."})
-					// predicado = append(predicado, models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", riesgos)."})
-					// predicado = append(predicado, models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", apf)."})
-					// predicado = append(predicado, models.Predicado{Nombre: "v_salud_func(" + persona + ", " + strconv.Itoa(totalSaludLiquidacion[persona]) + ")."})
-					// predicado = append(predicado, models.Predicado{Nombre: "v_pen_func(" + persona + ", " + strconv.Itoa(totalPensionLiquidacion[persona]) + ")."})
 				}(i)
 
 			}
@@ -329,7 +316,6 @@ func (c *PagoController) CalcularSegSocial() {
 			fmt.Println("caja:", len(caja))
 			fmt.Println("icbf:", len(icbf))
 
-			fmt.Println("comenzó la segunda tanda de gorutines...", len(idProveedores))
 			wg.Add(len(idProveedores))
 			// aquí se construye parte de la respuesta
 			for i := 0; i < len(idProveedores); i++ {
@@ -347,50 +333,35 @@ func (c *PagoController) CalcularSegSocial() {
 						PensionTotal:            pensionTotal[i],
 						FondoSolidaridad:        totalFondoSolidaridad[int(idProveedores[i])],
 						IdPreliquidacion:        idDetallePreliquidacion,
-						IdDetallePreliquidacion: detallePreliquidacion[i].Id}
-					// Caja:                    caja[i],
-					// Icbf:                    icbf[i],
-					// Arl:                     arl[i]}
-					// FondoSolidaridad:        valorPagoFondoSolidaridad(idProveedor, fmt.Sprint(idNommina)),
+						IdDetallePreliquidacion: detallePreliquidacion[i].Id,
+						Arl:                     arl[i],
+						Caja:                    caja[i],
+						Icbf:                    icbf[i]}
 
 					pagosSeguridadSocial = append(pagosSeguridadSocial, aux)
 				}(i)
 			}
 			wg.Wait()
-			mapProveedores, _ := GetInfoProveedor(proveedores)
-			fmt.Println("len pagosSeguridadSocial", len(pagosSeguridadSocial))
-			// fmt.Println("arl...", len(arl))
-			// fmt.Println("pagosSeguridadSocial...", len(arl))
-			wg.Add(len(pagosSeguridadSocial))
-			for i := range pagosSeguridadSocial {
-				go func(i int) {
-					defer wg.Done()
-					pagosSeguridadSocial[i].Arl = arl[i]
-					pagosSeguridadSocial[i].Caja = caja[i]
-					pagosSeguridadSocial[i].Icbf = icbf[i]
 
-					proveedor := mapProveedores[fmt.Sprint(pagosSeguridadSocial[i].IdProveedor)]
-					pagosSeguridadSocial[i].NombrePersona = proveedor.NomProveedor
-					caja, _ := ComprovarCajaProveedor(proveedor.NumDocumento)
-					if !caja {
-						pagosSeguridadSocial[i].Caja = 0
-					}
-				}(i)
-			}
-			wg.Wait()
+			// mapProveedores, _ := GetInfoProveedor(proveedores)
 
-			// wg.Add(len(idProveedores))
+			// wg.Add(len(pagosSeguridadSocial))
 			// for i := range pagosSeguridadSocial {
-			// 	// wg.Add(1)
 			// 	go func(i int) {
 			// 		defer wg.Done()
-			// 		// fmt.Println("entro a pagosSeguridadSocial: ", i)
+			// 		pagosSeguridadSocial[i].Arl = arl[i]
+			// 		pagosSeguridadSocial[i].Caja = caja[i]
+			// 		pagosSeguridadSocial[i].Icbf = icbf[i]
 
+			// 		// proveedor := mapProveedores[fmt.Sprint(pagosSeguridadSocial[i].IdProveedor)]
+			// 		// pagosSeguridadSocial[i].NombrePersona = proveedor.NomProveedor
+			// 		// caja, _ := ComprovarCajaProveedor(proveedor.NumDocumento)
+			// 		// if !caja {
+			// 		// 	pagosSeguridadSocial[i].Caja = 0
+			// 		// }
 			// 	}(i)
-
 			// }
 			// wg.Wait()
-			// fmt.Println("acabo la tercera tanda de gorutines....")
 
 			c.Data["json"] = pagosSeguridadSocial
 		}
