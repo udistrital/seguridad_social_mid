@@ -37,7 +37,6 @@ func (c *PagoController) CalcularSegSocialHonorarios() {
 		var (
 			detalleLiquSalud     []models.DetallePreliquidacion
 			pagosSeguridadSocial []*models.PagoSeguridadSocial
-			proveedores          []string
 		)
 
 		err = getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
@@ -48,7 +47,6 @@ func (c *PagoController) CalcularSegSocialHonorarios() {
 		}
 
 		for _, value := range detalleLiquSalud {
-			proveedores = append(proveedores, strconv.FormatInt(value.Persona, 10))
 			aux := &models.PagoSeguridadSocial{
 				NombrePersona:           "",
 				IdProveedor:             int64(value.Persona),
@@ -67,11 +65,6 @@ func (c *PagoController) CalcularSegSocialHonorarios() {
 			}
 
 			pagosSeguridadSocial = append(pagosSeguridadSocial, aux)
-		}
-
-		mapProveedores, _ := GetInfoProveedor()
-		for i := range pagosSeguridadSocial {
-			pagosSeguridadSocial[i].NombrePersona = mapProveedores[pagosSeguridadSocial[i].IdProveedor].NomProveedor
 		}
 
 		c.Data["json"] = pagosSeguridadSocial
