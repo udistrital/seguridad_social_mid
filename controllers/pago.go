@@ -3,12 +3,11 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/seguridad_social_mid/golog"
 	"github.com/udistrital/seguridad_social_mid/models"
 )
@@ -233,10 +232,7 @@ func (c *PagoController) CalcularSegSocial() {
 	} else {
 		var (
 			alertas               []string
-			proveedores           []string
-			predicado             []models.Predicado
 			detallePreliquidacion []models.DetallePreliquidacion
-			pagosSeguridadSocial  []*models.PagoSeguridadSocial
 		)
 
 		err := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
@@ -246,30 +242,30 @@ func (c *PagoController) CalcularSegSocial() {
 			alertas = append(alertas, "error al traer detalle liquidacion")
 			c.Data["json"] = alertas
 		} else {
+			var (
+				predicado            []models.Predicado
+				pagosSeguridadSocial []models.PagoSeguridadSocial
+			)
+
 			idDetallePreliquidacion := detallePreliquidacion[0].Preliquidacion.Id
+			idNomina := strconv.Itoa(detallePreliquidacion[0].Preliquidacion.Nomina.Id)
 
-			idNommina := detallePreliquidacion[0].Preliquidacion.Nomina.Id
-			var wg sync.WaitGroup
-			wg.Add(len(detallePreliquidacion))
-			fmt.Println("comienza las gorutines...")
+			totalSaludLiquidacion := valorConceptoTotal(idStr, "salud")
+			totalPensionLiquidacion := valorConceptoTotal(idStr, "pension")
+			totalFondoSolidaridad := valorFondoTotal(idNomina)
 
-			// aquí se van armando los hechos
-			for index := 0; index < len(detallePreliquidacion); index++ {
-				go func(i int) {
-					defer wg.Done()
-					persona := strconv.Itoa(detallePreliquidacion[i].Persona)
-					valorCalculado := strconv.Itoa(int(detallePreliquidacion[i].ValorCalculado))
-					fmt.Println("go rutine #:", i)
-					predicado = append(predicado, models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", salud)."})
-					predicado = append(predicado, models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", riesgos)."})
-					predicado = append(predicado, models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", apf)."})
-					predicado = append(predicado, valorSaludEmpleado(idStr, persona), ValorPensionEmpleado(idStr, persona))
-				}(index)
+			for i := range detallePreliquidacion {
+				persona := strconv.FormatInt(detallePreliquidacion[i].Persona, 10)
+				valorCalculado := strconv.Itoa(int(detallePreliquidacion[i].ValorCalculado))
 
+				predicado = append(predicado, []models.Predicado{
+					models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", salud)."},
+					models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", riesgos)."},
+					models.Predicado{Nombre: "ibc(" + persona + "," + valorCalculado + ", apf)."},
+					models.Predicado{Nombre: "v_salud_func(" + persona + ", " + strconv.Itoa(totalSaludLiquidacion[persona]) + ")."},
+					models.Predicado{Nombre: "v_pen_func(" + persona + ", " + strconv.Itoa(totalPensionLiquidacion[persona]) + ")."},
+				}...)
 			}
-			wg.Wait()
-
-			log.Println("acabo todas las gorutines....")
 
 			reglas := CargarReglasBase() + FormatoReglas(predicado) + cargarNovedades()
 
@@ -282,55 +278,23 @@ func (c *PagoController) CalcularSegSocial() {
 			caja := golog.GetInt64(reglas, "v_caja(I,Y).", "Y")
 			icbf := golog.GetInt64(reglas, "v_icbf(I,Y).", "Y")
 
-			// otras go rutines...
-			// wg.Add(len(idProveedores))
+			for i := range idProveedores {
+				aux := models.PagoSeguridadSocial{
+					NombrePersona:           "",
+					IdProveedor:             idProveedores[i],
+					SaludUd:                 saludUd[i],
+					SaludTotal:              saludTotal[i],
+					PensionUd:               pensionUd[i],
+					PensionTotal:            pensionTotal[i],
+					FondoSolidaridad:        totalFondoSolidaridad[int(idProveedores[i])],
+					IdPreliquidacion:        idDetallePreliquidacion,
+					IdDetallePreliquidacion: detallePreliquidacion[i].Id,
+					Arl:                     arl[i],
+					Caja:                    caja[i],
+					Icbf:                    icbf[i]}
 
-			for index := 0; index < len(idProveedores)-1; index++ {
-				wg.Add(1)
-				go func(i int) {
-					defer wg.Done()
-					fmt.Println("entró a idProveedores", i)
-					idProveedor := fmt.Sprint(idProveedores[i])
-					proveedores = append(proveedores, idProveedor)
-
-					aux := &models.PagoSeguridadSocial{
-						NombrePersona:           "",
-						IdProveedor:             idProveedores[i],
-						SaludUd:                 saludUd[i],
-						SaludTotal:              saludTotal[i],
-						PensionUd:               pensionUd[i],
-						PensionTotal:            pensionTotal[i],
-						FondoSolidaridad:        valorPagoFondoSolidaridad(idProveedor, fmt.Sprint(idNommina)),
-						Caja:                    caja[i],
-						Icbf:                    icbf[i],
-						IdPreliquidacion:        idDetallePreliquidacion,
-						IdDetallePreliquidacion: detallePreliquidacion[i].Id,
-						Arl:                     arl[i]}
-
-					pagosSeguridadSocial = append(pagosSeguridadSocial, aux)
-				}(index)
+				pagosSeguridadSocial = append(pagosSeguridadSocial, aux)
 			}
-			wg.Wait()
-			fmt.Println("acabo la segunda tanda de gorutines...")
-			mapProveedores, _ := GetInfoProveedor(proveedores)
-
-			//wg.Add(len(idProveedores))
-			for i := range pagosSeguridadSocial {
-				wg.Add(1)
-				go func(i int) {
-					fmt.Println("entro a pagosSeguridadSocial: ", i)
-					defer wg.Done()
-					proveedor := mapProveedores[fmt.Sprint(pagosSeguridadSocial[i].IdProveedor)]
-					pagosSeguridadSocial[i].NombrePersona = proveedor.NomProveedor
-					caja, _ := ComporarCajaProveedor(proveedor.NumDocumento)
-					if !caja {
-						pagosSeguridadSocial[i].Caja = 0
-					}
-				}(i)
-
-			}
-			wg.Wait()
-			fmt.Println("acabo la tercera tanda de gorutines....")
 
 			c.Data["json"] = pagosSeguridadSocial
 		}
@@ -338,24 +302,46 @@ func (c *PagoController) CalcularSegSocial() {
 	}
 }
 
-func valorPagoFondoSolidaridad(persona, idNomina string) float64 {
+func valorFondoTotal(idNomina string) (valores map[int]float64) {
 	var conceptoNominaPorPersona []models.ConceptoNominaPorPersona
 
-	var valorFondo float64
-
 	err := getJson("http://"+beego.AppConfig.String("titanServicio")+"/concepto_nomina_por_persona"+
-		"?limit=0&query=Concepto.NombreConcepto:fondoSolidaridad,Persona:"+persona+",Activo:true,Nomina.Id:"+idNomina,
+		"?limit=0&query=Concepto.NombreConcepto:fondoSolidaridad,Activo:true,Nomina.Id:"+idNomina,
 		&conceptoNominaPorPersona)
 
 	if err != nil {
 		ImprimirError("error en valorPagoFondoSolidaridad() ", err)
-		return valorFondo
-	}
-	if len(conceptoNominaPorPersona) > 0 {
-		valorFondo = conceptoNominaPorPersona[0].ValorNovedad
 	}
 
-	return valorFondo
+	if len(conceptoNominaPorPersona) > 0 {
+		valores = make(map[int]float64)
+		for _, value := range conceptoNominaPorPersona {
+			valores[value.Persona] = value.ValorNovedad
+		}
+	}
+
+	return
+}
+
+// valorConceptoTotal obtiene todos los datos del concepto de una preliquidación y devuelve un mapa
+// el mapa valores tiene la forma [idPersona] = totalValorCalculado
+func valorConceptoTotal(idLiquidacion, concepto string) (valores map[string]int) {
+	var detalleLiquSalud []models.DetallePreliquidacion
+
+	err := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
+		"?limit=0&query=Preliquidacion:"+idLiquidacion+",Concepto.NombreConcepto:"+concepto, &detalleLiquSalud)
+
+	if err != nil {
+		ImprimirError("error en valorSaludTotal()", err)
+	} else {
+		valores = make(map[string]int)
+
+		for _, value := range detalleLiquSalud {
+			valores[strconv.FormatInt(value.Persona, 10)] += int(value.ValorCalculado)
+		}
+	}
+
+	return
 }
 
 // valorSaludEmpleado ...
@@ -370,7 +356,7 @@ func valorSaludEmpleado(idLiquidacion, persona string) (predicado models.Predica
 		"?limit=0&query=Preliquidacion:"+idLiquidacion+",Concepto.NombreConcepto:salud,Persona:"+persona, &detalleLiquSalud)
 
 	if errSalud != nil {
-		log.Println("Error en ValorSaludEmpleado:", errSalud)
+		// logs.Error("Error en ValorSaludEmpleado:", errSalud)
 	} else {
 		for index := 0; index < len(detalleLiquSalud); index++ {
 			totalSalud += int(detalleLiquSalud[index].ValorCalculado)
@@ -378,6 +364,32 @@ func valorSaludEmpleado(idLiquidacion, persona string) (predicado models.Predica
 		predicado = models.Predicado{Nombre: "v_salud_func(" + persona + ", " + strconv.Itoa(totalSalud) + ")."}
 	}
 
+	return
+}
+
+// ValorPensionEmpleado ...
+// @Title Valor Pensión Empleado
+// @Description Crea todos los hechos con la información del valor de la pensión
+// @Param	idLiquidacion		id de la liquidacion correspondiente
+func ValorPensionEmpleado(idLiquidacion, persona string) (predicado models.Predicado) {
+	var detalleLiquPension []models.DetallePreliquidacion
+	var totalPension int
+
+	errPension := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
+		"?limit=0&query=Preliquidacion:"+idLiquidacion+",Concepto.NombreConcepto:pension,Persona:"+persona, &detalleLiquPension)
+
+	if errPension != nil {
+		logs.Error("Error en ValorPensionEmpleado:", errPension)
+		fmt.Println("http://" + beego.AppConfig.String("titanServicio") + "/detalle_preliquidacion" +
+			"?limit=0&query=Preliquidacion:" + idLiquidacion + ",Concepto.NombreConcepto:pension,Persona:" + persona)
+	} else {
+		fmt.Println(detalleLiquPension)
+		for index := 0; index < len(detalleLiquPension); index++ {
+			// fmt.Println(detalleLiquPension[index])
+			totalPension += int(detalleLiquPension[index].ValorCalculado)
+		}
+		predicado = models.Predicado{Nombre: "v_pen_func(" + persona + ", " + strconv.Itoa(totalPension) + ")."}
+	}
 	return
 }
 
@@ -393,35 +405,12 @@ func SaludHCHonorarios(idLiquidacion string) (valorSaludEmpleado string) {
 		"?limit=0&query=Preliquidacion:"+idLiquidacion+",Concepto.NombreConcepto:salud", &detalleLiquSalud)
 
 	if errSalud != nil {
-		log.Println("Error en SaludHCHonorarios:", errSalud)
+		logs.Error("Error en SaludHCHonorarios:", errSalud)
 	} else {
 		for index := 0; index < len(detalleLiquSalud); index++ {
 			predicado = append(predicado, models.Predicado{Nombre: "v_salud_func(" + detalleLiquSalud[index].NumeroContrato + ", " + strconv.Itoa(int(detalleLiquSalud[index].ValorCalculado)) + ")."})
 			valorSaludEmpleado += predicado[index].Nombre + "\n"
 		}
-	}
-	return
-}
-
-// ValorPensionEmpleado ...
-// @Title Valor Pensión Empleado
-// @Description Crea todos los hechos con la información del valor de la pensión
-// @Param	idLiquidacion		id de la liquidacion correspondiente
-func ValorPensionEmpleado(idLiquidacion, persona string) (predicado models.Predicado) {
-	var detalleLiquPension []*models.DetallePreliquidacion
-	var totalPension int
-
-	errPension := getJson("http://"+beego.AppConfig.String("titanServicio")+"/detalle_preliquidacion"+
-		"?limit=0&query=Preliquidacion:"+idLiquidacion+",Concepto.NombreConcepto:pension,Persona:"+persona, &detalleLiquPension)
-
-	if errPension != nil {
-		log.Println("Error en ValorPensionEmpleado:", errPension)
-
-	} else {
-		for index := 0; index < len(detalleLiquPension); index++ {
-			totalPension += int(detalleLiquPension[index].ValorCalculado)
-		}
-		predicado = models.Predicado{Nombre: "v_pen_func(" + persona + ", " + strconv.Itoa(totalPension) + ")."}
 	}
 	return
 }
@@ -503,7 +492,7 @@ func (c *PagoController) RegistrarPagos() {
 			}
 		}
 
-		mapProveedores, err := GetInfoProveedor(PeriodoPago.Personas)
+		mapProveedores, err := GetInfoProveedor()
 		if err != nil {
 			c.Data["json"] = err.Error()
 			c.ServeJSON()
@@ -563,17 +552,20 @@ func (c *PagoController) RegistrarPagos() {
 }
 
 // GetInfoProveedor Recibe un arreglo de strings con los contratos y devuelve un map con la información del proveedor
-func GetInfoProveedor(idProveedores []string) (map[string]models.InformacionProveedor, error) {
-	proveedores := make(map[string]models.InformacionProveedor)
-	var proveedor models.InformacionProveedor
-	for i := range idProveedores {
-		if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_proveedor/"+idProveedores[i], &proveedor); err == nil {
-			proveedores[idProveedores[i]] = proveedor
-		} else {
-			fmt.Println("Error en GetInfoProveedor: ", err.Error())
-			return nil, err
+func GetInfoProveedor() (map[int64]models.InformacionProveedor, error) {
+	var infoProveedores []models.InformacionProveedor
+	proveedores := make(map[int64]models.InformacionProveedor)
+
+	if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"informacion_proveedor?limit=-1", &infoProveedores); err == nil {
+		for _, proveedor := range infoProveedores {
+			proveedores[int64(proveedor.Id)] = proveedor
 		}
+	} else {
+		fmt.Println("http://" + beego.AppConfig.String("agoraServicio") + "informacion_proveedor")
+		ImprimirError("Error en GetInfoProveedor: ", err)
+		return nil, err
 	}
+
 	return proveedores, nil
 }
 
@@ -589,19 +581,19 @@ func GetInfoPersonas(detallesPreliquidacion []models.DetallePreliquidacion) (map
 	personas := make(map[string]models.InformacionPersonaNatural)
 
 	if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_proveedor?limit=-1", &infoProveedores); err != nil {
-		fmt.Println("Error en GetInfoPersonas: ", err.Error())
+		ImprimirError("Error en GetInfoPersonas: ", err)
 		return nil, err
 	}
 
 	if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_persona_natural?limit=-1", &personasNaturales); err != nil {
-		fmt.Println("Error en GetInfoPersonas: ", err.Error())
+		ImprimirError("Error en GetInfoPersonas: ", err)
 		return nil, err
 	}
 
 	for _, detallePreliquidacion := range detallesPreliquidacion {
 		for _, infoProveedor := range infoProveedores {
-			if detallePreliquidacion.Persona == infoProveedor.Id {
-				proveedores[strconv.Itoa(detallePreliquidacion.Persona)] = infoProveedor
+			if detallePreliquidacion.Persona == int64(infoProveedor.Id) {
+				proveedores[strconv.FormatInt(detallePreliquidacion.Persona, 10)] = infoProveedor
 				break
 			}
 		}
@@ -625,12 +617,12 @@ func GetInfoPersonas(detallesPreliquidacion []models.DetallePreliquidacion) (map
 GetInfoPersona recibe un map de proveedores para consultar el número de contrato y
 devuelve un map con la inforamción de la persona, cuya llave es también el número de contrato
 */
-func GetInfoPersona(proveedores map[string]models.InformacionProveedor) (map[string]models.InformacionPersonaNatural, error) {
+func GetInfoPersona(proveedores map[int64]models.InformacionProveedor) (map[string]models.InformacionPersonaNatural, error) {
 	personas := make(map[string]models.InformacionPersonaNatural)
 	var persona models.InformacionPersonaNatural
 	for key, value := range proveedores {
 		if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_persona_natural/"+value.NumDocumento, &persona); err == nil {
-			personas[key] = persona
+			personas[strconv.FormatInt(key, 10)] = persona
 		} else {
 			return nil, err
 		}
@@ -638,8 +630,8 @@ func GetInfoPersona(proveedores map[string]models.InformacionProveedor) (map[str
 	return personas, nil
 }
 
-// ComporarCajaProveedor revisa si el proveedor tiene una caja de compensación asociada
-func ComporarCajaProveedor(cedulaProveedor string) (tieneCaja bool, err error) {
+// ComprovarCajaProveedor revisa si el proveedor tiene una caja de compensación asociada
+func ComprovarCajaProveedor(cedulaProveedor string) (tieneCaja bool, err error) {
 	var persona models.InformacionPersonaNatural
 	err = getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_persona_natural/"+cedulaProveedor, &persona)
 	if err != nil {

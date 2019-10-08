@@ -48,7 +48,7 @@ func (c *PagoController) CalcularSegSocialHonorarios() {
 		}
 
 		for _, value := range detalleLiquSalud {
-			proveedores = append(proveedores, strconv.Itoa(value.Persona))
+			proveedores = append(proveedores, strconv.FormatInt(value.Persona, 10))
 			aux := &models.PagoSeguridadSocial{
 				NombrePersona:           "",
 				IdProveedor:             int64(value.Persona),
@@ -69,9 +69,9 @@ func (c *PagoController) CalcularSegSocialHonorarios() {
 			pagosSeguridadSocial = append(pagosSeguridadSocial, aux)
 		}
 
-		mapProveedores, _ := GetInfoProveedor(proveedores)
+		mapProveedores, _ := GetInfoProveedor()
 		for i := range pagosSeguridadSocial {
-			pagosSeguridadSocial[i].NombrePersona = mapProveedores[fmt.Sprint(pagosSeguridadSocial[i].IdProveedor)].NomProveedor
+			pagosSeguridadSocial[i].NombrePersona = mapProveedores[pagosSeguridadSocial[i].IdProveedor].NomProveedor
 		}
 
 		c.Data["json"] = pagosSeguridadSocial
