@@ -10,7 +10,7 @@ func init() {
     beego.GlobalControllerRouter["github.com/udistrital/seguridad_social_mid/controllers:ConceptosIbcController"] = append(beego.GlobalControllerRouter["github.com/udistrital/seguridad_social_mid/controllers:ConceptosIbcController"],
         beego.ControllerComments{
             Method: "ActualizarConceptos",
-            Router: `/ActualizarConceptos/`,
+            Router: `/ActualizarConceptos/:tipo_ibc`,
             AllowHTTPMethods: []string{"post"},
             MethodParams: param.Make(),
             Filters: nil,
@@ -110,6 +110,15 @@ func init() {
         beego.ControllerComments{
             Method: "SumarPagosSalud",
             Router: `/SumarPagosSalud/:idPeriodoPago`,
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/seguridad_social_mid/controllers:PagoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/seguridad_social_mid/controllers:PagoController"],
+        beego.ControllerComments{
+            Method: "ConceptosIbcParafiscales",
+            Router: `/conceptos_ibc_parafiscales`,
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,

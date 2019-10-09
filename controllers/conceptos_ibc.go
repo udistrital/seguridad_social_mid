@@ -2,8 +2,9 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
+	"strings"
+	"github.com/astaxie/beego/logs"
 
 	"github.com/udistrital/seguridad_social_mid/models"
 
@@ -27,8 +28,9 @@ func (c *ConceptosIbcController) URLMapping() {
 // @Param	body		body 	models.ConceptosIbc	true		"body for ConceptosIbc content"
 // @Success 201 {int} models.Alert
 // @Failure 404 body is empty
-// @router /ActualizarConceptos/ [post]
+// @router /ActualizarConceptos/:tipo_ibc [post]
 func (c *ConceptosIbcController) ActualizarConceptos() {
+	tipo_ibc := c.Ctx.Input.Param(":tipo_ibc")
 	var v []models.Predicado
 	alerta := models.Alert{
 		Type: "error",
@@ -45,7 +47,7 @@ func (c *ConceptosIbcController) ActualizarConceptos() {
 		alerta.Type = "success"
 		alerta.Code = "1"
 
-		construirHechos(v)
+		construirHechos(v, tipo_ibc)
 		err = RegistrarHechos(v)
 		if err != nil {
 			alerta.Body = err.Error()
@@ -54,8 +56,7 @@ func (c *ConceptosIbcController) ActualizarConceptos() {
 		c.Data["json"] = alerta
 
 	}).Catch(func(e try.E) {
-		fmt.Println("Error en conceptos_ibc.ActualizarConceptos(): ", e.(models.Alert).Body)
-		//beego.Error("Error en conceptos_ibc.ActualizarConceptos(): ", e.(models.Alert).Body)
+		logs.Error("Error en conceptos_ibc.ActualizarConceptos(): ", e.(models.Alert).Body)
 		c.Data["json"] = e
 	})
 
@@ -76,9 +77,14 @@ func RegistrarHechos(nombreConceptos []models.Predicado) (err error) {
 }
 
 // construirHechos recorre el arreglo de predicados, se crea un hecho y luego modifica el nombre del objeto con ese hecho
-func construirHechos(nombreConceptos []models.Predicado) {
+func construirHechos(nombreConceptos []models.Predicado, tipo_ibc string) {
 	for i, value := range nombreConceptos {
+
 		hecho := "concepto_ibc(" + value.Nombre + ","
+		if strings.Compare(tipo_ibc, "parafiscales") == 0 {
+			hecho = "concepto_ibc_parafiscales(" + value.Nombre + ","
+		}
+
 		if value.Estado {
 			hecho += " activo)."
 		} else {
