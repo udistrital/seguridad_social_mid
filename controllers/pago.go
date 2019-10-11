@@ -535,6 +535,7 @@ func (c *PagoController) RegistrarPagos() {
 		if validar, periodoModificado := validarPeriodo(PeriodoPago); validar {
 			if err = sendJson("http://"+beego.AppConfig.String("segSocialService")+"/periodo_pago/"+strconv.Itoa(periodoModificado.Id), "PUT", &alerta, periodoModificado); err != nil {
 				c.Data["json"] = err.Error()
+				c.Ctx.Output.SetStatus(500)
 				c.ServeJSON()
 				return
 			}
@@ -543,13 +544,16 @@ func (c *PagoController) RegistrarPagos() {
 		mapProveedores, err := GetInfoProveedor()
 		if err != nil {
 			c.Data["json"] = err.Error()
+			c.Ctx.Output.SetStatus(500)
 			c.ServeJSON()
 			return
 		}
 
 		mapPersonas, err := GetInfoPersona(mapProveedores)
 		if err != nil {
+			fmt.Println("aquí fue el error...")
 			c.Data["json"] = err.Error()
+			c.Ctx.Output.SetStatus(500)
 			c.ServeJSON()
 			return
 		}
@@ -557,6 +561,7 @@ func (c *PagoController) RegistrarPagos() {
 		pagosSeg, err := GetPagosSeguridadSocial()
 		if err != nil {
 			c.Data["json"] = err.Error()
+			c.Ctx.Output.SetStatus(500)
 			c.ServeJSON()
 			return
 		}
@@ -588,6 +593,7 @@ func (c *PagoController) RegistrarPagos() {
 			c.Ctx.Output.SetStatus(201)
 		} else {
 			c.Data["json"] = err.Error()
+			c.Ctx.Output.SetStatus(500)
 			c.ServeJSON()
 			return
 		}
@@ -595,6 +601,7 @@ func (c *PagoController) RegistrarPagos() {
 
 	} else {
 		c.Data["json"] = err.Error()
+		c.Abort("500")
 	}
 	c.ServeJSON()
 }
@@ -669,6 +676,7 @@ func GetInfoPersona(proveedores map[int64]models.InformacionProveedor) (map[stri
 	personas := make(map[string]models.InformacionPersonaNatural)
 	var persona models.InformacionPersonaNatural
 	for key, value := range proveedores {
+		fmt.Println("http://" + beego.AppConfig.String("agoraServicio") + "/informacion_persona_natural/" + value.NumDocumento)
 		if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_persona_natural/"+value.NumDocumento, &persona); err == nil {
 			personas[strconv.FormatInt(key, 10)] = persona
 		} else {
