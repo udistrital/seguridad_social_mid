@@ -25,6 +25,7 @@ func (c *PagoController) URLMapping() {
 	c.Mapping("SumarPagosSalud", c.SumarPagosSalud)
 	c.Mapping("RegistrarPagos", c.RegistrarPagos)
 	c.Mapping("GetInfoCabecera", c.GetInfoCabecera)
+	c.Mapping("ConceptosIbcParafiscales", c.ConceptosIbcParafiscales)
 }
 
 // GetInfoCabecera ...
@@ -140,6 +141,53 @@ func (c *PagoController) ConceptosIbc() {
 	} else {
 		nombres := golog.GetString(FormatoReglas(predicados), "concepto_ibc(X,Y).", "X")
 		estados := golog.GetString(FormatoReglas(predicados), "concepto_ibc(X,Y).", "Y")
+		fmt.Println(nombres, len(nombres))
+		for i := 0; i < len(nombres); i++ {
+			for j := 0; j < len(conceptos); j++ {
+				if nombres[i] == conceptos[j].NombreConcepto {
+					aux := models.ConceptosIbc{
+						Id:               predicados[i].Id,
+						Nombre:           nombres[i],
+						Descripcion:      conceptos[j].AliasConcepto,
+						DescripcionHecho: predicados[i].Descripcion,
+						Estado:           true,
+						Dominio:          predicados[i].Dominio,
+						TipoPredicado:    predicados[i].TipoPredicado,
+					}
+					if estados[i] == "inactivo" {
+						aux.Estado = false
+					}
+					conceptosIbc = append(conceptosIbc, aux)
+					break
+				}
+			}
+
+		}
+		c.Data["json"] = conceptosIbc
+	}
+	c.ServeJSON()
+}
+
+// ConceptosIbcParafiscales ...
+// @Title ConceptosIbcParafiscales
+// @Description Obtiene todos los conceptos IBC Parafiscales del ruler y los cruza con los conceptos de nómina
+// @router /conceptos_ibc_parafiscales [get]
+func (c *PagoController) ConceptosIbcParafiscales() {
+	var predicados []models.Predicado
+	var conceptos []models.Concepto
+	var conceptosIbc []models.ConceptosIbc
+	err := getJson("http://"+beego.AppConfig.String("rulerServicio")+
+		"/predicado?limit=-1&query=Nombre__startswith:concepto_ibc_parafiscales,Dominio.Id:19", &predicados)
+
+	errConceptoTitan := getJson("http://"+beego.AppConfig.String("titanServicio")+
+		"/concepto_nomina?limit=-1", &conceptos)
+
+	if err != nil && errConceptoTitan != nil {
+		c.Data["json"] = err.Error() + errConceptoTitan.Error()
+	} else {
+		fmt.Println(predicados)
+		nombres := golog.GetString(FormatoReglas(predicados), "concepto_ibc_parafiscales(X,Y).", "X")
+		estados := golog.GetString(FormatoReglas(predicados), "concepto_ibc_parafiscales(X,Y).", "Y")
 		for i := 0; i < len(predicados); i++ {
 			for j := 0; j < len(conceptos); j++ {
 				if nombres[i] == conceptos[j].NombreConcepto {
@@ -487,6 +535,7 @@ func (c *PagoController) RegistrarPagos() {
 		if validar, periodoModificado := validarPeriodo(PeriodoPago); validar {
 			if err = sendJson("http://"+beego.AppConfig.String("segSocialService")+"/periodo_pago/"+strconv.Itoa(periodoModificado.Id), "PUT", &alerta, periodoModificado); err != nil {
 				c.Data["json"] = err.Error()
+				c.Ctx.Output.SetStatus(500)
 				c.ServeJSON()
 				return
 			}
@@ -495,13 +544,16 @@ func (c *PagoController) RegistrarPagos() {
 		mapProveedores, err := GetInfoProveedor()
 		if err != nil {
 			c.Data["json"] = err.Error()
+			c.Ctx.Output.SetStatus(500)
 			c.ServeJSON()
 			return
 		}
 
 		mapPersonas, err := GetInfoPersona(mapProveedores)
 		if err != nil {
+			fmt.Println("aquí fue el error...")
 			c.Data["json"] = err.Error()
+			c.Ctx.Output.SetStatus(500)
 			c.ServeJSON()
 			return
 		}
@@ -509,6 +561,7 @@ func (c *PagoController) RegistrarPagos() {
 		pagosSeg, err := GetPagosSeguridadSocial()
 		if err != nil {
 			c.Data["json"] = err.Error()
+			c.Ctx.Output.SetStatus(500)
 			c.ServeJSON()
 			return
 		}
@@ -540,6 +593,7 @@ func (c *PagoController) RegistrarPagos() {
 			c.Ctx.Output.SetStatus(201)
 		} else {
 			c.Data["json"] = err.Error()
+			c.Ctx.Output.SetStatus(500)
 			c.ServeJSON()
 			return
 		}
@@ -547,6 +601,7 @@ func (c *PagoController) RegistrarPagos() {
 
 	} else {
 		c.Data["json"] = err.Error()
+		c.Abort("500")
 	}
 	c.ServeJSON()
 }
@@ -621,6 +676,7 @@ func GetInfoPersona(proveedores map[int64]models.InformacionProveedor) (map[stri
 	personas := make(map[string]models.InformacionPersonaNatural)
 	var persona models.InformacionPersonaNatural
 	for key, value := range proveedores {
+		fmt.Println("http://" + beego.AppConfig.String("agoraServicio") + "/informacion_persona_natural/" + value.NumDocumento)
 		if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_persona_natural/"+value.NumDocumento, &persona); err == nil {
 			personas[strconv.FormatInt(key, 10)] = persona
 		} else {

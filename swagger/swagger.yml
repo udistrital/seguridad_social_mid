@@ -30,7 +30,7 @@ paths:
           description: '{string} string'
         "403":
           description: body is empty
-  /conceptos_ibc/ActualizarConceptos/:
+  /conceptos_ibc/ActualizarConceptos/{tipo_ibc}:
     post:
       tags:
       - conceptos_ibc
@@ -213,6 +213,13 @@ paths:
         description: periodo
         schema:
           $ref: '#/definitions/del'
+  /pago/conceptos_ibc_parafiscales:
+    get:
+      tags:
+      - pago
+      description: Obtiene todos los conceptos IBC Parafiscales del ruler y los cruza
+        con los conceptos de nómina
+      operationId: PagoController.ConceptosIbcParafiscales
   /planillas/GenerarPlanillaActivos/{limit}/{offset}:
     post:
       tags:
@@ -254,7 +261,7 @@ definitions:
   '*models.PagoSeguridadSocial':
     title: PagoSeguridadSocial
     type: object
-  69.0xc0003e3e60.false:
+  69.0xc000416780.false:
     title: "false"
     type: object
   PeriodoPago:
@@ -274,7 +281,7 @@ definitions:
     type: object
     properties:
       Body:
-        $ref: '#/definitions/69.0xc0003e3e60.false'
+        $ref: '#/definitions/69.0xc000416780.false'
       Code:
         type: string
       Type:
