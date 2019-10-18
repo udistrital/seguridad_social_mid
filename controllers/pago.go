@@ -498,7 +498,7 @@ func validarPeriodo(PeriodoPago models.TrPeriodoPago) (bool, *models.PeriodoPago
 		",TipoLiquidacion:"+PeriodoPago.PeriodoPago.TipoLiquidacion+
 		"&EstadoSeguridadSocial.Nombre:Abierta", &periodoAntiguo); err == nil {
 
-		if err := getJson("http://"+beego.AppConfig.String("segSocialService")+"/estado_seguridad_social?query=Nombre:reemplazada", &estadoSegSocial); err != nil {
+		if err := getJson("http://"+beego.AppConfig.String("segSocialService")+"/estado_seguridad_social?query=Nombre:Cancelada", &estadoSegSocial); err != nil {
 			return false, nil
 		}
 
@@ -541,7 +541,7 @@ func (c *PagoController) RegistrarPagos() {
 			}
 		}
 
-		mapProveedores, err := GetInfoProveedor()
+		mapProveedores, err := GetInfoProveedores(PeriodoPago.Personas)
 		if err != nil {
 			c.Data["json"] = err.Error()
 			c.Ctx.Output.SetStatus(500)
@@ -549,7 +549,7 @@ func (c *PagoController) RegistrarPagos() {
 			return
 		}
 
-		mapPersonas, err := GetInfoPersona(mapProveedores)
+		mapPersonas, err := InfoPersona(mapProveedores)
 		if err != nil {
 			fmt.Println("aquí fue el error...")
 			c.Data["json"] = err.Error()
@@ -606,17 +606,47 @@ func (c *PagoController) RegistrarPagos() {
 	c.ServeJSON()
 }
 
-// GetInfoProveedor Recibe un arreglo de strings con los contratos y devuelve un map con la información del proveedor
+// GetInfoProveedores Recibe un arreglo de strings con las personas de una nómina y devuelve un map con la información del proveedor
+func GetInfoProveedores(personasNomina []string) (map[string]models.InformacionProveedor, error) {
+	var proveedor models.InformacionProveedor
+	personas := make(map[string]models.InformacionProveedor)
+
+	for i := range personasNomina {
+		fmt.Println("http://" + beego.AppConfig.String("agoraServicio") + "/informacion_proveedor/" + personasNomina[i])
+		if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_proveedor/"+personasNomina[i], &proveedor); err == nil {
+			personas[personasNomina[i]] = proveedor
+		} else {
+			return nil, err
+		}
+	}
+	return personas, nil
+}
+
+// InfoPersona recibe un map de proveedores para consultar el número de contrato y devuelve un mapa con la inforamción de la persona, cuya llave es también el número de contrato
+func InfoPersona(proveedores map[string]models.InformacionProveedor) (map[string]models.InformacionPersonaNatural, error) {
+	personas := make(map[string]models.InformacionPersonaNatural)
+	var persona models.InformacionPersonaNatural
+	for key, value := range proveedores {
+		if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_persona_natural/"+value.NumDocumento, &persona); err == nil {
+			personas[key] = persona
+		} else {
+			return nil, err
+		}
+	}
+	return personas, nil
+}
+
+// GetInfoProveedor devuelve un map con la información de todos los proveedores de tipo persona NATURAL
 func GetInfoProveedor() (map[int64]models.InformacionProveedor, error) {
 	var infoProveedores []models.InformacionProveedor
 	proveedores := make(map[int64]models.InformacionProveedor)
 
-	if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"informacion_proveedor?limit=-1", &infoProveedores); err == nil {
+	if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"informacion_proveedor?"+
+		"limit=-1&query=Tipopersona:NATURAL", &infoProveedores); err == nil {
 		for _, proveedor := range infoProveedores {
 			proveedores[int64(proveedor.Id)] = proveedor
 		}
 	} else {
-		fmt.Println("http://" + beego.AppConfig.String("agoraServicio") + "informacion_proveedor")
 		ImprimirError("Error en GetInfoProveedor: ", err)
 		return nil, err
 	}
@@ -678,6 +708,7 @@ func GetInfoPersona(proveedores map[int64]models.InformacionProveedor) (map[stri
 	for key, value := range proveedores {
 		fmt.Println("http://" + beego.AppConfig.String("agoraServicio") + "/informacion_persona_natural/" + value.NumDocumento)
 		if err := getJson("http://"+beego.AppConfig.String("agoraServicio")+"/informacion_persona_natural/"+value.NumDocumento, &persona); err == nil {
+			fmt.Println(key)
 			personas[strconv.FormatInt(key, 10)] = persona
 		} else {
 			return nil, err
