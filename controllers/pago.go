@@ -498,7 +498,7 @@ func validarPeriodo(PeriodoPago models.TrPeriodoPago) (bool, *models.PeriodoPago
 		",TipoLiquidacion:"+PeriodoPago.PeriodoPago.TipoLiquidacion+
 		"&EstadoSeguridadSocial.Nombre:Abierta", &periodoAntiguo); err == nil {
 
-		if err := getJson("http://"+beego.AppConfig.String("segSocialService")+"/estado_seguridad_social?query=Nombre:reemplazada", &estadoSegSocial); err != nil {
+		if err := getJson("http://"+beego.AppConfig.String("segSocialService")+"/estado_seguridad_social?query=Nombre:Cancelada", &estadoSegSocial); err != nil {
 			return false, nil
 		}
 
